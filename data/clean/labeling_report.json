@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.1.0",
+  "review_method": "Individual AI review of all available test notes and control annotations; no human sign-off",
+  "solid_tests_reviewed": 250,
+  "test_outcomes": {
+    "fuel_exhaustion": 20,
+    "burn_observed": 49,
+    "burn_then_extinguished": 127,
+    "insufficient_evidence": 12,
+    "suppression_extinction": 3,
+    "transient_or_not_sustained": 23,
+    "no_ignition_observed": 6,
+    "hardware_failure": 6,
+    "partial_extinction": 4
+  },
+  "test_any_flame_labels": {
+    "1": 226,
+    "": 18,
+    "0": 6
+  },
+  "explicit_flow_event_links": 91,
+  "stage_observations": 395,
+  "airflow_readings": 422,
+  "solid_training_candidates": 47,
+  "solid_candidate_class_counts": {
+    "1": 31,
+    "0": 16
+  },
+  "solid_candidate_validation_groups": 41,
+  "stage_exclusions": {
+    "approximate_or_bounded_airspeed": 307,
+    "nonintrinsic_terminal_event": 90,
+    "stage_airspeed_not_resolved": 304,
+    "no_stage_sustained_flame_label": 171,
+    "nitrogen_intervention_needs_condition_review": 40,
+    "ignition_alone_does_not_establish_sustained_burning": 7,
+    "unresolved_material": 22,
+    "fuel_depletion_or_geometry_change": 25,
+    "instrument_or_condition_description_conflict": 17,
+    "igniter_failure_in_test": 5,
+    "sustained_burning_not_explicitly_established": 2,
+    "source_date_requires_review": 3,
+    "oxygen_changed_or_sensor_value_suspect": 81,
+    "no_usable_observation_note": 6,
+    "igniter_position_changed": 1
+  },
+  "flex_training_candidates": 207,
+  "flex_candidate_class_counts": {
+    "1": 180,
+    "0": 27
+  },
+  "flex_disruptions_excluded": 61,
+  "training_status": "Exploratory labeled candidates; no model fit or validated predictions. Labels retain source-specific observation horizons and AI review provenance.",
+  "required_solid_features": [
+    "material",
+    "oxygen_initial_pct",
+    "airflow_cm_s",
+    "protocol"
+  ],
+  "optional_solid_features": [
+    "sample_geometry",
+    "flow_direction",
+    "thickness_mm",
+    "diameter_mm",
+    "width_mm"
+  ],
+  "flex_features": [
+    "fuel",
+    "pressure_kpa",
+    "oxygen_pct",
+    "nitrogen_fraction",
+    "co2_fraction",
+    "helium_fraction",
+    "droplet_diameter_mm"
+  ],
+  "forbidden_features": [
+    "outcome",
+    "burned_binary",
+    "notes",
+    "evidence_quote",
+    "event_state",
+    "event_cause",
+    "review_status",
+    "exclusion_reasons",
+    "oxygen_final_pct",
+    "co2_final_pct",
+    "burn_time_s",
+    "extinction_diameter_mm",
+    "burning_rate_raw",
+    "test_end_raw"
+  ]
+}

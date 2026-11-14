@@ -70,26 +70,22 @@ files were present in the workspace.
 
 ## Files for each teammate
 
-**Model lead:** Start with `clean/solid_combustion_model.csv`, the data contract
-and quality report. Copy `clean/label_review_queue.csv` into `data/annotations/`
-before editing; generated files are overwritten on rebuild. Define one target
-and consistent observation conditions, then review notes against their source
-locators. A whole test can contain multiple flow changes, re-ignitions, forced
-suppression and fuel exhaustion. It cannot automatically supply one binary
-label for its initial oxygen/airflow. Extinction after a real burn is not a
-"did not burn" result. Hardware failure or depleted fuel is also not evidence
-of intrinsic ignition resistance. All `burned_binary` cells currently remain
-blank and `training_eligible` is false. The package is ready for annotation,
-not for immediately fitting a burn/no-burn model.
+**Model lead:** Read [the labeling handoff](annotations/README.md) and
+`clean/labeling_report.json`. All 250 tests now have individual AI reviews,
+including explicit unresolved cases. The whole-test `burned_binary` means any
+reported visible flame; it is not the sustained-flame stage target. Whole-test
+rows remain ineligible for condition-specific training. Use
+`clean/solid_stage_training.csv` for conservative exploratory stage candidates,
+or `clean/flex_training.csv` for the separate droplet fallback. Keep the physics
+separate and follow the feature whitelist, trial protocol and group definitions.
 
-If the selected target requires separate condition segments, create a reviewed
-training table with `experiment_id`, a segment identifier, actual conditions,
-target value, reviewer and source locator. Preserve the original observations.
-Use `split_group` to keep repeat burns of the same sample together in validation;
-review possible cross-investigation sample reuse too. Do not use final gas
-measurements, crew prose, IDs or source-specific camera settings as predictive
-features. Record labels, feature choices, sample exclusions and validation
-metrics in the later model commit. FLEX remains a separate fallback dataset.
+A whole test can contain flow changes, re-ignitions, forced suppression and fuel
+exhaustion. The event table preserves those distinctions. Missing flow-to-event
+alignment remains missing. Actual stage oxygen is unknown; initial test oxygen
+is explicitly labeled as a proxy. The annotation files preserve source hashes,
+evidence spans and AI reviewer provenance; no human review is claimed. Update
+those source annotations when correcting a label, then run `label_data.py`.
+Record group-aware validation metrics and exclusions in the later model commit.
 
 **Dashboard/advisor lead:** Read the observation table for actual experiments,
 the source tables for Saffire evidence, and the catalog for source cards. Offer
@@ -145,6 +141,10 @@ and fails if BASS joins or CSV structures do not reconcile. The source manifest
 records SHA-256 hashes, versions and permanent download endpoint parameters;
 temporary signed download URLs are not stored. Ground transcription lives in
 `scripts/ground_reference.py`, with table/page provenance on every output row.
+
+The full build also applies the committed annotations. To rebuild only labels
+and stage/FLEX training candidates from existing clean files, run
+`python3 data/scripts/label_data.py`; it requires only Python's standard library.
 
 Commit `data/clean/`, `data/scripts/`, `data/access.py`, `data/tests/`, requirements
 and documentation. `data/raw/` stays local and is ignored.

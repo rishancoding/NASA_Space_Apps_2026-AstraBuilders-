@@ -1,7 +1,7 @@
 """Dependency-free readers shared by the later dashboard, agent and model code.
 
-No predictions or safety rankings are supplied by the data package. Callers must
-respect quality_report.json and define/review model labels before training.
+No predictions or safety rankings are supplied by the data package. Candidate
+training rows have AI-reviewed labels; see annotations/README.md for limitations.
 """
 from __future__ import annotations
 
@@ -64,3 +64,15 @@ def load_evidence(source_record: str | None = None) -> list[dict]:
 
 def load_quality_report() -> dict:
     return json.loads((CLEAN / "quality_report.json").read_text())
+
+
+def load_training_candidates(dataset: str = "solids") -> list[dict]:
+    """Return the curated candidates; use the documented feature whitelist.
+
+    Values remain CSV strings. These rows are observations with AI annotation,
+    not validated model outputs. Do not concatenate the two physical datasets.
+    """
+    files = {"solids": "solid_stage_training.csv", "flex": "flex_training.csv"}
+    if dataset not in files:
+        raise ValueError("dataset must be 'solids' or 'flex'")
+    return _csv(CLEAN / files[dataset])

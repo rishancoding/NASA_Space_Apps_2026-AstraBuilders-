@@ -1,12 +1,12 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "null_encoding": "Empty CSV cell; JSON/API numeric null is None/null; never substitute zero",
   "solid_table": "solid_combustion_model.csv",
   "row_granularity": "One whole BASS or BASS-II test; conditions may vary within a test",
   "primary_key": "experiment_id",
-  "cross_validation_group": "split_group",
+  "cross_validation_group": "validation_group in stage files; whole-test split_group retained for compatibility",
   "join_to_catalog": "source_record",
-  "training_gate": "No current row is training eligible; define a target and review condition-specific labels first",
+  "training_gate": "Use solid_stage_training.csv or separate flex_training.csv; validate grouped splits and feature coverage before fitting",
   "columns": {
     "experiment_id": {
       "type": "string",
@@ -166,7 +166,7 @@
     "burned_binary": {
       "type": "nullable number",
       "unit": "",
-      "use": "target only after review"
+      "use": "Any visible flame reported anywhere in test; not the sustained-flame stage target"
     },
     "training_eligible": {
       "type": "boolean encoded true/false",
@@ -215,10 +215,53 @@
     }
   },
   "dataset_roles": {
-    "solid_combustion_model.csv": "solid observations and future annotation; no training labels yet",
+    "solid_combustion_model.csv": "Reviewed whole-test observations; not independent condition labels",
     "flex_backup.csv": "liquid droplet fallback only; never pool with solids",
     "ground_thresholds.csv": "Earth comparison; 70 configuration-specific threshold pairs, not burn outcomes",
     "source_tables/": "NASA table values; heterogeneous headers, units and note rows",
-    "evidence_chunks.jsonl": "research text with citation locators"
+    "evidence_chunks.jsonl": "research text with citation locators",
+    "solid_stage_observations.csv": "Evidence-linked events; includes unknown conditions and excluded endpoints",
+    "solid_stage_training.csv": "Conservative sustained-flame stage candidates with measured airspeed; initial oxygen is a proxy, protocol is required",
+    "airflow_readings.csv": "Instrument reading order only; no inferred outcome or reconstructed timestamp",
+    "flex_training.csv": "Separate terminal-extinction classifier candidates; disruptions censored"
+  },
+  "training_targets": {
+    "solid_stage_training.csv": {
+      "target": "sustained_flame_binary",
+      "positive": "source-reported sustained/established flame at the selected event",
+      "negative": "source-reported failure to sustain or extinction at the selected event",
+      "group": "validation_group",
+      "required_features": [
+        "material",
+        "oxygen_initial_pct",
+        "airflow_cm_s",
+        "protocol"
+      ],
+      "optional_features": [
+        "sample_geometry",
+        "flow_direction",
+        "thickness_mm",
+        "diameter_mm",
+        "width_mm"
+      ],
+      "oxygen_caveat": "oxygen_initial_pct is not actual stage oxygen; oxygen_at_stage_pct remains unknown",
+      "protocol": "ignition_trial versus ongoing_burn_trial; both categories contain both labels"
+    },
+    "flex_training.csv": {
+      "target": "extinction_binary",
+      "positive": "Extinction",
+      "negative": "Completion",
+      "censored": "Disruption",
+      "group": "split_group",
+      "features": [
+        "fuel",
+        "pressure_kpa",
+        "oxygen_pct",
+        "nitrogen_fraction",
+        "co2_fraction",
+        "helium_fraction",
+        "droplet_diameter_mm"
+      ]
+    }
   }
 }

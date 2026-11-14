@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "verified_psi_records": 19,
   "external_ntrs_records": 1,
   "experimental_tables": 21,
@@ -15,9 +15,9 @@
     "O21",
     "O22"
   ],
-  "solid_labeled_rows": 0,
+  "solid_labeled_rows": 232,
   "training_eligible_rows": 0,
-  "model_readiness": "requires_target_definition_and_reviewed_condition_specific_labels",
+  "model_readiness": "exploratory_stage_candidates_available; use stage table, not whole-test labels",
   "flex_observations": 274,
   "evidence_chunks": 757,
   "publications": 325,
@@ -56,7 +56,7 @@
     "oxygen_final_increase_requires_review": 2
   },
   "limitations": [
-    "Extinction after burning is not a no-burn label. No binary target was invented from crew prose.",
+    "Individual AI reviews supply any-flame test labels and conservative sustained-flame stage candidates. Extinction after burning is not a no-burn test label; no human sign-off is claimed.",
     "A single test often changes airflow and reuses a sample. Do not associate its final outcome with only the initial conditions.",
     "Scalar airflow is populated only for a single numeric Air display, whose unit is cm/s per BASS-II ReadMe; fan display is a different signal.",
     "BASS oxygen is a fraction in its workbook despite the percent header; it is multiplied by 100. BASS-II calibrated oxygen is already percent.",
@@ -66,5 +66,8 @@
     "FLEX is droplet data, kept out of the solid model. Its burning-rate unit needs verification.",
     "Ground thresholds describe Earth-gravity configurations and are not microgravity outcomes.",
     "No validated Moon/Mars prediction, pressure extrapolation, untested material ranking, mass, strength or budget constraints are supplied."
-  ]
+  ],
+  "solid_tests_reviewed": 250,
+  "solid_training_stage_rows": 47,
+  "flex_training_rows": 207
 }

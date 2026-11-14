@@ -485,7 +485,8 @@ def build() -> None:
                           "source_tables/": "NASA table values; heterogeneous headers, units and note rows",
                           "evidence_chunks.jsonl": "research text with citation locators"},
     })
-    print(json.dumps({k: quality[k] for k in ["verified_psi_records", "solid_observations", "bassii_report_notes", "training_eligible_rows", "flex_observations", "evidence_chunks"]}, indent=2))
+    from label_data import build_labels
+    build_labels()
 
 
 if __name__ == "__main__":

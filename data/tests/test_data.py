@@ -59,9 +59,10 @@ class DataTests(unittest.TestCase):
         self.assertIn("spread halfway", row["notes"])
         self.assertIn("extinguished", row["notes"])
         self.assertIn("PDF page 111", row["supplement_locator"])
-        self.assertIsNone(row["burned_binary"])
+        self.assertEqual(row["burned_binary"], 1)
         self.assertEqual(sum(bool(r["notes"]) for r in query_experiments(source_record="PSI-25")), 126)
-        self.assertTrue(all(r["burned_binary"] is None and not r["training_eligible"] for r in self.rows))
+        self.assertTrue(all(not r["training_eligible"] for r in self.rows))
+        self.assertEqual(query_experiments(source_record="PSI-25", test_id="O20")[0]["burned_binary"], None)
 
     def test_missing_pressure_and_variable_flow(self):
         self.assertTrue(all(r["pressure_kpa"] is None for r in query_experiments(source_record="PSI-25")))
