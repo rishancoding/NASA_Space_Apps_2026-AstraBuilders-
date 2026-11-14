@@ -1,0 +1,497 @@
+[
+  {
+    "source_record": "PSI-26",
+    "filename": "PSI-26_Experimental table_BASS.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-26/download?file=PSI-26_Experimental+table_BASS.csv&version=1&redirect=false",
+    "size_bytes": 4726,
+    "sha256": "ccfc3c54d948b64a1c5d2596a63c7c8019e51df0c91a1d62f039f48fa28c300f",
+    "local_path": "data/raw/PSI-26/PSI-26_Experimental table_BASS.csv"
+  },
+  {
+    "source_record": "PSI-26",
+    "filename": "PSI-26_Science Documents_FlammabilityAspectsofFabric_USNationalCombustion.2013.docx",
+    "file_version": 2,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-26/download?file=PSI-26_Science+Documents_FlammabilityAspectsofFabric_USNationalCombustion.2013.docx&version=2&redirect=false",
+    "size_bytes": 8837026,
+    "sha256": "434e9b2cade638d63dcb738d3355533db702649eca356c63e9277b1ef8eecac7",
+    "local_path": "data/raw/PSI-26/PSI-26_Science Documents_FlammabilityAspectsofFabric_USNationalCombustion.2013.docx"
+  },
+  {
+    "source_record": "PSI-26",
+    "filename": "PSI-26_Science Documents_Planned_Test Matrix.xlsx",
+    "file_version": 2,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-26/download?file=PSI-26_Science+Documents_Planned_Test+Matrix.xlsx&version=2&redirect=false",
+    "size_bytes": 20976,
+    "sha256": "e0a06f81c110efc83cb23841342734c2d0a7187e9d9cbf2c0100c78d66bab9f9",
+    "local_path": "data/raw/PSI-26/PSI-26_Science Documents_Planned_Test Matrix.xlsx"
+  },
+  {
+    "source_record": "PSI-26",
+    "filename": "PSI-26_Science Documents_As Run_Test Matrix.xlsx",
+    "file_version": 2,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-26/download?file=PSI-26_Science+Documents_As+Run_Test+Matrix.xlsx&version=2&redirect=false",
+    "size_bytes": 111886,
+    "sha256": "850910541fc9c802d00aa9de14758205103642184249b419c09868df2fbea6e8",
+    "local_path": "data/raw/PSI-26/PSI-26_Science Documents_As Run_Test Matrix.xlsx"
+  },
+  {
+    "source_record": "PSI-25",
+    "filename": "PSI-25_Experimental table_BASS-II.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-25/download?file=PSI-25_Experimental+table_BASS-II.csv&version=1&redirect=false",
+    "size_bytes": 16590,
+    "sha256": "71e792bf6b5fb5ea620c5dd70fbbac05515992e12aefcf5dff47312caa48c042",
+    "local_path": "data/raw/PSI-25/PSI-25_Experimental table_BASS-II.csv"
+  },
+  {
+    "source_record": "PSI-25",
+    "filename": "PSI-25_Reference Data_Fan calibration data.xlsx",
+    "file_version": 2,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-25/download?file=PSI-25_Reference+Data_Fan+calibration+data.xlsx&version=2&redirect=false",
+    "size_bytes": 23973,
+    "sha256": "bc0dca3efdef44a7774d8dd37aebc0cedae8d67d7bae8c9cbde9590014a3c983",
+    "local_path": "data/raw/PSI-25/PSI-25_Reference Data_Fan calibration data.xlsx"
+  },
+  {
+    "source_record": "PSI-25",
+    "filename": "PSI-25_Science Documents_BASS-II_Test.Matrices.xlsx",
+    "file_version": 2,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-25/download?file=PSI-25_Science+Documents_BASS-II_Test.Matrices.xlsx&version=2&redirect=false",
+    "size_bytes": 28956,
+    "sha256": "1a3b283dd0adec861793bbc4a454aab64d398cd32d6f37d7a1ad0f642879e686",
+    "local_path": "data/raw/PSI-25/PSI-25_Science Documents_BASS-II_Test.Matrices.xlsx"
+  },
+  {
+    "source_record": "PSI-25",
+    "filename": "PSI-25_Science Documents_BASS-II_ReadMe.docx",
+    "file_version": 2,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-25/download?file=PSI-25_Science+Documents_BASS-II_ReadMe.docx&version=2&redirect=false",
+    "size_bytes": 21538,
+    "sha256": "69f32647792f54ab2a561e3cdafc6c87d854564fe487aed2b09265286bd84e1d",
+    "local_path": "data/raw/PSI-25/PSI-25_Science Documents_BASS-II_ReadMe.docx"
+  },
+  {
+    "source_record": "PSI-25",
+    "filename": "PSI-25_Reports_BASS-II Summary Report.pdf",
+    "file_version": 2,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-25/download?file=PSI-25_Reports_BASS-II+Summary+Report.pdf&version=2&redirect=false",
+    "size_bytes": 48972416,
+    "sha256": "5ffa911fd9b6356f204646003fb9342e341810dcdfdf5cb15756e7f01ec5f770",
+    "local_path": "data/raw/PSI-25/PSI-25_Reports_BASS-II Summary Report.pdf"
+  },
+  {
+    "source_record": "PSI-98",
+    "filename": "PSI-98_Experimental table_SAFFIRE-1.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-98/download?file=PSI-98_Experimental+table_SAFFIRE-1.csv&version=1&redirect=false",
+    "size_bytes": 469,
+    "sha256": "c01f29c62455f0a3b512290ab85e5687ecded326733189f002f580368402308d",
+    "local_path": "data/raw/PSI-98/PSI-98_Experimental table_SAFFIRE-1.csv"
+  },
+  {
+    "source_record": "PSI-98",
+    "filename": "PSI-98_Science Documents_SAFFIRE Objectives, Development and Status.pdf",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-98/download?file=PSI-98_Science+Documents_SAFFIRE+Objectives%2C+Development+and+Status.pdf&version=1&redirect=false",
+    "size_bytes": 186259,
+    "sha256": "6cff0b55b8f1416f5b5b768b7fd22ae31991791ef633865471b72ff19ff4159b",
+    "local_path": "data/raw/PSI-98/PSI-98_Science Documents_SAFFIRE Objectives, Development and Status.pdf"
+  },
+  {
+    "source_record": "PSI-98",
+    "filename": "PSI-98_Science Documents_SAFFIRE-I and SAFFIRE-III Readme.docx",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-98/download?file=PSI-98_Science+Documents_SAFFIRE-I+and+SAFFIRE-III+Readme.docx&version=1&redirect=false",
+    "size_bytes": 65426,
+    "sha256": "49c939337fa00a0473f7efa10367288f510afcbf69dd7f5405054a2617d3a66d",
+    "local_path": "data/raw/PSI-98/PSI-98_Science Documents_SAFFIRE-I and SAFFIRE-III Readme.docx"
+  },
+  {
+    "source_record": "PSI-99",
+    "filename": "PSI-99_Experimental table_SAFFIRE-2.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-99/download?file=PSI-99_Experimental+table_SAFFIRE-2.csv&version=1&redirect=false",
+    "size_bytes": 1973,
+    "sha256": "3c24390b9ef86f3d1ebaab911a1a3cc95a8759aebf42062371370e6d4b31b8ac",
+    "local_path": "data/raw/PSI-99/PSI-99_Experimental table_SAFFIRE-2.csv"
+  },
+  {
+    "source_record": "PSI-99",
+    "filename": "PSI-99_Science Documents_SAFFIRE Objectives, Development and Status.pdf",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-99/download?file=PSI-99_Science+Documents_SAFFIRE+Objectives%2C+Development+and+Status.pdf&version=1&redirect=false",
+    "size_bytes": 186259,
+    "sha256": "6cff0b55b8f1416f5b5b768b7fd22ae31991791ef633865471b72ff19ff4159b",
+    "local_path": "data/raw/PSI-99/PSI-99_Science Documents_SAFFIRE Objectives, Development and Status.pdf"
+  },
+  {
+    "source_record": "PSI-100",
+    "filename": "PSI-100_Experimental table_SAFFIRE-3.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-100/download?file=PSI-100_Experimental+table_SAFFIRE-3.csv&version=1&redirect=false",
+    "size_bytes": 239,
+    "sha256": "4d3c717ec20dd0247db670b2784a9fd7d746788bc54a936f80693e48eb8cd117",
+    "local_path": "data/raw/PSI-100/PSI-100_Experimental table_SAFFIRE-3.csv"
+  },
+  {
+    "source_record": "PSI-100",
+    "filename": "PSI-100_Science Documents_SAFFIRE Objectives, Development and Status.pdf",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-100/download?file=PSI-100_Science+Documents_SAFFIRE+Objectives%2C+Development+and+Status.pdf&version=1&redirect=false",
+    "size_bytes": 186259,
+    "sha256": "6cff0b55b8f1416f5b5b768b7fd22ae31991791ef633865471b72ff19ff4159b",
+    "local_path": "data/raw/PSI-100/PSI-100_Science Documents_SAFFIRE Objectives, Development and Status.pdf"
+  },
+  {
+    "source_record": "PSI-100",
+    "filename": "PSI-100_Science Documents_SAFFIRE-I and SAFFIRE-III Readme.docx",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-100/download?file=PSI-100_Science+Documents_SAFFIRE-I+and+SAFFIRE-III+Readme.docx&version=1&redirect=false",
+    "size_bytes": 65426,
+    "sha256": "49c939337fa00a0473f7efa10367288f510afcbf69dd7f5405054a2617d3a66d",
+    "local_path": "data/raw/PSI-100/PSI-100_Science Documents_SAFFIRE-I and SAFFIRE-III Readme.docx"
+  },
+  {
+    "source_record": "PSI-69",
+    "filename": "PSI-69_Experimental table_FLEX.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-69/download?file=PSI-69_Experimental+table_FLEX.csv&version=1&redirect=false",
+    "size_bytes": 24776,
+    "sha256": "37c88ce8ae9391b7544ff630a45ce87543d04d317cdbfbed104fe7d5c27e1b96",
+    "local_path": "data/raw/PSI-69/PSI-69_Experimental table_FLEX.csv"
+  },
+  {
+    "source_record": "PSI-69",
+    "filename": "PSI-69_Science Documents_FLEX DoD.docx",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-69/download?file=PSI-69_Science+Documents_FLEX+DoD.docx&version=1&redirect=false",
+    "size_bytes": 18758,
+    "sha256": "1120819bb8f57f418cc5185700bbbd8304f1a019d9a99ca67baee130898fac98",
+    "local_path": "data/raw/PSI-69/PSI-69_Science Documents_FLEX DoD.docx"
+  },
+  {
+    "source_record": "PSI-69",
+    "filename": "PSI-69_Science Documents_FLEX_Test_Plan.pdf",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-69/download?file=PSI-69_Science+Documents_FLEX_Test_Plan.pdf&version=1&redirect=false",
+    "size_bytes": 185799,
+    "sha256": "0af43477a04b05e3c44558b22c16a69cfda837a6a17fa94178ce1f9fce361dc5",
+    "local_path": "data/raw/PSI-69/PSI-69_Science Documents_FLEX_Test_Plan.pdf"
+  },
+  {
+    "source_record": "PSI-68",
+    "filename": "PSI-68_Experimental table_Flex2.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-68/download?file=PSI-68_Experimental+table_Flex2.csv&version=1&redirect=false",
+    "size_bytes": 1029,
+    "sha256": "cc57ad1bd9977aa13e7ac6c3aa618303012686e232b36c052c6a9f1a74e5f528",
+    "local_path": "data/raw/PSI-68/PSI-68_Experimental table_Flex2.csv"
+  },
+  {
+    "source_record": "PSI-39",
+    "filename": "PSI-39_Experimental table_CFI.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-39/download?file=PSI-39_Experimental+table_CFI.csv&version=1&redirect=false",
+    "size_bytes": 7792,
+    "sha256": "fb898e28762353aa132c16b886dbd207a024b1dd3c9bed5928d70d8036d2ec7e",
+    "local_path": "data/raw/PSI-39/PSI-39_Experimental table_CFI.csv"
+  },
+  {
+    "source_record": "PSI-10",
+    "filename": "PSI-10_Experimental table_Flame Design_Normal Flame.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-10/download?file=PSI-10_Experimental+table_Flame+Design_Normal+Flame.csv&version=1&redirect=false",
+    "size_bytes": 26933,
+    "sha256": "4a663292bd3f65201943cc71bd661a70383639276a9176f64105b285bf0b6deb",
+    "local_path": "data/raw/PSI-10/PSI-10_Experimental table_Flame Design_Normal Flame.csv"
+  },
+  {
+    "source_record": "PSI-10",
+    "filename": "PSI-10_Experimental table_Flame Design_Inverse Flame.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-10/download?file=PSI-10_Experimental+table_Flame+Design_Inverse+Flame.csv&version=1&redirect=false",
+    "size_bytes": 17314,
+    "sha256": "97933ee9ae0b9ebc6b948a67485a0fe2f8218f753253a4f2be93c40d374c44e4",
+    "local_path": "data/raw/PSI-10/PSI-10_Experimental table_Flame Design_Inverse Flame.csv"
+  },
+  {
+    "source_record": "PSI-20",
+    "filename": "PSI-20_Experimental table_ACME BRE.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-20/download?file=PSI-20_Experimental+table_ACME+BRE.csv&version=1&redirect=false",
+    "size_bytes": 1113,
+    "sha256": "4aa5d3f98708ceacced5c620d46858b9965f8d4d941b203229f46467d53e5ab7",
+    "local_path": "data/raw/PSI-20/PSI-20_Experimental table_ACME BRE.csv"
+  },
+  {
+    "source_record": "PSI-21",
+    "filename": "PSI-21_Experimental table_CLD Flame.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-21/download?file=PSI-21_Experimental+table_CLD+Flame.csv&version=1&redirect=false",
+    "size_bytes": 2454,
+    "sha256": "9fafbc5b3dddaf715ce8025ed9154ce297803f7b69a935f077ec26c8249e44c0",
+    "local_path": "data/raw/PSI-21/PSI-21_Experimental table_CLD Flame.csv"
+  },
+  {
+    "source_record": "PSI-22",
+    "filename": "PSI-22_Experimental table_ACME E-FIELD Flames.csv",
+    "file_version": 2,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-22/download?file=PSI-22_Experimental+table_ACME+E-FIELD+Flames.csv&version=2&redirect=false",
+    "size_bytes": 2475,
+    "sha256": "69090c357b83ae38d161d29001d1d32b40fd77b13324ca6585ee990cdceef524",
+    "local_path": "data/raw/PSI-22/PSI-22_Experimental table_ACME E-FIELD Flames.csv"
+  },
+  {
+    "source_record": "PSI-23",
+    "filename": "PSI-23_Experimental table_ACME s-Flame.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-23/download?file=PSI-23_Experimental+table_ACME+s-Flame.csv&version=1&redirect=false",
+    "size_bytes": 2456,
+    "sha256": "16cd10f50bd2e962887c8eb4077e5a9b3e790c78de8e0361c0b77e19300be7cf",
+    "local_path": "data/raw/PSI-23/PSI-23_Experimental table_ACME s-Flame.csv"
+  },
+  {
+    "source_record": "PSI-159",
+    "filename": "PSI-159_Experimental table_CFI-G_Normal Flames.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-159/download?file=PSI-159_Experimental+table_CFI-G_Normal+Flames.csv&version=1&redirect=false",
+    "size_bytes": 22166,
+    "sha256": "d95a621c3fbd27d204dd32ed29fa17d68f2b779d6a523cde8479ed7ebaa5251a",
+    "local_path": "data/raw/PSI-159/PSI-159_Experimental table_CFI-G_Normal Flames.csv"
+  },
+  {
+    "source_record": "PSI-159",
+    "filename": "PSI-159_Experimental table_CFI-G_Inverse Flames.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-159/download?file=PSI-159_Experimental+table_CFI-G_Inverse+Flames.csv&version=1&redirect=false",
+    "size_bytes": 39422,
+    "sha256": "d4d44f8b9896936728748e34d1b6ad0812032a92fa5289599b708c138e3a9b39",
+    "local_path": "data/raw/PSI-159/PSI-159_Experimental table_CFI-G_Inverse Flames.csv"
+  },
+  {
+    "source_record": "PSI-107",
+    "filename": "PSI-107_Experimental table_Spice.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-107/download?file=PSI-107_Experimental+table_Spice.csv&version=1&redirect=false",
+    "size_bytes": 31205,
+    "sha256": "fb0d7e60cf5367afb429089e9901d27288f78038efd26c8de1db4fbe04117136",
+    "local_path": "data/raw/PSI-107/PSI-107_Experimental table_Spice.csv"
+  },
+  {
+    "source_record": "PSI-106",
+    "filename": "PSI-106_Experimental table_Slice.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-106/download?file=PSI-106_Experimental+table_Slice.csv&version=1&redirect=false",
+    "size_bytes": 734,
+    "sha256": "89ef980810ca6d9aa8be817b42e36cd2adff23f5e9058361b5a33d18b4363f4d",
+    "local_path": "data/raw/PSI-106/PSI-106_Experimental table_Slice.csv"
+  },
+  {
+    "source_record": "PSI-102",
+    "filename": "PSI-102_Experimental table_SAME.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-102/download?file=PSI-102_Experimental+table_SAME.csv&version=1&redirect=false",
+    "size_bytes": 331,
+    "sha256": "268d1e121d2f211b124407dd32b9475617bd269ede2c2d1749441da3e949a2af",
+    "local_path": "data/raw/PSI-102/PSI-102_Experimental table_SAME.csv"
+  },
+  {
+    "source_record": "PSI-101",
+    "filename": "PSI-101_Experimental table_SAME-R.csv",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-101/download?file=PSI-101_Experimental+table_SAME-R.csv&version=1&redirect=false",
+    "size_bytes": 5674,
+    "sha256": "87164b7dc9168a4273c159f7a9f23699afbd06ad97b77974377e79b9bf8a3bef",
+    "local_path": "data/raw/PSI-101/PSI-101_Experimental table_SAME-R.csv"
+  },
+  {
+    "source_record": "PSI-47",
+    "filename": "PSI-47_Experimental table_DAFT.csv",
+    "file_version": 2,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/studies/PSI-47/download?file=PSI-47_Experimental+table_DAFT.csv&version=2&redirect=false",
+    "size_bytes": 518,
+    "sha256": "d9d1a436c6e7bbc410b433e04575fe7dedaff763b5237d688089929b7393b5c0",
+    "local_path": "data/raw/PSI-47/PSI-47_Experimental table_DAFT.csv"
+  },
+  {
+    "source_record": "NTRS-20110008636",
+    "filename": "20110008636.pdf",
+    "file_version": "",
+    "download_url": "https://ntrs.nasa.gov/api/citations/20110008636/downloads/20110008636.pdf",
+    "size_bytes": 210436,
+    "sha256": "f66084a447e893c73eeff41ed03ddf443e988df35817ad6501e167ecd77b44f2",
+    "local_path": "data/raw/NTRS-20110008636/20110008636.pdf"
+  },
+  {
+    "source_record": "PSI-26",
+    "filename": "metadata.json",
+    "file_version": 4,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-26",
+    "size_bytes": 190127,
+    "sha256": "9dee45d44bb736178db270a07c9ee8f98ac02ee810189ab518271fd4720c0533",
+    "local_path": "data/raw/PSI-26/metadata.json"
+  },
+  {
+    "source_record": "PSI-25",
+    "filename": "metadata.json",
+    "file_version": 4,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-25",
+    "size_bytes": 680348,
+    "sha256": "b9234754db5da651ad27d888af082b889d07210b018e543369662f065b4ec2da",
+    "local_path": "data/raw/PSI-25/metadata.json"
+  },
+  {
+    "source_record": "PSI-98",
+    "filename": "metadata.json",
+    "file_version": 4,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-98",
+    "size_bytes": 134230,
+    "sha256": "501b5f625733e29c0c6ff0c12b3de1a3e960a159a8c8f8a21ba5c5803afe0570",
+    "local_path": "data/raw/PSI-98/metadata.json"
+  },
+  {
+    "source_record": "PSI-99",
+    "filename": "metadata.json",
+    "file_version": 5,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-99",
+    "size_bytes": 10308,
+    "sha256": "2c042a6bd82fa6b437cae61490d54ea91f890a52282bc5949b4a0119bcbf6633",
+    "local_path": "data/raw/PSI-99/metadata.json"
+  },
+  {
+    "source_record": "PSI-100",
+    "filename": "metadata.json",
+    "file_version": 4,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-100",
+    "size_bytes": 148767,
+    "sha256": "9c836955a28ff129b2f239f9499e06f4ca52ba58f7a03d384a7bd0528c8bbe10",
+    "local_path": "data/raw/PSI-100/metadata.json"
+  },
+  {
+    "source_record": "PSI-69",
+    "filename": "metadata.json",
+    "file_version": 5,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-69",
+    "size_bytes": 31770,
+    "sha256": "a2d8ec5d0e9ad1060f6ecc7a850598634cc5519c373ae70462bf76c31fc8731c",
+    "local_path": "data/raw/PSI-69/metadata.json"
+  },
+  {
+    "source_record": "PSI-68",
+    "filename": "metadata.json",
+    "file_version": 6,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-68",
+    "size_bytes": 30456,
+    "sha256": "de041dc1dc8b093e8f168b36d3b06cab257b4d75ffb24ff21754b8af4256ebcf",
+    "local_path": "data/raw/PSI-68/metadata.json"
+  },
+  {
+    "source_record": "PSI-39",
+    "filename": "metadata.json",
+    "file_version": 4,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-39",
+    "size_bytes": 4232395,
+    "sha256": "ab2501bbe6200dabd012e7bf199e79426f8d19eb484c2af421183bb61b558d35",
+    "local_path": "data/raw/PSI-39/metadata.json"
+  },
+  {
+    "source_record": "PSI-10",
+    "filename": "metadata.json",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-10",
+    "size_bytes": 2867657,
+    "sha256": "a20756e7acf67f0046a21a3bce9bfca7f142cd5350350c0dad29997cf8fe28db",
+    "local_path": "data/raw/PSI-10/metadata.json"
+  },
+  {
+    "source_record": "PSI-20",
+    "filename": "metadata.json",
+    "file_version": 4,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-20",
+    "size_bytes": 17376,
+    "sha256": "ea118e19d02785f54d246406aacea93878053ff95ddd5bdca44bd29c09a753d1",
+    "local_path": "data/raw/PSI-20/metadata.json"
+  },
+  {
+    "source_record": "PSI-21",
+    "filename": "metadata.json",
+    "file_version": 4,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-21",
+    "size_bytes": 18065,
+    "sha256": "99a5e58119a9c01ec1b57dfe03d696fb8d05b494a3658338b0f2abb077a72ac5",
+    "local_path": "data/raw/PSI-21/metadata.json"
+  },
+  {
+    "source_record": "PSI-22",
+    "filename": "metadata.json",
+    "file_version": 7,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-22",
+    "size_bytes": 20827,
+    "sha256": "a491519f60b91c9eb2272e651846103f34006867fb74535911e8c18448e48a09",
+    "local_path": "data/raw/PSI-22/metadata.json"
+  },
+  {
+    "source_record": "PSI-23",
+    "filename": "metadata.json",
+    "file_version": 4,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-23",
+    "size_bytes": 8127138,
+    "sha256": "a89bd634a661e724b9bc766a8f217bc0c76c816f0db973991847bce6b53802d7",
+    "local_path": "data/raw/PSI-23/metadata.json"
+  },
+  {
+    "source_record": "PSI-159",
+    "filename": "metadata.json",
+    "file_version": 1,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-159",
+    "size_bytes": 2796301,
+    "sha256": "e01abe2caa309753a9bee1b0c3c79dec194a2a7300d0d13541e0dcf25e3b0ea5",
+    "local_path": "data/raw/PSI-159/metadata.json"
+  },
+  {
+    "source_record": "PSI-107",
+    "filename": "metadata.json",
+    "file_version": 4,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-107",
+    "size_bytes": 320156,
+    "sha256": "f31081deb2b079373a0cbc98ad8483d87856aeca1aa6946ce31acff6cefcfbf2",
+    "local_path": "data/raw/PSI-107/metadata.json"
+  },
+  {
+    "source_record": "PSI-106",
+    "filename": "metadata.json",
+    "file_version": 3,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-106",
+    "size_bytes": 9715,
+    "sha256": "f705b2e04bd00d05f3c74ae55391c340b5a08d60efa8193e66b7c4e2518d9d5d",
+    "local_path": "data/raw/PSI-106/metadata.json"
+  },
+  {
+    "source_record": "PSI-102",
+    "filename": "metadata.json",
+    "file_version": 4,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-102",
+    "size_bytes": 135432,
+    "sha256": "fe221f1380ad3317f70b559a3213c4e00ef3676b40838a49cb5b3cba89dea5ba",
+    "local_path": "data/raw/PSI-102/metadata.json"
+  },
+  {
+    "source_record": "PSI-101",
+    "filename": "metadata.json",
+    "file_version": 4,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-101",
+    "size_bytes": 552733,
+    "sha256": "e0aa75d015705a5943b51dbb4a8ba52751a35e4cafc2307d9201d77ebed711a5",
+    "local_path": "data/raw/PSI-101/metadata.json"
+  },
+  {
+    "source_record": "PSI-47",
+    "filename": "metadata.json",
+    "file_version": 5,
+    "download_url": "https://psi.nasa.gov/geode-py/ws/repo/investigations/PSI-47",
+    "size_bytes": 174029,
+    "sha256": "60ff7a7d0ef34c3043dda4133f277045ba72addb1fb2fc2e9f02e0550d0eb389",
+    "local_path": "data/raw/PSI-47/metadata.json"
+  }
+]

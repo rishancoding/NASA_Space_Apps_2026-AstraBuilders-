@@ -1,0 +1,439 @@
+[
+  {
+    "source_record": "PSI-26",
+    "file": "source_tables/PSI-26_Experimental table_BASS.csv",
+    "row_count": 122,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Date",
+      "GMT",
+      "As Run Test #",
+      "Test #",
+      "Sample #",
+      "Fuel Sample Material"
+    ],
+    "role": "solid_model",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-25",
+    "file": "source_tables/PSI-25_Experimental table_BASS-II.csv",
+    "row_count": 129,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "PI",
+      "Test #",
+      "Date",
+      "GMT",
+      "Sample #",
+      "Fuel Sample Material",
+      "Flow restrictor",
+      "Fan display",
+      "Air display",
+      "Radiometer gain   (1000   250   50   10)",
+      "Total Frames Shot",
+      "Calibrated  initial O2 % by vol ",
+      "Calibrated final O2 % by vol",
+      "Initial CO2 % by vol",
+      "Final CO2 % by vol",
+      "Initial CO (ppm)",
+      "Final CO (ppm)"
+    ],
+    "role": "solid_model",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-98",
+    "file": "source_tables/PSI-98_Experimental table_SAFFIRE-1.csv",
+    "row_count": 4,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Sample Number ",
+      "Material",
+      "Sample Thickness (cm)",
+      "Sample Length (cm)",
+      "Sample Width (cm)",
+      "Air Flow (cm/s)",
+      "Percent O2",
+      "Ignition Power (W)",
+      "Ignition Time (s)",
+      "Burn Time (s)",
+      "Flow Direction ",
+      "Camera 1",
+      "Camera 2"
+    ],
+    "role": "solid_evidence",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-99",
+    "file": "source_tables/PSI-99_Experimental table_SAFFIRE-2.csv",
+    "row_count": 15,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Sample Number",
+      "Material",
+      "Samle Thickness ",
+      "Sample Length ",
+      "Sample Width (cm)",
+      "Air Flow (cm/s)",
+      "Percent O2 (Note 1)",
+      "Ignition Power (W)",
+      "Ignition Time (s)",
+      "Burn Time (s)",
+      "Flow Direction",
+      "?-g Burn Length",
+      "?-g Spread Length",
+      "1-g Burn Length",
+      "1-g Spread Rate",
+      "Camera 1",
+      "Camera 2"
+    ],
+    "role": "solid_evidence",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-100",
+    "file": "source_tables/PSI-100_Experimental table_SAFFIRE-3.csv",
+    "row_count": 2,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Sample Number ",
+      "Material",
+      "Sample Thickness",
+      "Sample Length",
+      "Sample Width",
+      "Air Flow ",
+      "Direction",
+      "Camera 1",
+      "Camera 2"
+    ],
+    "role": "solid_evidence",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-69",
+    "file": "source_tables/PSI-69_Experimental table_FLEX.csv",
+    "row_count": 274,
+    "original_encoding": "cp1252",
+    "columns": [
+      "FLEX Test #",
+      "FLEX Identifier",
+      "Test Date",
+      "Test GMT",
+      "Fuel",
+      "Ambient pressure; mmHg",
+      "O initial ambient composition; mole fraction",
+      "N initial ambient composition; mole fraction",
+      "CO initial ambient composition; mole fraction",
+      "He initial ambient composition; mole fraction",
+      "Droplet initial diameter; mm",
+      "Visible flame extinction diameter; mm",
+      "Burning rate; mm",
+      "Burn time; s",
+      "Test end"
+    ],
+    "role": "droplet_backup",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-68",
+    "file": "source_tables/PSI-68_Experimental table_Flex2.csv",
+    "row_count": 8,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Sample (Fuel Type)",
+      "Initial Droplet Diameter (mm)",
+      "Ambient Gas Mixture ",
+      "Oxygen Mole Fraction",
+      "Ambient Pressure (atm)",
+      " Ambient Temperature (C)",
+      "Flow Velocity (cm/s)"
+    ],
+    "role": "research",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-39",
+    "file": "source_tables/PSI-39_Experimental table_CFI.csv",
+    "row_count": 87,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Flex Number",
+      "Test Date",
+      "Local Time",
+      "CIR ",
+      "Pressure",
+      "Oxygen",
+      "Nitrogen",
+      "Helium",
+      "Fiber",
+      "Fuel "
+    ],
+    "role": "research",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-10",
+    "file": "source_tables/PSI-10_Experimental table_Flame Design_Normal Flame.csv",
+    "row_count": 207,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Flame Type",
+      "Day",
+      "Fuel",
+      "Test",
+      "Xfuel",
+      "mfuel (mg/s)",
+      "mN2 (mg/s)",
+      "mtot (mg/s)",
+      "XO2 (init)",
+      "XO2 (final)",
+      "pinit (atm)",
+      "pfinal (atm)",
+      "pmean (atm)",
+      "mean Zst",
+      "Tad (K)"
+    ],
+    "role": "research",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-10",
+    "file": "source_tables/PSI-10_Experimental table_Flame Design_Inverse Flame.csv",
+    "row_count": 120,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Flame Type",
+      "Day",
+      "Test",
+      "XO2",
+      "mO2 (mg/s)",
+      "mN2 (mg/s)",
+      "mtot (mg/s)",
+      "XC2H4 initial",
+      "XC2H4 final",
+      "pinit (atm)",
+      "pfinal (atm)",
+      "pmean (atm)",
+      "mean Zst",
+      "Tad (K)"
+    ],
+    "role": "research",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-20",
+    "file": "source_tables/PSI-20_Experimental table_ACME BRE.csv",
+    "row_count": 18,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Year",
+      "Month",
+      "Date",
+      "Burner Size (mm)",
+      "Fuel Bottle",
+      "Oxygen Conc (percent)",
+      "Flames Ignited",
+      "Notes"
+    ],
+    "role": "research",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-21",
+    "file": "source_tables/PSI-21_Experimental table_CLD Flame.csv",
+    "row_count": 32,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Test Type",
+      "Test Day",
+      "Fuel MFC",
+      "N2 MFC",
+      "Fuel Bottle",
+      "Fuel conc. Range",
+      "Flames ignited",
+      "Notes"
+    ],
+    "role": "research",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-22",
+    "file": "source_tables/PSI-22_Experimental table_ACME E-FIELD Flames.csv",
+    "row_count": 32,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Test Type",
+      "Test Day",
+      "Year",
+      "Month",
+      "Date",
+      "Mesh Polarity",
+      "Fuel Bottle",
+      "Fuel Conc",
+      "Flames Ignited",
+      "Notes"
+    ],
+    "role": "research",
+    "file_version": 2
+  },
+  {
+    "source_record": "PSI-23",
+    "file": "source_tables/PSI-23_Experimental table_ACME s-Flame.csv",
+    "row_count": 18,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Test Type",
+      "Test Day*",
+      "Year",
+      "Month",
+      "Date",
+      "Atmosphere*",
+      "Fuel Bottle",
+      "Flames Ignited*",
+      "Notes"
+    ],
+    "role": "research",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-159",
+    "file": "source_tables/PSI-159_Experimental table_CFI-G_Normal Flames.csv",
+    "row_count": 179,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Flame Type",
+      "Day",
+      "Fuel",
+      "Test",
+      "Cool flame?",
+      " XO2 before test",
+      "XO2  after test",
+      "approx p (bar)",
+      "Xf",
+      "mHC (mg/s)",
+      "TFP",
+      "Tad (K)",
+      "Zst",
+      "Hot ignition",
+      "burn time (sec)",
+      "Self-ext or flow term",
+      "Peak burner T (C )",
+      "Comments"
+    ],
+    "role": "research",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-159",
+    "file": "source_tables/PSI-159_Experimental table_CFI-G_Inverse Flames.csv",
+    "row_count": 1015,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Flame Type",
+      "Day",
+      "Fuel",
+      "Test",
+      "Xf  before test",
+      "Xf  after test",
+      "approx p (bar)",
+      "XO2",
+      "HC burnrate (mg/s)",
+      "O2 flow rate (mg/s)",
+      "TFP",
+      "Tad (K)",
+      "Zst",
+      "Hot ignition",
+      "burn time (sec)",
+      "Self -ext or flow term",
+      "Peak burner Temp (C)",
+      "Peak burner temp (K)",
+      "Color",
+      "Comments"
+    ],
+    "role": "research",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-107",
+    "file": "source_tables/PSI-107_Experimental table_Spice.csv",
+    "row_count": 469,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "GMT date",
+      "GMT ignition",
+      "GMT  Flame Off ",
+      "Fuel",
+      "Nozzle (mm)",
+      "Fuel Rate (sccm)",
+      "Fuel Rate (mg/s)",
+      "HC Fuel Rate (mg/s)",
+      "Air Rate (cm/s)"
+    ],
+    "role": "research",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-106",
+    "file": "source_tables/PSI-106_Experimental table_Slice.csv",
+    "row_count": 12,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Test Date",
+      "Fuel Type"
+    ],
+    "role": "research",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-102",
+    "file": "source_tables/PSI-102_Experimental table_SAME.csv",
+    "row_count": 8,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Sample #",
+      "Sample Material  ",
+      "Air Flow (cm/s)",
+      "Weight loss rate (mg/min)",
+      "Aging Duration (minutes)"
+    ],
+    "role": "research",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-101",
+    "file": "source_tables/PSI-101_Experimental table_SAME-R.csv",
+    "row_count": 109,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Sample Type",
+      "SAME Test #",
+      "Description",
+      "Date",
+      "Inlet velocity (cm/s)",
+      "Rt/R0",
+      "Duration (sec)",
+      "Primary aging time (sec)",
+      "Primary mixing time (sec)",
+      "Net aging time (sec)"
+    ],
+    "role": "research",
+    "file_version": 1
+  },
+  {
+    "source_record": "PSI-47",
+    "file": "source_tables/PSI-47_Experimental table_DAFT.csv",
+    "row_count": 2,
+    "original_encoding": "utf-8-sig",
+    "columns": [
+      "Session Name",
+      "Actual Day",
+      "Hardware Description",
+      "Sample Material",
+      "Sampled Location"
+    ],
+    "role": "research",
+    "file_version": 2
+  }
+]

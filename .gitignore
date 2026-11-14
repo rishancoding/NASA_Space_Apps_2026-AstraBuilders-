@@ -1,0 +1,10 @@
+# Keep raw NASA downloads local only; do not commit full archives or media
+# The project repo stores only the cleaned and minimal data needed for the app.
+data/raw/*
+!data/raw/README.md
+
+# Common local artifacts
+__pycache__/
+*.pyc
+.DS_Store
+.venv/

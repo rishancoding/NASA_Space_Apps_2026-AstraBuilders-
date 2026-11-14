@@ -1,0 +1,224 @@
+{
+  "schema_version": "1.0.0",
+  "null_encoding": "Empty CSV cell; JSON/API numeric null is None/null; never substitute zero",
+  "solid_table": "solid_combustion_model.csv",
+  "row_granularity": "One whole BASS or BASS-II test; conditions may vary within a test",
+  "primary_key": "experiment_id",
+  "cross_validation_group": "split_group",
+  "join_to_catalog": "source_record",
+  "training_gate": "No current row is training eligible; define a target and review condition-specific labels first",
+  "columns": {
+    "experiment_id": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "source_record": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "investigation_name": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "test_id": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "as_run_test_id": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "sample_id": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "split_group": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "test_date": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "principal_investigator": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "gravity_regime": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "material": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "material_raw": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "material_basis": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "material_category": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "sample_geometry": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "thickness_mm": {
+      "type": "nullable number",
+      "unit": "mm; nominal description",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "diameter_mm": {
+      "type": "nullable number",
+      "unit": "mm; nominal description",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "width_mm": {
+      "type": "nullable number",
+      "unit": "mm; nominal description",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "oxygen_pct": {
+      "type": "nullable number",
+      "unit": "oxygen volume percent",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "oxygen_final_pct": {
+      "type": "nullable number",
+      "unit": "oxygen volume percent",
+      "use": "provenance or review; not a feature"
+    },
+    "airflow_cm_s": {
+      "type": "nullable number",
+      "unit": "cm/s; single Air display reading only",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "airflow_raw": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "fan_display_raw": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "flow_restrictor_raw": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "flow_direction": {
+      "type": "string",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "pressure_kpa": {
+      "type": "nullable number",
+      "unit": "kPa",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "co2_initial_pct": {
+      "type": "nullable number",
+      "unit": "CO2 volume percent",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "co2_final_pct": {
+      "type": "nullable number",
+      "unit": "CO2 volume percent",
+      "use": "provenance or review; not a feature"
+    },
+    "co_initial_ppm_raw": {
+      "type": "string",
+      "unit": "",
+      "use": "provenance or review; not a feature"
+    },
+    "co_final_ppm_raw": {
+      "type": "string",
+      "unit": "",
+      "use": "provenance or review; not a feature"
+    },
+    "outcome": {
+      "type": "string",
+      "unit": "",
+      "use": "target only after review"
+    },
+    "burned_binary": {
+      "type": "nullable number",
+      "unit": "",
+      "use": "target only after review"
+    },
+    "training_eligible": {
+      "type": "boolean encoded true/false",
+      "unit": "",
+      "use": "see DATA_HANDOFF.md"
+    },
+    "label_status": {
+      "type": "string",
+      "unit": "",
+      "use": "provenance or review; not a feature"
+    },
+    "notes": {
+      "type": "string",
+      "unit": "",
+      "use": "provenance or review; not a feature"
+    },
+    "quality_flags": {
+      "type": "string",
+      "unit": "",
+      "use": "provenance or review; not a feature"
+    },
+    "source_file": {
+      "type": "string",
+      "unit": "",
+      "use": "provenance or review; not a feature"
+    },
+    "source_row": {
+      "type": "string",
+      "unit": "",
+      "use": "provenance or review; not a feature"
+    },
+    "supplement_file": {
+      "type": "string",
+      "unit": "",
+      "use": "provenance or review; not a feature"
+    },
+    "supplement_locator": {
+      "type": "string",
+      "unit": "",
+      "use": "provenance or review; not a feature"
+    },
+    "source_url": {
+      "type": "string",
+      "unit": "",
+      "use": "provenance or review; not a feature"
+    }
+  },
+  "dataset_roles": {
+    "solid_combustion_model.csv": "solid observations and future annotation; no training labels yet",
+    "flex_backup.csv": "liquid droplet fallback only; never pool with solids",
+    "ground_thresholds.csv": "Earth comparison; 70 configuration-specific threshold pairs, not burn outcomes",
+    "source_tables/": "NASA table values; heterogeneous headers, units and note rows",
+    "evidence_chunks.jsonl": "research text with citation locators"
+  }
+}

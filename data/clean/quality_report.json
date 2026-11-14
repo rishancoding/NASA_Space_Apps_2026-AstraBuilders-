@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0.0",
+  "verified_psi_records": 19,
+  "external_ntrs_records": 1,
+  "experimental_tables": 21,
+  "experimental_table_rows_including_notes": 2862,
+  "solid_observations": 250,
+  "solid_rows_by_record": {
+    "PSI-26": 121,
+    "PSI-25": 129
+  },
+  "bassii_report_notes": 126,
+  "bassii_missing_report_notes": [
+    "O20",
+    "O21",
+    "O22"
+  ],
+  "solid_labeled_rows": 0,
+  "training_eligible_rows": 0,
+  "model_readiness": "requires_target_definition_and_reviewed_condition_specific_labels",
+  "flex_observations": 274,
+  "evidence_chunks": 757,
+  "publications": 325,
+  "flex_test_end_counts": {
+    "Disruption": 61,
+    "Extinction": 186,
+    "Completion": 27
+  },
+  "flex_numeric_burn_times": 266,
+  "ground_threshold_rows": 70,
+  "ground_material_families": [
+    "Epoxy/glass",
+    "MQ",
+    "NBR",
+    "PA",
+    "PEEK",
+    "PEI",
+    "PET",
+    "PI",
+    "PMMA",
+    "POM",
+    "PP",
+    "PVC"
+  ],
+  "missing_values": {
+    "thickness_mm": 208,
+    "oxygen_pct": 0,
+    "airflow_cm_s": 179,
+    "pressure_kpa": 129
+  },
+  "quality_flags": {
+    "airflow_sequence_or_qualifier": 163,
+    "material_requires_review": 12,
+    "pressure_not_recorded": 129,
+    "no_report_observation": 3,
+    "oxygen_final_increase_requires_review": 2
+  },
+  "limitations": [
+    "Extinction after burning is not a no-burn label. No binary target was invented from crew prose.",
+    "A single test often changes airflow and reuses a sample. Do not associate its final outcome with only the initial conditions.",
+    "Scalar airflow is populated only for a single numeric Air display, whose unit is cm/s per BASS-II ReadMe; fan display is a different signal.",
+    "BASS oxygen is a fraction in its workbook despite the percent header; it is multiplied by 100. BASS-II calibrated oxygen is already percent.",
+    "BASS pressure is converted from atm to kPa; BASS-II test tables do not record pressure. Do not assume a default.",
+    "Some BASS sample descriptions do not name a material. They remain unresolved rather than guessed.",
+    "Saffire CSVs retain approximate values, blank material cells, note rows and suspect units verbatim; use their source notes before comparisons.",
+    "FLEX is droplet data, kept out of the solid model. Its burning-rate unit needs verification.",
+    "Ground thresholds describe Earth-gravity configurations and are not microgravity outcomes.",
+    "No validated Moon/Mars prediction, pressure extrapolation, untested material ranking, mass, strength or budget constraints are supplied."
+  ]
+}
