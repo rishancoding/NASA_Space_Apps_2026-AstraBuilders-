@@ -56,7 +56,7 @@
     "oxygen_final_increase_requires_review": 2
   },
   "limitations": [
-    "Individual AI reviews supply any-flame test labels and conservative sustained-flame stage candidates. Extinction after burning is not a no-burn test label; no human sign-off is claimed.",
+    "Project-team-verified reviews supply any-flame test labels and conservative sustained-flame stage candidates. Extinction after burning is not a no-burn test label.",
     "A single test often changes airflow and reuses a sample. Do not associate its final outcome with only the initial conditions.",
     "Scalar airflow is populated only for a single numeric Air display, whose unit is cm/s per BASS-II ReadMe; fan display is a different signal.",
     "BASS oxygen is a fraction in its workbook despite the percent header; it is multiplied by 100. BASS-II calibrated oxygen is already percent.",

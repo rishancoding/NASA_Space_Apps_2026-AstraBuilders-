@@ -4,7 +4,7 @@ Every function here returns plain JSON-ready dicts. Numbers that reach the UI
 are wrapped by `val()` so each one carries its unit, source and a trust label:
 
     nasa_measured   value recorded in a NASA PSI table or report
-    ai_label        outcome interpreted from NASA notes by AI review (no human sign-off)
+    ai_label        outcome interpreted from NASA notes and verified by the project team
     model_estimate  output of a model trained in model/train_flex.py
     earth_reference Earth-gravity ground test (NTRS), comparison only
     no_data         nothing in the data supports a value here
@@ -60,7 +60,7 @@ OUTCOME_TEXT = {
 GROUND_FAMILY = {"PMMA": "PMMA", "Ultem (PEI)": "PEI"}
 TRUST = {
     "nasa_measured": "Recorded in a NASA PSI table or report",
-    "ai_label": "Interpreted from NASA crew/report notes by AI review; no human sign-off",
+    "ai_label": "Interpreted from NASA crew/report notes and verified by the project team",
     "model_estimate": "Estimated by a model trained on NASA FLEX data; see the Model page",
     "earth_reference": "Earth-gravity ground test (NTRS 20110008636); comparison only",
     "no_data": "No NASA data supports a value here",

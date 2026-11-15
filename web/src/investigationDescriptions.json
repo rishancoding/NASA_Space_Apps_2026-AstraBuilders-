@@ -1,0 +1,22 @@
+{
+  "PSI-26": "Burned small samples in space to see how airflow affects whether flames keep burning or go out.",
+  "PSI-25": "Explored how oxygen and airflow affect how flames start, grow, and go out in space.",
+  "PSI-98": "Studied how a larger fire grows and spreads inside an uncrewed spacecraft.",
+  "PSI-99": "Compared how samples burned in a larger spacecraft fire test.",
+  "PSI-100": "Repeated a large fire test to compare how flames spread under controlled airflow.",
+  "PSI-69": "Burned floating fuel droplets to study when flames go out.",
+  "PSI-68": "Extended the droplet tests to study fuel mixtures and interactions between nearby droplets.",
+  "PSI-39": "Studied cool flames, which can keep reacting after a bright flame disappears.",
+  "PSI-10": "Studied how changing the air around a gas flame affects its shape, smoke, and when it goes out.",
+  "PSI-20": "Used controlled gas flames to explore how fires burn and go out in still air in space.",
+  "PSI-21": "Studied how airflow and fuel mixing affect whether a flame stays steady and produces smoke.",
+  "PSI-22": "Tested how electric fields change a flame's behavior and smoke.",
+  "PSI-23": "Studied round flames to understand how they change shape, flicker, and go out.",
+  "PSI-159": "Studied when gas flames can continue burning at lower temperatures.",
+  "PSI-107": "Studied when a flame begins releasing smoke and how airflow affects that change.",
+  "PSI-106": "Studied why some flames stay attached to their burner while others lift away.",
+  "PSI-102": "Studied how smoke particles grow and move through air in space.",
+  "PSI-101": "Repeated the smoke study with updated equipment to improve the measurements.",
+  "PSI-47": "Checked whether a particle counter could measure dust and smoke reliably in space.",
+  "NTRS-20110008636": "Measured how much oxygen a fire needs to keep burning under Earth gravity."
+}

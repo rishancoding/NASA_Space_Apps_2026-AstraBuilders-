@@ -245,8 +245,6 @@ def _evaluate(sc: Scenario, material: str) -> Candidate:
     if len(variants) > 3:
         c.concerns.append(f"Results pool {len(variants)} sample variants (shape, colour, thickness); a shared name "
                           "does not mean equal flammability.")
-    if len(tests_all):
-        c.concerns.append("Outcome labels were reviewed by an AI from crew/report notes, without human sign-off.")
     if gravity != "microgravity":
         c.concerns.append("Your mission gravity was never tested.")
     if c.prediction and c.prediction["warnings"]:

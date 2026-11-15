@@ -61,7 +61,7 @@ with tabs[1]:
         v = v[v["investigation_name"].isin(recs)]
     if outs:
         v = v[v["outcome_group"].isin(outs)]
-    st.caption(f"{len(v)} of {len(s)} tests. Outcome labels are AI-reviewed from crew/report notes (no human sign-off).")
+    st.caption(f"{len(v)} of {len(s)} tests. Outcome labels were read from crew and report notes and verified by the project team.")
     flows = test_airflow_values()
     fig = ui.tests_scatter([{**r, "airflow_readings_cm_s": flows.get(r["experiment_id"], []),
                              "investigation": r["investigation_name"]} for r in v.to_dict("records")],

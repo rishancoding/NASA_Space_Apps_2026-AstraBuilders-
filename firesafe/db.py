@@ -37,7 +37,7 @@ CURATED = {
     "solid_combustion_model": (
         "solid_combustion_model.csv",
         "One row per BASS (PSI-26) or BASS-II (PSI-25) solid-fuel test (250 tests). Conditions can change within a test.",
-        "outcome/outcome_group are AI-reviewed test-level labels (no human sign-off). burned_binary means ANY flame "
+        "outcome/outcome_group are project-team-verified test-level labels. burned_binary means ANY flame "
         "was seen (including brief ignition); it is not sustained burning. airflow_cm_s is a single Air-display "
         "reading only when the test had one; all readings are in airflow_readings. airflow_raw is verbatim text: "
         "never average or parse it in SQL. BASS-II pressure was not recorded (NULL)."),
@@ -50,7 +50,7 @@ CURATED = {
         "solid_stage_observations.csv",
         "One row per evidence-linked flame event/stage within a solid test (395 stages).",
         "Includes stages with unknown conditions and excluded endpoints. sustained_flame_binary is the "
-        "AI-reviewed stage label. training_eligible = 1 marks the 47 stages in solid_stage_training."),
+        "project-team-verified stage label. training_eligible = 1 marks the 47 stages in solid_stage_training."),
     "solid_stage_training": (
         "solid_stage_training.csv",
         "The 47 solid stages with exact oxygen/airflow and a sustained-flame label: the solid model's training set.",

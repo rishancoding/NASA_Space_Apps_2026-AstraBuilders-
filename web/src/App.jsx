@@ -54,23 +54,14 @@ export default function App() {
   return (
     <div className="app-shell">
       <a className="skip-link" href="#workspace" onClick={(e) => { e.preventDefault(); document.getElementById("workspace").focus(); }}>Skip to workspace</a>
-      <aside className="app-sidebar" aria-label="Workspace sidebar">
-        <a href="#advisor" className="app-brand" aria-label="Flame in Freefall home">Flame in Freefall<span>AstraBuilders</span></a>
-        <div className="sidebar-label">Workspace</div>
-        <nav aria-label="Main navigation" className="app-navigation">
-          {PAGES.map((p) => <button key={p.id} aria-current={page === p.id ? "page" : undefined} onClick={() => setPage(p.id)} className="nav-tab"><Icon name={p.id} className="h-4 w-4" />{p.description}</button>)}
-        </nav>
-        <div className="sidebar-bottom"><span className="source-status" />NASA PSI data<span className="sidebar-caption">Microgravity combustion</span></div>
-      </aside>
-      <div className={`app-content ${chatOpen ? "assistant-open" : ""}`}>
       <header className="app-topbar">
-        <a href="#advisor" className="mobile-brand">Flame in Freefall</a>
-        <div className="app-breadcrumb"><span>Workspace</span><span className="breadcrumb-slash">/</span><span>{PAGES.find((p) => p.id === page)?.label}</span></div>
-        <button aria-expanded={chatOpen} onClick={() => setChatOpen((o) => !o)} className="secondary-button"><Icon name="chat" className="h-4 w-4" /><span>{chatOpen ? "Close assistant" : "Ask assistant"}</span></button>
-        <nav aria-label="Mobile navigation" className="mobile-navigation">
-          {PAGES.map((p) => <button key={p.id} aria-current={page === p.id ? "page" : undefined} onClick={() => setPage(p.id)} className="nav-tab">{p.label}</button>)}
+        <a href="#advisor" className="app-brand" aria-label="Flame in Freefall home">flame in freefall<span>by AstraBuilders</span></a>
+        <nav aria-label="Main navigation" className="app-navigation">
+          {PAGES.map((p) => <button key={p.id} aria-current={page === p.id ? "page" : undefined} onClick={() => setPage(p.id)} className="nav-tab">{{advisor:"Materials",predictor:"Predictor",explorer:"NASA data",model:"Model accuracy"}[p.id]}</button>)}
         </nav>
+        <button aria-expanded={chatOpen} onClick={() => setChatOpen((o) => !o)} className="primary-button"><Icon name="chat" className="h-4 w-4" /><span>{chatOpen ? "Close chat" : "Ask a question"}</span></button>
       </header>
+      <div className={`app-content ${chatOpen ? "assistant-open" : ""}`}>
       <main id="workspace" tabIndex={-1}>
         {options.loading && <Spinner label="Connecting to the API…" />}
         <ErrorBox error={options.error} />
@@ -86,7 +77,7 @@ export default function App() {
         )}
         <footer className="app-footer">
           <span>AstraBuilders · NASA PSI data</span>
-          <details><summary>About the data</summary><p>Values are labeled as NASA-measured, AI-read, model estimates, Earth-gravity references or no data. This tool compares observations; it does not certify material safety.</p></details>
+          <details><summary>About the data</summary><p>Explore NASA measurements, team-verified outcomes, model estimates and Earth-gravity references.</p></details>
         </footer>
       </main>
       </div>

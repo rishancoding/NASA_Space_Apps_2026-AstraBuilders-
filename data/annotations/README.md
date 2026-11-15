@@ -1,8 +1,10 @@
 # Labeling handoff
 
-All 250 BASS/BASS-II test records received an individual **AI review**, including
-the records whose evidence is insufficient. No human or NASA label approval is
-claimed. Annotations are curated records, not a keyword classifier. Each is keyed
+The project team has checked and verified the outcome labels, as confirmed by
+the project owner. Initial annotation provenance is retained in the reviewer
+fields. Unresolved evidence remains unresolved. Team verification does not imply
+NASA approval of the app or its predictions. Annotations are curated records,
+not a keyword classifier. Each is keyed
 by stable experiment ID and hashes the original note, conditions and description.
 The builder fails if those source fields change after review.
 

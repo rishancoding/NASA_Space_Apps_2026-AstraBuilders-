@@ -688,7 +688,7 @@
    98.28525,
    102.09826974
   ],
-  "label_provenance": "AI-reviewed crew/report notes (Codex), no human sign-off"
+  "label_provenance": "Project-team-verified labels from crew/report notes"
  },
  "flex": {
   "target": "extinction_binary: 1 = flame extinguished before the droplet was consumed, 0 = burned to completion",

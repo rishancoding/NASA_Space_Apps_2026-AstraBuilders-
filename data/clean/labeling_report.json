@@ -1,6 +1,6 @@
 {
   "schema_version": "1.1.0",
-  "review_method": "Individual AI review of all available test notes and control annotations; no human sign-off",
+  "review_method": "Project team verification of outcome labels from test notes and control annotations",
   "solid_tests_reviewed": 250,
   "test_outcomes": {
     "fuel_exhaustion": 20,
@@ -55,7 +55,7 @@
     "initial_gas_fractions_do_not_sum_to_one": 6,
     "nonpositive_initial_feature:pressure_kpa": 1
   },
-  "training_status": "Exploratory labeled candidates; no model fit or validated predictions. Labels retain source-specific observation horizons and AI review provenance.",
+  "training_status": "Exploratory labeled candidates; no model fit or validated predictions. Labels retain source-specific observation horizons and project team verification metadata.",
   "required_solid_features": [
     "material",
     "oxygen_initial_pct",

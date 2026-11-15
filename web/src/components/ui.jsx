@@ -44,7 +44,7 @@ export const unitText = (u) => (u in UNIT_SUFFIX ? UNIT_SUFFIX[u] : u ? ` ${u}` 
 
 const TRUST_STYLE = {
   nasa_measured: ["NASA measured", "bg-sky-500/15 text-indigo-600 ring-sky-500/30"],
-  ai_label: ["AI-read label", "bg-amber-500/15 text-amber-800 ring-amber-500/30"],
+  ai_label: ["Team-verified label", "bg-amber-500/15 text-amber-800 ring-amber-500/30"],
   model_estimate: ["Model estimate", "bg-violet-500/15 text-violet-700 ring-violet-500/30"],
   earth_reference: ["Earth 1g", "bg-emerald-500/15 text-emerald-700 ring-emerald-500/30"],
   no_data: ["No data", "bg-slate-500/15 text-gray-500 ring-slate-500/30"],

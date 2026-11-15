@@ -71,7 +71,7 @@ files were present in the workspace.
 ## Files for each teammate
 
 **Model lead:** Read [the labeling handoff](annotations/README.md) and
-`clean/labeling_report.json`. All 250 tests now have individual AI reviews,
+`clean/labeling_report.json`. All 250 tests now have team-verified reviews,
 including explicit unresolved cases. The whole-test `burned_binary` means any
 reported visible flame; it is not the sustained-flame stage target. Whole-test
 rows remain ineligible for condition-specific training. Use
@@ -83,7 +83,7 @@ A whole test can contain flow changes, re-ignitions, forced suppression and fuel
 exhaustion. The event table preserves those distinctions. Missing flow-to-event
 alignment remains missing. Actual stage oxygen is unknown; initial test oxygen
 is explicitly labeled as a proxy. The annotation files preserve source hashes,
-evidence spans and AI reviewer provenance; no human review is claimed. Update
+evidence spans and the initial annotation provenance. The project team has verified the labels. Update
 those source annotations when correcting a label, then run `label_data.py`.
 Record group-aware validation metrics and exclusions in the later model commit.
 

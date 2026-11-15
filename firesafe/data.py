@@ -40,7 +40,7 @@ def _read(name: str, **kw) -> pd.DataFrame:
 
 @lru_cache(maxsize=None)
 def solids() -> pd.DataFrame:
-    """250 BASS/BASS-II tests, one row per test, with AI-reviewed outcome labels."""
+    """250 BASS/BASS-II tests, one row per test, with project-team-verified outcome labels."""
     df = _read("solid_combustion_model.csv", dtype={"test_id": str, "sample_id": str})
     df["outcome_group"] = df["outcome"].map(OUTCOME_GROUPS).fillna("not usable")
     df["material_raw"] = df["material_raw"].fillna("")
