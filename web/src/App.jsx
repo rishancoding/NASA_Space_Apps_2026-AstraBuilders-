@@ -6,7 +6,7 @@ class PageBoundary extends Component {
   render() {
     if (!this.state.error) return this.props.children;
     return (
-      <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
+      <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-700">
         This page hit an error: {String(this.state.error.message)}{" "}
         <button className="underline" onClick={() => this.setState({ error: null })}>Try again</button>
       </div>
@@ -23,10 +23,10 @@ import ChatPanel from "./components/ChatPanel.jsx";
 import ExperimentDrawer from "./components/ExperimentDrawer.jsx";
 
 const PAGES = [
-  { id: "advisor", label: "Material Advisor" },
-  { id: "predictor", label: "Atmosphere Predictor" },
-  { id: "explorer", label: "NASA Data Explorer" },
-  { id: "model", label: "Model Accuracy" },
+  { id: "advisor", label: "Material Advisor", description: "Compare materials" },
+  { id: "predictor", label: "Atmosphere Predictor", description: "Explore a flame" },
+  { id: "explorer", label: "NASA Data Explorer", description: "Browse experiments" },
+  { id: "model", label: "Model Accuracy", description: "Understand the models" },
 ];
 
 function usePage() {
@@ -52,29 +52,26 @@ export default function App() {
     askChat: (ctx) => { setChatContext(ctx); setChatOpen(true); } };
 
   return (
-    <div className="min-h-screen">
+    <div className="app-shell">
       <a className="skip-link" href="#workspace" onClick={(e) => { e.preventDefault(); document.getElementById("workspace").focus(); }}>Skip to workspace</a>
-      <header className="sticky top-0 z-20 border-b border-line bg-ink/95 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-7">
-          <a href="#advisor" className="flex items-center gap-3" aria-label="Flame in Freefall home">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-300/30 bg-cyan-300/5 text-cyan-200"><Icon name="predictor" className="h-7 w-7" /></div>
-            <div><div className="text-base font-semibold tracking-tight text-white">FLAME <span className="font-normal text-slate-400">IN</span> FREEFALL</div><div className="eyebrow text-[9px]">AstraBuilders / Combustion research</div></div>
-          </a>
-          <button aria-expanded={chatOpen} onClick={() => setChatOpen((o) => !o)} className="primary-button"><Icon name="chat" /><span>{chatOpen ? "Close assistant" : "Research assistant"}</span></button>
-        </div>
-        <nav aria-label="Main navigation" className="mx-auto flex max-w-[1440px] gap-1 overflow-x-auto px-4 pb-2 sm:px-7">
-          {PAGES.map((p) => <button key={p.id} aria-current={page === p.id ? "page" : undefined} onClick={() => setPage(p.id)} className="nav-tab"><Icon name={p.id} className="h-4 w-4" />{p.label}</button>)}
+      <aside className="app-sidebar" aria-label="Workspace sidebar">
+        <a href="#advisor" className="app-brand" aria-label="Flame in Freefall home">Flame in Freefall<span>AstraBuilders</span></a>
+        <div className="sidebar-label">Workspace</div>
+        <nav aria-label="Main navigation" className="app-navigation">
+          {PAGES.map((p) => <button key={p.id} aria-current={page === p.id ? "page" : undefined} onClick={() => setPage(p.id)} className="nav-tab"><Icon name={p.id} className="h-4 w-4" />{p.description}</button>)}
+        </nav>
+        <div className="sidebar-bottom"><span className="source-status" />NASA PSI data<span className="sidebar-caption">Microgravity combustion</span></div>
+      </aside>
+      <div className={`app-content ${chatOpen ? "assistant-open" : ""}`}>
+      <header className="app-topbar">
+        <a href="#advisor" className="mobile-brand">Flame in Freefall</a>
+        <div className="app-breadcrumb"><span>Workspace</span><span className="breadcrumb-slash">/</span><span>{PAGES.find((p) => p.id === page)?.label}</span></div>
+        <button aria-expanded={chatOpen} onClick={() => setChatOpen((o) => !o)} className="secondary-button"><Icon name="chat" className="h-4 w-4" /><span>{chatOpen ? "Close assistant" : "Ask assistant"}</span></button>
+        <nav aria-label="Mobile navigation" className="mobile-navigation">
+          {PAGES.map((p) => <button key={p.id} aria-current={page === p.id ? "page" : undefined} onClick={() => setPage(p.id)} className="nav-tab">{p.label}</button>)}
         </nav>
       </header>
-      <main id="workspace" tabIndex={-1} className={`mx-auto max-w-[1440px] px-4 py-6 sm:px-7 ${chatOpen ? "lg:pr-[450px]" : ""}`}>
-        <section aria-label="Dataset overview" className="console-hero mb-7 flex flex-wrap items-center justify-between gap-6 rounded-2xl border border-line p-5 sm:p-7">
-          <div><div className="eyebrow mb-2">NASA PSI / Evidence workspace</div><div className="text-xl font-medium tracking-tight text-white sm:text-2xl">Explore the science. Know the limits.</div><p className="mt-2 max-w-xl text-sm text-slate-400">Trace observations to NASA sources and explore estimates where comparable tests exist.</p></div>
-          <div className="flex gap-5 sm:gap-8">
-            <div className="console-metric"><strong>{options.data?.dataset_counts.psi_records ?? "—"}</strong><span>PSI records</span></div>
-            <div className="console-metric"><strong>{options.data?.dataset_counts.recorded_tests ?? "—"}</strong><span>recorded tests</span></div>
-            <div className="console-metric"><strong>{options.data?.dataset_counts.screened_flex ?? "—"}</strong><span>screened FLEX rows</span></div>
-          </div>
-        </section>
+      <main id="workspace" tabIndex={-1}>
         {options.loading && <Spinner label="Connecting to the API…" />}
         <ErrorBox error={options.error} />
         {options.data && (
@@ -87,11 +84,12 @@ export default function App() {
             </Suspense>
           </PageBoundary>
         )}
-        <footer className="mt-10 border-t border-line pt-5 text-xs leading-relaxed text-slate-400">
-          Data: NASA Physical Sciences Informatics (PSI). Every number is labeled as NASA-measured, AI-read, model estimate,
-          Earth-gravity reference or no data. This tool compares evidence; it does not certify material safety.
+        <footer className="app-footer">
+          <span>AstraBuilders · NASA PSI data</span>
+          <details><summary>About the data</summary><p>Values are labeled as NASA-measured, AI-read, model estimates, Earth-gravity references or no data. This tool compares observations; it does not certify material safety.</p></details>
         </footer>
       </main>
+      </div>
 
       <PageBoundary><ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} context={chatContext} /></PageBoundary>
       <PageBoundary><ExperimentDrawer id={experimentId} onClose={() => setExperimentId(null)} openExperiment={setExperimentId} /></PageBoundary>

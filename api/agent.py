@@ -17,6 +17,9 @@ import os
 import anthropic
 
 from . import core
+from .config import load_environment
+
+load_environment()
 
 DEFAULT_MODELS = {"deepseek": "deepseek-flash", "anthropic": "claude-opus-5-5"}
 DEEPSEEK_BASE_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")

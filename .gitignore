@@ -9,6 +9,12 @@ __pycache__/
 .DS_Store
 .venv/
 
+# Local credentials; only key-free templates belong in Git.
+.env
+.env.*
+!.env.example
+!.env.*.example
+
 # Web app
 web/node_modules/
 web/dist/

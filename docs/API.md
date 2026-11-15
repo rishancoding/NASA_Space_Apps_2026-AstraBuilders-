@@ -18,8 +18,12 @@ For TypeScript types, generate from the schema:
 npx openapi-typescript http://localhost:8000/openapi.json -o src/api-types.ts
 ```
 
-Chat needs one language-model key, set before starting the server. Everything
-else works without it.
+Chat needs one language-model key. Copy the repository-root `.env.example` to
+`.env`, add the key received privately from the owner, then start the API. The
+backend reads this ignored file on startup; terminal/deployment environment
+variables take precedence. Everything else works without a key. See
+[collaborator setup](COLLABORATOR_SETUP.md). Never put a provider key in `VITE_`
+variables or frontend source.
 
 | Provider | Set | Default model | Cost per 1M tokens (input / output) |
 | --- | --- | --- | --- |

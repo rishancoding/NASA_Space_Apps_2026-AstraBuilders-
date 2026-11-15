@@ -15,7 +15,11 @@ npm install
 npm run dev          # http://localhost:5173 (calls to /api are proxied to port 8000)
 ```
 
-Chat needs `DEEPSEEK_API_KEY` (or `ANTHROPIC_API_KEY`) set in the API's terminal.
+For chat, copy the repository-root `.env.example` to `.env` and add the DeepSeek
+key you receive privately from the project owner. The backend loads it on startup;
+restart the API after editing it. Existing terminal environment variables take
+precedence. Keep API keys out of `web/` and all `VITE_` variables, which are exposed
+in browser builds. See [collaborator setup](../docs/COLLABORATOR_SETUP.md).
 For a deployed build, set `VITE_API_URL` to the API's public address, then `npm run build`.
 
 ## Layout

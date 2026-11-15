@@ -36,3 +36,8 @@ NASA text search and a research-assistant agent (DeepSeek or Claude). Start with
 .venv/Scripts/python -m pip install -r api/requirements.txt
 .venv/Scripts/python -m uvicorn api.main:app --reload --port 8000   # then open http://localhost:8000/docs
 ```
+
+For local chat, copy `.env.example` to `.env` and add a DeepSeek key shared privately
+by the project owner. The backend loads this file automatically; it is ignored by
+Git. See [collaborator setup](docs/COLLABORATOR_SETUP.md) for Windows/macOS/Linux
+instructions and the distinction between repository access and secret access.
