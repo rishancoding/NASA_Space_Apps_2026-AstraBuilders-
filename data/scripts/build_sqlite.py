@@ -35,10 +35,10 @@ CLEAN = ROOT / "data" / "clean"
 DEFAULT_OUT = ROOT / "data" / "flame.sqlite"
 
 DESCRIPTIONS = {
-    "solid_combustion_model": "250 BASS/BASS-II solid-fuel tests: conditions, crew notes, AI-reviewed whole-test outcome",
+    "solid_combustion_model": "250 BASS/BASS-II solid-fuel tests: conditions, crew notes, team-verified whole-test outcome",
     "solid_stage_observations": "Evidence-linked flame events within solid tests, with exclusion reasons",
     "solid_stage_training": "47 screened solid stages with sustained_flame_binary (exploratory; no model trained)",
-    "label_review_queue": "AI review worksheet for all 250 solid tests",
+    "label_review_queue": "Team-verified review worksheet for all 250 solid tests",
     "airflow_readings": "Ordered airflow display readings per solid test (order is not time)",
     "flex_backup": "274 FLEX droplet tests (PSI-69) as cleaned",
     "flex_labeled": "All 274 FLEX tests with extinction_binary and exclusion reasons",

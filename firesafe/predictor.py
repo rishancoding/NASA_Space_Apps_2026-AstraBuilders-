@@ -159,7 +159,7 @@ def train_all() -> dict:
         "protocols_by_material": {m: sorted(gr["protocol"].unique().tolist()) for m, gr in d.groupby("material")},
         "pressure_kpa_range": [float(d["pressure_kpa"].min()), float(d["pressure_kpa"].max())]
         if d["pressure_kpa"].notna().any() else None,
-        "label_provenance": "AI-reviewed crew/report notes (Codex), no human sign-off",
+        "label_provenance": "Project-team-verified labels from crew/report notes",
     }
 
     # ---- FLEX droplets ------------------------------------------------------

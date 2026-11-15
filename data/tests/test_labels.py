@@ -28,7 +28,9 @@ class LabelTests(unittest.TestCase):
         self.assertEqual({r["experiment_id"] for r in reviews}, set(self.tests))
         for review in reviews:
             self.assertEqual(source_hash(self.tests[review["experiment_id"]]), review["source_evidence_sha256"])
-            self.assertIn("AI", review["reviewer"])
+            self.assertEqual(review["review_status"], "team_verified")
+            self.assertIn("Project team", review["reviewer"])
+            self.assertIn("initial annotation by Codex", review["reviewer"])
         changed = dict(next(iter(self.tests.values())))
         before = source_hash(changed)
         changed["notes"] += " changed source"

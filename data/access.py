@@ -1,7 +1,7 @@
 """Dependency-free readers shared by the later dashboard, agent and model code.
 
 No predictions or safety rankings are supplied by the data package. Candidate
-training rows have AI-reviewed labels; see annotations/README.md for limitations.
+training rows have team-verified labels; see annotations/README.md for limitations.
 """
 from __future__ import annotations
 

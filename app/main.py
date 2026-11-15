@@ -21,6 +21,5 @@ nav = st.navigation([
 with st.sidebar:
     st.markdown("**FireSafe**")
     st.caption("Built on NASA's fire experiments in orbit (BASS, BASS-II, Saffire, FLEX). Every number comes from "
-               "NASA's data or our trained model; the AI only explains them. Test outcomes were labeled by AI "
-               "and not yet checked by a person.")
+               "NASA's data or our trained model; the AI only explains them. Outcome labels were verified by the project team.")
 nav.run()

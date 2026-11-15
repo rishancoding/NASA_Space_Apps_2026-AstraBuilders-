@@ -1,4 +1,3 @@
-import html
 import re
 
 import pandas as pd
@@ -8,9 +7,7 @@ import streamlit as st
 import ui
 from firesafe import agent
 
-ui.init_page("Research Assistant",
-             "Ask anything about NASA's fire experiments in space. Answers come from NASA's own data, with sources "
-             "and what the data can't tell you.", eyebrow="Ask the data")
+ui.init_page("Research Assistant")
 
 ss = st.session_state
 ss.setdefault("chat_api", [])      # exact API message history (assistant content blocks kept as returned)
@@ -19,21 +16,20 @@ online = agent.has_credentials()
 ctx = ss.get("advisor_result")
 
 if not online:
-    st.warning("No DeepSeek API key found (set DEEPSEEK_API_KEY). You'll get the most relevant NASA passages "
-               "without a written answer.", icon=":material/key_off:")
+    st.info("Search mode: answers will show matching reports.", icon=":material/search:")
 
 SUGGESTED = [
-    "How does oxygen level affect how fast flames spread in space?",
+    "What happens when oxygen increases?",
     "Compare how PMMA and Nomex burn.",
-    "Would a heptane droplet flame go out early at 16% oxygen?",
-    "What don't we know yet about fire safety on the Moon?",
+    "Which materials have the most test data?",
+    "Why do some flames go out?",
 ]
 if ctx:
-    st.info(f"Linked to your Material Advisor results ({ctx['scenario']['oxygen_pct']:g}% oxygen, "
-            f"{ctx['scenario']['airflow_cm_s']:g} cm/s airflow).", icon=":material/link:")
-    pairs = [f"Is {x['higher']} really safer than {x['lower']} in my conditions?"
+    st.caption(f"Using your comparison · {ctx['scenario']['oxygen_pct']:g}% oxygen · "
+               f"{ctx['scenario']['airflow_cm_s']:g} cm/s airflow")
+    pairs = [f"How do {x['higher']} and {x['lower']} compare?"
              for x in ctx.get("comparisons", [])][:3]
-    SUGGESTED = pairs + ["Which of my requirements couldn't be checked?"] + SUGGESTED[:4 - len(pairs)]
+    SUGGESTED = (pairs + ["Explain my comparison results."] + SUGGESTED)[:4]
 
 
 STEP = {"find_tests": "Finding matching NASA tests", "material_summary": "Summarising a material",
@@ -70,18 +66,18 @@ def charts_for(calls) -> None:
                       yaxis=dict(tickformat=".0%", range=[0, 1.15], title=None),
                       xaxis_title="Oxygen (%)", showlegend=False)
             st.plotly_chart(fig, width="stretch", key=f"t{id(calls)}{i}")
-            ui.note("Bar height is how often the flame stayed lit in NASA's carefully measured runs; "
-                    "the label shows how many runs.")
         elif name == "predict_sustained_burning" and out.get("probability") is not None:
             st.metric(f"{out['material']} at {out['oxygen_pct']:g}% oxygen, {out['airflow_cm_s']:g} cm/s",
-                      f"{out['probability']:.0%} chance it keeps burning")
-            ui.note(f"Model estimate. Trust: {out['reliability']['rating']}.")
+                      f"{out['probability']:.0%} chance it keeps burning",
+                      help=f"Model estimate. Confidence: {out['reliability']['rating']}.")
         elif name == "predict_droplet_extinction" and out.get("probability") is not None:
             st.metric(f"{out['fuel']} droplet at {out['oxygen_pct']:g}% oxygen, {out['pressure_kpa']:g} kPa",
-                      f"{out['probability']:.0%} chance it goes out early")
-            ui.note(f"Model estimate. Trust: {out['reliability']['rating']}.")
+                      f"{out['probability']:.0%} chance it goes out early",
+                      help=f"Model estimate. Confidence: {out['reliability']['rating']}.")
         elif name == "prediction_sweep" and out.get("points"):
-            df = pd.DataFrame(out["points"])
+            df = pd.DataFrame([p for p in out["points"] if p.get("probability") is not None])
+            if df.empty:
+                continue
             fig = go.Figure(go.Scatter(
                 x=df[out["varied"]], y=df["probability"], mode="lines+markers",
                 line=dict(color=ui.INK, width=2),
@@ -92,11 +88,21 @@ def charts_for(calls) -> None:
                       yaxis=dict(tickformat=".0%", range=[0, 1.05], title=None), xaxis_title=out["varied"].split("_")[0].capitalize(),
                       showlegend=False)
             st.plotly_chart(fig, width="stretch", key=f"w{id(calls)}{i}")
-            ui.note("Hollow points are outside what NASA tested, so trust them less.")
-        elif name == "query_database" and out.get("rows"):
-            st.dataframe(pd.DataFrame(out["rows"]), width="stretch", hide_index=True)
-            ui.note(f"{out['returned']} matching records from NASA's data"
-                    f"{' (first ones only)' if out['truncated'] else ''}.")
+            if out["points_in_tested_range"] < len(out["points"]):
+                ui.note("Estimates are shown only for tested conditions.")
+
+
+def optional_charts(calls) -> None:
+    """Tool use is not a request to show every intermediate table and plot."""
+    charts = {"find_tests", "condition_trends", "predict_sustained_burning",
+              "predict_droplet_extinction", "prediction_sweep"}
+    calls = [(name, args, out) for name, args, out in (calls or [])
+             if name in charts and (out.get("tests") or out.get("stages_by_oxygen_bin")
+                                    or out.get("probability") is not None
+                                    or any(p.get("probability") is not None for p in out.get("points", [])))]
+    if calls:
+        with st.expander("Charts"):
+            charts_for(calls)
 
 
 def sources_for(calls) -> list[dict]:
@@ -121,10 +127,10 @@ def sources_for(calls) -> list[dict]:
         walk(out)
     seen, out = set(), []
     for it in items:
-        if it["label"] not in seen:
-            seen.add(it["label"])
+        if it["url"] not in seen:
+            seen.add(it["url"])
             out.append(it)
-    return out[:12]
+    return out[:3]
 
 
 SECTIONS = ("Answer", "Evidence", "What it means", "Prediction reliability", "Sources", "In short")
@@ -152,23 +158,24 @@ def render_answer(text: str, calls) -> None:
     parts = split_sections(text)
     if not parts:
         st.markdown(text)
-        if calls:
-            charts_for(calls)
+        optional_charts(calls)
+        srcs = sources_for(calls or [])
+        if srcs:
+            with st.expander("Sources"):
+                ui.citations(srcs, header="")
         return
     if parts.get("Answer"):
         st.markdown(parts["Answer"])
-    for name in ("Evidence", "What it means"):
-        if parts.get(name):
-            ui.label(name)
-            st.markdown(parts[name])
-        if name == "Evidence" and calls:
-            charts_for(calls)
-    if parts.get("Prediction reliability"):
-        with st.container(border=True):
-            ui.label("How much to trust the estimate")
-            st.markdown(parts["Prediction reliability"])
-    if parts.get("In short"):
-        st.html(f'<div class="fs-tldr"><div class="fs-label">In short</div>{md_inline(parts["In short"])}</div>')
+    elif parts.get("In short"):
+        st.markdown(parts["In short"])
+    optional_charts(calls)
+    if any(parts.get(name) for name in ("Evidence", "What it means", "Prediction reliability")):
+        with st.expander("Answer details"):
+            for name, label in (("Evidence", "Recorded tests"), ("What it means", "Explanation"),
+                                ("Prediction reliability", "Estimate limits")):
+                if parts.get(name):
+                    st.markdown(f"**{label}**")
+                    st.markdown(parts[name])
     srcs = sources_for(calls) if calls else []
     if parts.get("Sources") or srcs:
         with st.expander("Sources"):
@@ -176,13 +183,6 @@ def render_answer(text: str, calls) -> None:
                 st.markdown(parts["Sources"])
             else:
                 ui.citations(srcs, header="")
-
-
-def md_inline(t: str) -> str:
-    """Tiny, safe Markdown-to-HTML for the one- or two-line summary (bold and links only)."""
-    t = html.escape(" ".join(t.split()))
-    t = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", t)
-    return re.sub(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", r'<a href="\2" target="_blank">\1</a>', t)
 
 
 def render(msg) -> None:
@@ -208,13 +208,14 @@ if question:
     ss.chat_view.append({"role": "user", "text": question})
     render(ss.chat_view[-1])
     with st.chat_message("assistant"):
-        status = st.status("Looking through NASA's data...", expanded=False)
+        status = st.status("Working on your answer...", expanded=False)
         if online:
             ss.chat_api.append({"role": "user", "content": question})
             out = agent.ask(ss.chat_api, ctx, on_tool=lambda n, a: status.write(STEP.get(n, "Checking the data")))
         else:
             out = agent.offline_answer(question)
-        status.update(label="Done", state="complete")
+        failed = out.get("stop_reason") in ("error", "tool_limit")
+        status.update(label="Try again" if failed else "Done", state="error" if failed else "complete")
     ss.chat_view.append({"role": "assistant", "text": out["text"], "calls": out["tool_calls"]})
     st.rerun()
 

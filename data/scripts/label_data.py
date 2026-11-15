@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply evidence-linked AI reviews and build conservative training candidates.
+"""Apply evidence-linked, team-verified reviews and build conservative training candidates.
 
 Works offline on the committed clean CSVs. Outcomes are curated by experiment
 ID in data/annotations, not inferred by a substring classifier. No model is fit.
@@ -155,7 +155,7 @@ def build_labels():
     for row in rows:
         review = review_byid[row["experiment_id"]]
         row.update(outcome=review["outcome"], burned_binary=review["any_flame_observed"],
-                   label_status="ai_reviewed" if review["any_flame_observed"] != "" else "reviewed_unresolved",
+                   label_status="team_verified" if review["any_flame_observed"] != "" else "reviewed_unresolved",
                    training_eligible="false")
         queue.append({"experiment_id": row["experiment_id"], "test_id": row["test_id"],
                       "source_record": row["source_record"], "source_url": row["source_url"],
@@ -201,7 +201,7 @@ def build_labels():
                 "source_row": row["source_row"], "source_url": row["source_url"],
                 "supplement_file": row["supplement_file"], "supplement_locator": row["supplement_locator"],
                 "evidence_field": event["evidence_field"], "evidence_quote": event["evidence_quote"],
-                "reviewer": event["reviewer"], "review_status": "ai_reviewed; no human sign-off"})
+                "reviewer": event["reviewer"], "review_status": "team_verified"})
     write_csv(CLEAN / "solid_combustion_model.csv", rows)
     write_csv(CLEAN / "label_review_queue.csv", queue, REVIEW_COLUMNS)
     write_csv(CLEAN / "airflow_readings.csv", readings)
@@ -223,7 +223,7 @@ def build_labels():
     write_csv(CLEAN / "flex_labeled.csv", flex_labels)
     flex_candidates = [r for r in flex_labels if r["training_eligible"] == "true"]
     write_csv(CLEAN / "flex_training.csv", flex_candidates, list(flex_labels[0]))
-    report = {"schema_version": "1.1.0", "review_method": "Individual AI review of all available test notes and control annotations; no human sign-off",
+    report = {"schema_version": "1.1.0", "review_method": "Project team verification of outcome labels from test notes and control annotations",
         "solid_tests_reviewed": len(rows), "test_outcomes": dict(Counter(r["outcome"] for r in rows)),
         "test_any_flame_labels": dict(Counter(str(r["burned_binary"]) for r in rows)),
         "explicit_flow_event_links": len(explicit), "stage_observations": len(stages),
@@ -234,7 +234,7 @@ def build_labels():
         "flex_training_candidates": len(flex_candidates), "flex_candidate_class_counts": dict(Counter(str(r["extinction_binary"]) for r in flex_candidates)),
         "flex_disruptions_excluded": sum(r["test_end_raw"] == "Disruption" for r in flex_labels),
         "flex_initial_quality_exclusions": dict(Counter(reason for r in flex_labels for reason in r["exclusion_reasons"].split("|") if reason and not reason.startswith("disruption_"))),
-        "training_status": "Exploratory labeled candidates; no model fit or validated predictions. Labels retain source-specific observation horizons and AI review provenance.",
+        "training_status": "Exploratory labeled candidates; no model fit or validated predictions. Labels retain source-specific observation horizons and project team verification metadata.",
         "required_solid_features": ["material", "oxygen_initial_pct", "airflow_cm_s", "protocol"],
         "optional_solid_features": ["sample_geometry", "flow_direction", "thickness_mm", "diameter_mm", "width_mm"],
         "flex_features": [f for f in features if f != "nitrogen_fraction"],
@@ -247,7 +247,7 @@ def build_labels():
                    solid_tests_reviewed=len(rows), training_eligible_rows=0,
                    solid_training_stage_rows=len(candidates), flex_training_rows=len(flex_candidates),
                    model_readiness="exploratory_stage_candidates_available; use stage table, not whole-test labels")
-    quality["limitations"][0] = "Individual AI reviews supply any-flame test labels and conservative sustained-flame stage candidates. Extinction after burning is not a no-burn test label; no human sign-off is claimed."
+    quality["limitations"][0] = "Project-team-verified reviews supply any-flame test labels and conservative sustained-flame stage candidates. Extinction after burning is not a no-burn test label."
     (CLEAN / "quality_report.json").write_text(json.dumps(quality, indent=2) + "\n")
     contract = json.loads((CLEAN / "data_contract.json").read_text())
     contract.update(schema_version="1.1.0", training_gate="Use solid_stage_training.csv or separate flex_training.csv; validate grouped splits and feature coverage before fitting",

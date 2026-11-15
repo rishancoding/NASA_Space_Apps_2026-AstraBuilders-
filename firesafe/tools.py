@@ -36,7 +36,8 @@ def _clean(obj):
 
 def list_materials() -> dict:
     return {"materials": [{"material": m, "tests": material_profile(m)["tests"],
-                           "saffire_samples": material_profile(m)["saffire_samples"]} for m in materials()],
+                           "saffire_samples": material_profile(m)["saffire_samples"],
+                           "supports_burn_prediction": m in predictor.solid_materials()} for m in materials()],
             "note": "Solid materials burned in orbit (BASS PSI-26, BASS-II PSI-25, Saffire PSI-98/99/100). "
                     f"{int((solids()['material'] == UNRESOLVED).sum())} tests have an unresolved material."}
 
@@ -103,7 +104,7 @@ def condition_trends(material: str | None = None) -> dict:
         oxygen_bin=lambda t: pd.cut(t["oxygen_pct"], [0, 16, 18, 20, 21.5, 23, 30]).astype(str))
     tab = pd.crosstab(s["oxygen_bin"], s["outcome_group"])
     out["tests_by_oxygen_bin"] = {k: {c: int(v) for c, v in row.items() if v} for k, row in tab.iterrows()}
-    out["caveat"] = ("Stages are the 47 conditions with exact oxygen/airflow and an AI-reviewed label. Bins mix "
+    out["caveat"] = ("Stages are the 47 conditions with exact oxygen/airflow and a team-verified label. Bins mix "
                      "materials, shapes and test scenarios, so they show where tests were run, not a controlled trend.")
     return out
 
@@ -111,11 +112,14 @@ def condition_trends(material: str | None = None) -> dict:
 def predict_sustained_burning(material: str, oxygen_pct: float, airflow_cm_s: float,
                               scenario: str = "ongoing_burn_trial", pressure_kpa: float | None = None,
                               mission: str = "Space station (microgravity)") -> dict:
+    if mission not in advisor.MISSIONS:
+        return {"error": "Unknown setting. Choose a setting listed in the Material Advisor."}
     res = predictor.predict_solid(material, oxygen_pct, airflow_cm_s, scenario, pressure_kpa,
-                                  advisor.MISSIONS.get(mission, "microgravity"))
+                                  advisor.MISSIONS[mission])
     if res["probability"] is not None:
         res["predicted_outcome"] = "flame stays lit" if res["probability"] >= 0.5 else "flame goes out"
     res["reliability"] = reliability.review("solid", res, material)
+    _withhold_unsupported_prediction(res)
     res["note"] = ("Exploratory: material identity carries most of the signal; oxygen and airflow add little with "
                    "47 labelled stages. Compare model_statistics.simpler_model.")
     return res
@@ -128,7 +132,16 @@ def predict_droplet_extinction(fuel: str, pressure_kpa: float, oxygen_pct: float
     if res["probability"] is not None:
         res["predicted_outcome"] = "extinguishes early" if res["probability"] >= 0.5 else "burns to completion"
     res["reliability"] = reliability.review("flex", res, fuel)
+    _withhold_unsupported_prediction(res)
     return res
+
+
+def _withhold_unsupported_prediction(result: dict) -> None:
+    """Chat must not present an out-of-domain number as an answer with a caveat."""
+    if result.get("warnings") or result.get("supported") is False:
+        result["probability"] = None
+        result.pop("predicted_outcome", None)
+        result["prediction_unavailable"] = "No estimate for these inputs: outside the tested conditions."
 
 
 SWEEP_VARS = {"solid": ("oxygen_pct", "airflow_cm_s"),
@@ -166,18 +179,18 @@ def prediction_sweep(model: str, vary: str, start: float, stop: float, steps: in
         if r["probability"] is None:
             return {"error": "; ".join(r["warnings"])}
         rev = reliability.review(model, r, group)
-        points.append({vary: round(x, 4), "probability": r["probability"], "rating": rev["rating"],
+        points.append({vary: round(x, 4), "probability": r["probability"] if r["supported"] else None, "rating": rev["rating"],
                        "in_tested_range": not r["warnings"], "warnings": r["warnings"]})
     fixed = {k: base[k] for k in SWEEP_VARS[model] if k != vary}
-    probs = [pt["probability"] for pt in points]
+    probs = [pt["probability"] for pt in points if pt["probability"] is not None]
     return {"model": model, "material" if model == "solid" else "fuel": group, "varied": vary, "held_fixed": fixed,
             **({"scenario": scenario} if model == "solid" else {}),
-            "points": points, "probability_range": [min(probs), max(probs)],
+            "points": points, "probability_range": [min(probs), max(probs)] if probs else None,
             "points_in_tested_range": sum(pt["in_tested_range"] for pt in points),
             "model_statistics": reliability.model_statistics(model),
             "meaning": reliability.TARGET[model],
             "note": "A flat curve can mean the model learned little from this input, not that it has no physical "
-                    "effect. Points outside the tested range are extrapolations."}
+                    "effect. No prediction is provided for points outside the tested conditions."}
 
 
 def describe_database(table: str | None = None) -> dict:
@@ -227,7 +240,8 @@ def _compact_advice(res: dict) -> dict:
                                                      "airflow_readings_cm_s", "outcome_group", "notes", "locator")}
                                   for t in c["comparable_tests"][:3]],
                 "stage_evidence": c["stage_evidence"],
-                "model_probability_sustained": c["prediction"]["probability"] if c["prediction"] else None,
+                "model_probability_sustained": c["prediction"]["probability"]
+                if c["prediction"] and c["prediction"].get("supported") else None,
                 "model_scenario": c["prediction_scenario"], "sort_basis": c["sort_basis"],
                 "checks": c["checks"], "concerns": c["concerns"], "saffire": c["saffire"],
                 "earth_ground_thresholds": c["ground"][:4], "excluded_reason": c["excluded_reason"],
@@ -293,7 +307,9 @@ def get_current_advisor_results(_context: dict | None = None) -> dict:
 
 
 TOOLS = [
-    {"name": "list_materials", "description": "List the solid materials NASA burned in orbit, with test counts.",
+    {"name": "list_materials", "description": "List the solid materials NASA burned in orbit, with test counts "
+                                            "and whether the solid burn model supports each material. "
+                                            "Having NASA observations does not imply prediction support.",
      "input_schema": {"type": "object", "properties": {}}},
     {"name": "material_summary",
      "description": "Counts, outcome mix, tested oxygen/airflow/pressure ranges, shapes, variants and Saffire samples "

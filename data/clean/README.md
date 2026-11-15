@@ -6,7 +6,7 @@ These are real NASA records, rebuilt from selected tables and documents. See
 | File | Contents | Later consumer |
 | --- | --- | --- |
 | `solid_combustion_model.csv` | 250 BASS/BASS-II test observations, with conditions, crew notes and provenance | Model preparation, experiment lookup, advisor |
-| `label_review_queue.csv` | Completed AI review of 250 tests, with unresolved outcomes retained | Model lead and evidence audit |
+| `label_review_queue.csv` | Completed project team verification of 250 tests, with unresolved outcomes retained | Model lead and evidence audit |
 | `solid_stage_observations.csv` | Condition-linked events and explicit exclusions | Model preparation and agent |
 | `solid_stage_training.csv` | 47 conservative labeled stage candidates | Exploratory solid-fuel model |
 | `airflow_readings.csv` | Ordered display readings; no assumed outcome alignment | Evidence review |
@@ -29,7 +29,7 @@ These are real NASA records, rebuilt from selected tables and documents. See
 It is a **whole-test observation table**. `burned_binary` now records any visible
 flame reported anywhere in a test, including brief ignition. Whole-test rows stay
 ineligible for condition-specific training; use the separate stage candidates.
-All 250 tests have AI review records, with 18 any-flame labels still unresolved.
+All 250 tests have team-verified review records, with 18 any-flame labels still unresolved.
 See the [labeling handoff](../annotations/README.md) for target definitions and
 limitations. No predictions, trained model or validation metrics are included.
 

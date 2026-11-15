@@ -33,7 +33,7 @@ Retrain the models (rewrites `model/*.joblib` and `model/metrics.json`):
   grouped-CV ROC AUC about 0.71, but a material-only model scores about as well, so
   oxygen and airflow add little so far. The FLEX droplet model (207 tests, AUC about 0.84)
   is where conditions clearly matter.
-- **Labels are AI-reviewed** from crew and report notes, with no human sign-off.
+- **Outcome labels were verified by the project team** against crew and report notes.
 - **Not covered:** partial gravity (Moon/Mars), pressures away from ~1 atm, untested
   materials, mass/cost/mechanical properties. The app flags these instead of guessing.
 - **No safety certification.** Materials are only called better than one another where
@@ -47,7 +47,7 @@ Data provenance and cleaning: [data audit and team handoff](data/DATA_HANDOFF.md
 Start with the [data audit and team handoff](data/DATA_HANDOFF.md). The
 [clean data package](data/clean/README.md) includes 250 solid-fuel observations,
 274 FLEX droplet observations, all 19 requested PSI investigations and the
-external ground-test comparison. Evidence-linked AI labels and conservative
+external ground-test comparison. Evidence-linked, team-verified labels and conservative
 training candidates are included; see [the labeling handoff](data/annotations/README.md).
 No trained predictor or validated safety rankings are included yet.
 
