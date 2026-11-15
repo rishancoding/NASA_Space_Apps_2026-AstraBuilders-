@@ -23,21 +23,19 @@ export default function ModelPage() {
   return (
     <div className="space-y-5">
       <div className="page-heading">
-        <h1 className="text-2xl font-semibold text-gray-900">Model Accuracy</h1>
+        <h1>How well does it predict?</h1>
         <p className="mt-1 max-w-3xl text-sm text-gray-500">
           How well the models match recorded fuel-droplet tests.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <Big label="Extinction: balanced accuracy" value={fmt(exSel.balanced_accuracy)} sub="0.50 = guessing" />
-        <Big label="Extinction: probability error (Brier)" value={fmt(exSel.brier_score)} sub={`${fmt(ex.candidates.majority_baseline.brier_score)} for quoting the average`} />
-        <Big label="Burn time: independent audit R²" value={fmt(btSel.r2)} sub={`typical error ${fmt(btSel.mae_s)} s`} />
-        <Big label="Burn time: audit interval coverage" value={`${Math.round(btSel.interval_coverage * 100)}%`} sub={`nominal target 90% · ${btSel.groups} audit groups`} />
+      <div className="grid gap-5 md:grid-cols-2">
+        <Big label="Flame-out prediction score" value={`${Math.round(exSel.balanced_accuracy * 100)}%`} sub="Balanced accuracy · 50% is guessing" />
+        <Big label="Typical burn-time error" value={`${fmt(btSel.mae_s)} s`} sub="Measured on independent test groups" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card title="Are the extinction percentages honest?" subtitle="Each dot groups ~40 tests: what the model said vs how often the flame really went out. On the diagonal = honest.">
+        <Card title="Predictions vs. recorded outcomes" subtitle="Closer to the diagonal is better.">
           <div className="h-72">
             <ResponsiveContainer>
               <LineChart data={calib} margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
@@ -53,7 +51,7 @@ export default function ModelPage() {
           </div>
         </Card>
 
-        <Card title="Burn time: predicted vs actual" subtitle="Each dot is an independent audit test; none was used to fit, select or calibrate the deployed model.">
+        <Card title="Estimated vs. actual burn time" subtitle="Each dot is an independent test.">
           <div className="h-72">
             <ResponsiveContainer>
               <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
@@ -71,6 +69,11 @@ export default function ModelPage() {
         </Card>
       </div>
 
+      <details className="technical-details"><summary>Model comparisons & technical results</summary><div className="space-y-5">
+      <div className="grid gap-4 md:grid-cols-2">
+        <Big label="Probability error (Brier)" value={fmt(exSel.brier_score)} sub={`${fmt(ex.candidates.majority_baseline.brier_score)} for quoting the average`} />
+        <Big label="Burn-time interval coverage" value={`${Math.round(btSel.interval_coverage * 100)}%`} sub={`nominal target 90% · ${btSel.groups} audit groups · R² ${fmt(btSel.r2)}`} />
+      </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="Extinction models compared" subtitle={`Selected: ${NAMES[ex.selected_model]} · ${ex.selection_rule}`}>
           <Table rows={Object.entries(ex.candidates).map(([k, v]) => [NAMES[k] || k, fmt(v.balanced_accuracy), fmt(v.roc_auc), fmt(v.brier_score)])}
@@ -104,6 +107,7 @@ export default function ModelPage() {
           {data.unsupported_claims.map((c) => <li key={c}>{c}</li>)}
         </ul>
       </Card>
+      </div></details>
     </div>
   );
 }

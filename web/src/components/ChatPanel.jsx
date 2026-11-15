@@ -3,10 +3,8 @@ import { api } from "../api.js";
 import { ErrorBox, Spinner } from "./ui.jsx";
 
 const STARTERS = [
-  "How does oxygen concentration affect flame spread in microgravity?",
-  "Which NASA experiments investigated airflow and solid-fuel flammability?",
-  "What gaps exist in our understanding of fire safety on the Moon?",
-  "Compare how PMMA and Nomex behaved in the BASS tests.",
+  "What happens when oxygen increases?",
+  "Compare PMMA and Nomex.",
 ];
 
 /** Docked research-assistant chat. Sends the whole conversation each time (the API is stateless). */
@@ -44,8 +42,7 @@ export default function ChatPanel({ open, onClose, context }) {
     <aside aria-label="Research assistant" className="assistant-panel fixed inset-y-0 right-0 z-30 flex w-full max-w-[420px] flex-col border-l border-line">
       <div className="flex items-center justify-between border-b border-line px-4 py-3">
         <div>
-          <div className="font-semibold text-gray-900">Research assistant</div>
-          <div className="text-[11px] text-gray-500">Answers from NASA PSI data and the trained models, with citations.</div>
+          <div className="font-medium text-gray-900">Ask the assistant</div>
         </div>
         <button aria-label="Close research assistant" onClick={onClose} className="panel-close">✕</button>
       </div>
@@ -75,8 +72,8 @@ export default function ChatPanel({ open, onClose, context }) {
               )}
               {info?.tool_calls?.length > 0 && (
                 <details className="mt-1 text-[10px] text-gray-500">
-                  <summary className="cursor-pointer">Looked up: {info.tool_calls.map((t) => t.tool).join(", ")}</summary>
-                  <pre className="mt-1 whitespace-pre-wrap">{JSON.stringify(info.tool_calls, null, 1)}</pre>
+                  <summary className="cursor-pointer">Sources checked</summary>
+                  <p className="mt-1">NASA records and model results used for this answer.</p>
                 </details>
               )}
             </div>
@@ -88,7 +85,7 @@ export default function ChatPanel({ open, onClose, context }) {
       </div>
 
       <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex gap-2 border-t border-line p-3">
-        <input aria-label="Message the assistant" value={text} onChange={(e) => setText(e.target.value)} placeholder="Ask about NASA combustion data…"
+        <input aria-label="Message the assistant" value={text} onChange={(e) => setText(e.target.value)} placeholder="What's on your mind?"
           className="flex-1 rounded-md border border-line bg-ink px-3 py-2 text-sm text-gray-900" />
         <button disabled={busy || !text.trim()} className="primary-button">Send</button>
       </form>

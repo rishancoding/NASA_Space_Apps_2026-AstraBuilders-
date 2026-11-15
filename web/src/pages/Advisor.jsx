@@ -22,7 +22,8 @@ export default function Advisor({ options, openExperiment, askChat }) {
     <div className="space-y-5">
       <div className="page-heading flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Material Advisor</h1>
+          <h1>Compare materials.</h1>
+          <p>See how they behaved in NASA's fire tests.</p>
         </div>
         <Toggle value={form.mode} onChange={set("mode")}
           options={[{ value: "discover", label: "Find materials" }, { value: "analyze", label: "Analyze a material" }]} />
@@ -96,29 +97,29 @@ function CandidateCard({ c, openExperiment }) {
         {c.is_selected && <span className="rounded bg-flame/20 px-1.5 text-[10px] text-flame">your material</span>}</span>}
       right={<CoverageBadge coverage={c.evidence.coverage} />}>
       <div className="candidate-stats">
-        <Stat n={c.evidence.close_tests} label="close tests" />
         <Stat n={c.evidence.nearby_tests} label="nearby tests" />
         <Stat n={c.evidence.total_tests} label="tests total" />
       </div>
 
       <div className="candidate-body mt-4 space-y-3 text-xs">
         <div>
-          <div className="mb-2 flex flex-wrap items-center gap-2 text-gray-500">Recorded outcomes <TrustBadge trust="ai_label" /></div>
+          <div className="mb-2 text-gray-500">Recorded outcomes</div>
           {outcomes.length ? (
             <div className="flex flex-wrap gap-1.5">
-              {outcomes.map(([k, n]) => <span key={k} className="candidate-outcome">{k}: {n}</span>)}
+              {outcomes.slice(0, 2).map(([k, n]) => <span key={k} className="candidate-outcome">{n} {k.toLowerCase().replace('brief flame, not sustained', 'brief flames').replace('burned until fuel ran out', 'used up fuel').replace('did not ignite', 'did not light').replace('unclear from the notes', 'unclear')}</span>)}
+              {outcomes.length > 2 && <span className="candidate-outcome">+{outcomes.length - 2} outcomes</span>}
             </div>
           ) : <div className="text-gray-500">No NASA test near these conditions.</div>}
           {outcomes.length > 0 && <div className="candidate-progress" aria-hidden="true">{outcomes.map(([k, n]) => <span key={k} style={{ flex: n }} />)}</div>}
         </div>
         {ev.events > 0 && (
           <div className="text-gray-700">
-            <div className="mb-1 text-gray-500">{ev.protocol === "ignition_trial" ? "Ignition trials" : "Already-burning trials"} <span className="text-[10px]">· AI-read</span></div>
-            <b className="text-gray-900">{ev.sustained_flame}</b> sustained, <b className="text-gray-900">{ev.not_sustained}</b> not sustained
+            <div className="mb-1 text-gray-500">{ev.protocol === "ignition_trial" ? "Starting a flame" : "Already-burning trials"}</div>
+            <b className="text-gray-900">{ev.sustained_flame}</b> kept burning · <b className="text-gray-900">{ev.not_sustained}</b> did not
           </div>
         )}
-        {ev.events === 0 && <p className="text-gray-500">No reviewed {ev.protocol === "ignition_trial" ? "ignition" : "already-burning"} events match these conditions and filters.</p>}
-        <details className="border-t border-line pt-3"><summary>Test details & limitations</summary><div className="space-y-3 leading-relaxed text-gray-500">
+        <details className="border-t border-line pt-3"><summary>Test details</summary><div className="space-y-3 leading-relaxed text-gray-500">
+        <div>{outcomes.map(([k,n]) => <span key={k} className="mr-3">{k}: {n}</span>)}</div>
         <p>Whole-test outcomes may cover multiple airflow stages. Condition matching uses initial oxygen; oxygen at each event is unknown and observation durations vary.</p>
         {ev.events > 0 && <div><div className="mb-2 font-medium text-gray-700">Supporting events · {ev.events}</div><ul className="space-y-2">{ev.evidence.map((e) => <li key={e.stage_id} className="rounded-md bg-ink p-3"><p className="italic">“{e.quote}”</p><button className="mt-1 text-indigo-600 hover:underline" onClick={() => openExperiment(e.experiment_id)}>{e.geometry} · initial {fmt(e.oxygen_initial_pct)}% O₂ · {fmt(e.airflow_cm_s)} cm/s ↗</button></li>)}</ul></div>}
         {c.earth_reference?.earth_tests?.length > 0 && (
@@ -137,8 +138,8 @@ function CandidateCard({ c, openExperiment }) {
         </div></details>
       </div>
 
-      <div className="mt-3 border-t border-line pt-2">
-        <div className="mb-1 text-xs text-gray-500">Closest NASA tests</div>
+      <details className="mt-3 border-t border-line pt-3">
+        <summary>Closest NASA tests</summary>
         <ul className="space-y-1">
           {c.top_tests.map((t) => (
             <li key={t.experiment_id}>
@@ -149,7 +150,7 @@ function CandidateCard({ c, openExperiment }) {
             </li>
           ))}
         </ul>
-      </div>
+      </details>
     </Card>
   );
 }

@@ -32,9 +32,8 @@ export default function Predictor({ options, openExperiment, askChat }) {
   return (
     <div className="space-y-5">
       <div className="page-heading flex flex-wrap items-end justify-between gap-3">
-        <div><h1 className="text-2xl font-semibold tracking-tight text-gray-900">Atmosphere Predictor</h1>
-          <p className="mt-2 text-sm text-gray-500">Explore fuel droplets in microgravity.</p></div>
-        <span className="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] text-indigo-700">Model estimates</span>
+        <div><h1>Change the air.</h1>
+          <p>Explore how a fuel droplet's flame might respond.</p></div>
       </div>
       <div className="grid items-start gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
         <Card title="Your conditions" className="space-y-5">
@@ -63,9 +62,9 @@ export default function Predictor({ options, openExperiment, askChat }) {
             <span className="text-gray-500">Same fuel · same gas family</span>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <ResultCard title="Recorded Extinction probability" r={ext.data} error={ext.error} loading={ext.loading || pending} valueKey="probability_extinction"
+            <ResultCard title="Estimated chance the flame goes out" r={ext.data} error={ext.error} loading={ext.loading || pending} valueKey="probability_extinction"
               extra={ext.data?.compared_with_typical && <div className="text-xs text-gray-700">{ext.data.compared_with_typical.label}</div>} />
-            <ResultCard title="Estimated recorded burn time" r={burn.data} error={burn.error} loading={burn.loading || pending} valueKey="burn_time_s" />
+            <ResultCard title="Estimated burn time" r={burn.data} error={burn.error} loading={burn.loading || pending} valueKey="burn_time_s" />
           </div>
           {(ext.data?.warnings || []).map((w, i) => <Warning key={i}>{w.message}</Warning>)}
           <Card title="Change one condition" subtitle="Model estimates and recorded NASA tests."
@@ -80,11 +79,11 @@ export default function Predictor({ options, openExperiment, askChat }) {
             {!pending && curve.data && <WhatIfChart d={curve.data} current={vals[vary]} />}
             <details className="mt-3 border-t border-line pt-3"><summary>About this chart</summary><p className="text-xs leading-relaxed text-gray-500">The line is an estimate; dots are screened NASA observations with other inputs that may differ. Gaps indicate unsupported combinations.{model === "extinction" && " Recorded outcomes appear at 100% for extinction and 0% for completion."}</p></details>
           </Card>
-          <div className="grid gap-4 xl:grid-cols-2">
+          <details className="technical-details"><summary>Supporting tests & input effects</summary><div className="grid gap-4 xl:grid-cols-2">
             {!pending && ext.data?.available && <Factors f={ext.data.factors} title="How inputs affect the estimate" />}
             {!pending && ext.data && <Nearest n={ext.data.nearest_tests} openExperiment={openExperiment} />}
-          </div>
-          <button disabled={pending || ext.loading} onClick={() => askChat({ page: "atmosphere_predictor", inputs: body, extinction: ext.data, burn_time: burn.data })} className="primary-button">Explain these results with the assistant ↗</button>
+          </div></details>
+          <button disabled={pending || ext.loading} onClick={() => askChat({ page: "atmosphere_predictor", inputs: body, extinction: ext.data, burn_time: burn.data })} className="secondary-button">Explain these results ↗</button>
         </div>
       </div>
     </div>

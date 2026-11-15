@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api } from "../api.js";
+import investigationDescriptions from "../investigationDescriptions.json";
 import { Card, ErrorBox, Select, SourceLink, Spinner, Toggle, TrustBadge, Value, useAsync, useDebounced } from "../components/ui.jsx";
 
 export default function Explorer({ options, openExperiment }) {
@@ -9,8 +10,8 @@ export default function Explorer({ options, openExperiment }) {
     <div className="space-y-5">
       <div className="page-heading flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">NASA Data Explorer</h1>
-          <p className="mt-2 text-sm text-gray-500">Experiments, observations, and source reports.</p>
+          <h1>Explore the experiments.</h1>
+          <p>The observations behind every answer.</p>
         </div>
         <Toggle value={tab} onChange={setTab} options={[
           { value: "investigations", label: "Investigations" }, { value: "tests", label: "Tests" }, { value: "search", label: "Search reports" }]} />
@@ -35,27 +36,31 @@ function Investigations({ onTests }) {
         options={Object.entries(PHASES).map(([value, label]) => ({ value, label }))} /></div>
       <ErrorBox error={list.error} />
       {list.loading && <Spinner />}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="investigation-grid grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {list.data?.map((i) => (
-          <Card key={i.source_record} title={`${i.name} · ${i.source_record}`} subtitle={i.title}>
-            <div className="mb-2 text-[11px] uppercase tracking-wide text-flame">{PHASES[i.fuel_phase] || i.fuel_phase}{i.role === "earth_comparison" ? " · Earth gravity" : ""}</div>
-            <p className="line-clamp-4 text-xs text-gray-700">{i.summary}</p>
+          <Card key={i.source_record} className="investigation-card" title={i.name} right={<span className="record-id">{i.source_record}</span>}>
+            <div className="investigation-kind">{PHASES[i.fuel_phase] || i.fuel_phase}{i.role === "earth_comparison" ? " · Earth gravity" : ""}</div>
+            <p className="text-sm leading-relaxed text-gray-500">{investigationDescriptions[i.source_record] || i.summary}</p>
             <div className="mt-3 flex flex-wrap gap-x-3 text-[11px] text-gray-500">
               {i.counts.solid_tests > 0 && <span>{i.counts.solid_tests} solid tests</span>}
               {i.counts.flex_tests > 0 && <span>{i.counts.flex_tests} droplet tests</span>}
-              <span>{i.counts.tables} tables</span><span>{i.counts.evidence_passages} passages</span><span>{i.counts.publications} papers</span>
+              <span>{i.counts.publications} publications</span>
             </div>
             <div className="mt-3 flex gap-3 text-xs">
-              <button className="text-indigo-600 hover:underline" onClick={() => setOpen(open === i.source_record ? null : i.source_record)}>
+              <button aria-expanded={open === i.source_record} className="text-indigo-600 hover:underline" onClick={() => setOpen(open === i.source_record ? null : i.source_record)}>
                 {open === i.source_record ? "Hide details" : "Details"}</button>
               {(i.counts.solid_tests > 0 || i.counts.flex_tests > 0) && <button className="text-indigo-600 hover:underline" onClick={() => onTests(i.source_record)}>View tests</button>}
-              <SourceLink url={i.url} />
+              <a href={i.url} target="_blank" rel="noreferrer" className="text-gray-500 hover:underline">NASA record ↗</a>
             </div>
+            {open === i.source_record && detail.loading && <Spinner />}
+            {open === i.source_record && <ErrorBox error={detail.error} />}
             {open === i.source_record && detail.data && (
               <div className="mt-3 space-y-2 border-t border-line pt-3 text-xs text-gray-700">
+                <p>{i.summary}</p>
                 <div><b className="text-gray-800">Objective.</b> {detail.data.objective}</div>
                 <div><b className="text-gray-800">Approach.</b> {detail.data.approach}</div>
                 {detail.data.measured_variables && <div><b className="text-gray-800">Measured.</b> {detail.data.measured_variables}</div>}
+                {detail.data.publications?.length > 0 && <details><summary>Publications ({detail.data.publications.length})</summary><ul className="space-y-3">{detail.data.publications.map((p,index) => <li key={p.doi || index}>{p.url ? <a className="text-indigo-600 hover:underline" href={p.url} target="_blank" rel="noreferrer">{p.title} ↗</a> : p.title}</li>)}</ul></details>}
               </div>
             )}
           </Card>
@@ -126,7 +131,7 @@ function Tests({ options, record, setRecord, openExperiment }) {
         {res.loading && <div className="p-3"><Spinner /></div>}
       </div>
       <div className="flex items-center justify-between text-xs text-gray-500">
-        <span>{res.data?.total ?? 0} tests · click a row for details · tick two to compare</span>
+        <span>{res.data?.total ?? 0} tests · select two to compare</span>
         <div className="flex items-center gap-2">
           <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="rounded border border-line px-2 py-1 disabled:opacity-40">Prev</button>
           <span>Page {page} of {pages}</span>
@@ -177,7 +182,7 @@ function Search() {
       {res.data?.results.length === 0 && <div className="text-sm text-gray-500">No passages found.</div>}
       <div className="space-y-3">
         {res.data?.results.map((r) => (
-          <Card key={r.chunk_id} title={`${r.investigation} · ${r.source_record}`} subtitle={`${r.source_file} · ${r.locator}`}
+          <Card key={r.chunk_id} title={`${r.investigation} · ${r.source_record}`}
             right={<SourceLink url={r.url} />}>
             {r.caution && <div className="mb-2 text-xs text-amber-800">⚠ {r.caution}</div>}
             <p className="text-sm text-gray-700">{r.snippet}</p>
