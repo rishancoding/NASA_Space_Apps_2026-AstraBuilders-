@@ -20,9 +20,9 @@ cp -n .env.example .env
 
 Get the DeepSeek key from the project owner through a private channel, such as a
 shared password-manager vault. Edit `.env` locally and fill in `DEEPSEEK_API_KEY`.
-Chat also requires `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and
-`CHAT_LIMIT_SECRET`. Use a separate persistent Redis database for local development
-so tests do not spend the public site's quota. See [deployment and usage limits](VERCEL_DEPLOYMENT.md).
+Public chat uses Vercel's native firewall rather than Redis or Upstash. The local
+server's chat remains off; use the protected production site to test generated answers.
+See [deployment and usage limits](VERCEL_DEPLOYMENT.md).
 DeepSeek is selected automatically when its key is present. This is a one-time step on each computer. No real
 credential is included in the repository or template.
 

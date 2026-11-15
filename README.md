@@ -39,7 +39,7 @@ npm run dev -- --host 127.0.0.1
 
 On Windows, use `python` instead of `python3` and `.venv/Scripts/python` instead of `.venv/bin/python`.
 
-For optional AI chat, copy `.env.example` to `.env` without overwriting an existing file, add a provider key and the shared Redis limiter credentials privately, and restart the API. Chat fails closed without the limiter. See [collaborator setup](docs/COLLABORATOR_SETUP.md) and [Vercel deployment and usage limits](docs/VERCEL_DEPLOYMENT.md). Never place a key in `web/` or a `VITE_` variable. A configured key is not proof that a provider call succeeds.
+For optional AI chat, copy `.env.example` to `.env` without overwriting an existing file, store a provider key privately on Vercel and enable the native firewall protection. Public chat fails closed until its firewall flag is configured. Local data tools work without a key. See [collaborator setup](docs/COLLABORATOR_SETUP.md) and [Vercel deployment and usage limits](docs/VERCEL_DEPLOYMENT.md). Never place a key in `web/` or a `VITE_` variable. A configured key is not proof that a provider call succeeds.
 
 For a frontend production build: `cd web && npm ci && npm run build`. Set `VITE_API_URL` to the public backend address before building when deploying to separate hosts. This repository's local preview is not a public deployment.
 

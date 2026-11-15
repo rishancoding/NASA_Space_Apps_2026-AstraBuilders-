@@ -1,7 +1,6 @@
-"""Public chat must never fall through to a paid provider without a reservation."""
+"""Public chat must never fall through to a paid provider without configured deployment protection."""
 from unittest.mock import Mock
 
-import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -14,43 +13,31 @@ PAYLOAD = {'messages': [{'role': 'user', 'content': 'Show BASS evidence'}]}
 
 @pytest.fixture
 def protected(monkeypatch):
-    monkeypatch.setenv('UPSTASH_REDIS_REST_URL', 'https://redis.example')
-    monkeypatch.setenv('UPSTASH_REDIS_REST_TOKEN', 'private-redis-token')
-    monkeypatch.setenv('CHAT_LIMIT_SECRET', 'private-hmac-secret')
     monkeypatch.setenv('VERCEL', '1')
+    monkeypatch.setenv('CHAT_FIREWALL_PROTECTED', '1')
     provider = Mock(return_value={'answer': 'NASA evidence'})
     monkeypatch.setattr('api.main.chat', provider)
     return provider
 
 
-@pytest.mark.parametrize('result,status,paid_calls', [(1, 200, 1), (0, 429, 0), (None, 503, 0)])
-def test_shared_reservation_gates_paid_calls(monkeypatch, protected, result, status, paid_calls):
-    post = Mock(return_value=Mock(json=lambda: {'result': result}))
-    monkeypatch.setattr(chat_limits.httpx, 'post', post)
-    response = client.post('/api/chat', json=PAYLOAD, headers={'x-vercel-forwarded-for': '192.0.2.1'})
-    assert response.status_code == status
-    assert protected.call_count == paid_calls
-    command = post.call_args.kwargs['json']
-    assert command[0] == 'EVAL' and command[2] == '3'
-    assert '192.0.2.1' not in str(command)
-    assert 'private-' not in response.text
+def test_protected_deployment_can_call_provider(protected):
+    assert client.post('/api/chat', json=PAYLOAD).status_code == 200
+    protected.assert_called_once()
 
 
-def test_store_outage_and_missing_config_fail_closed(monkeypatch, protected):
-    monkeypatch.setattr(chat_limits.httpx, 'post', Mock(side_effect=httpx.ConnectError('private diagnostics')))
-    assert client.post('/api/chat', json=PAYLOAD).status_code == 503
-    monkeypatch.delenv('CHAT_LIMIT_SECRET')
-    assert client.post('/api/chat', json=PAYLOAD).status_code == 503
+@pytest.mark.parametrize('platform,flag', [('1', ''), ('', '1'), ('', '')])
+def test_missing_protection_fails_closed_even_with_spoofed_headers(monkeypatch, protected, platform, flag):
+    monkeypatch.setenv('VERCEL', platform)
+    monkeypatch.setenv('CHAT_FIREWALL_PROTECTED', flag)
+    response = client.post('/api/chat', json=PAYLOAD, headers={'CHAT_FIREWALL_PROTECTED': '1', 'VERCEL': '1'})
+    assert response.status_code == 503
     protected.assert_not_called()
 
 
-def test_oversized_and_invalid_requests_never_reserve_or_call_provider(monkeypatch, protected):
-    post = Mock()
-    monkeypatch.setattr(chat_limits.httpx, 'post', post)
+def test_oversized_and_invalid_requests_never_call_provider(protected):
     assert client.post('/api/chat', json={'messages': [{'role': 'user', 'content': 'x' * 4001}]}).status_code == 422
     assert client.post('/api/chat', json={'messages': []}).status_code == 422
     assert client.post('/api/chat', content=(b'x' * 13000 for _ in range(2))).status_code == 413
-    post.assert_not_called()
     protected.assert_not_called()
 
 
