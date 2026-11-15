@@ -195,3 +195,155 @@ export function SourceLink({ url, children }) {
   if (!url) return children || null;
   return <a href={url} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">{children || "NASA source ↗"}</a>;
 }
+
+// ---------------------------------------------------------------- Streamlit-style building blocks
+
+/** Eyebrow pill, serif title and one-line caption (Streamlit's ui.init_page). */
+export function PageHeader({ eyebrow, title, caption, children }) {
+  return (
+    <div className="page-heading">
+      {eyebrow && <span className="page-eyebrow">{eyebrow}</span>}
+      <h1>{title}</h1>
+      {caption && <p className="page-caption">{caption}</p>}
+      {children}
+    </div>
+  );
+}
+
+/** Small uppercase section label (ui.label). */
+export const Label = ({ children, className = "" }) => <div className={`fs-label ${className}`}>{children}</div>;
+
+/** One short plain-language line under a chart or control (ui.note). */
+export const Note = ({ children, className = "" }) => <p className={`fs-note ${className}`}>{children}</p>;
+
+export const Caption = ({ children, className = "" }) => <p className={`fs-caption ${className}`}>{children}</p>;
+
+/** st.info / st.warning / st.error. */
+export function Callout({ kind = "info", children }) {
+  return <div role={kind === "error" ? "alert" : undefined} className={`callout callout-${kind}`}>{children}</div>;
+}
+
+/** st.metric: label, big value, optional delta (inverse = lower is better). */
+export function Metric({ label, value, delta, inverse = false, help }) {
+  const n = typeof delta === "string" ? parseFloat(delta) : delta;
+  const good = n == null || Number.isNaN(n) ? null : inverse ? n < 0 : n > 0;
+  return (
+    <div className="metric" title={help}>
+      <div className="metric-label">{label}{help && <span className="metric-help" aria-hidden="true">?</span>}</div>
+      <div className="metric-value">{value}</div>
+      {delta != null && <div className={`metric-delta ${good == null ? "" : good ? "is-good" : "is-bad"}`}>{n < 0 ? "▼" : "▲"} {delta}</div>}
+    </div>
+  );
+}
+
+/** st.badge with Streamlit colour names. */
+export const Badge = ({ color = "gray", children }) => <span className={`fs-badge fs-badge-${color}`}>{children}</span>;
+
+/** Radio list (st.radio). options: [{value, label}] */
+export function Radio({ label, value, onChange, options }) {
+  const name = useId();
+  return (
+    <fieldset className="fs-radio">
+      <legend>{label}</legend>
+      {options.map((o) => (
+        <label key={o.value}><input type="radio" name={name} checked={value === o.value} onChange={() => onChange(o.value)} /> <span>{o.label}</span></label>
+      ))}
+    </fieldset>
+  );
+}
+
+/** Chip multiselect (st.multiselect). Empty selection means "all". */
+export function MultiSelect({ label, options, value, onChange }) {
+  const toggle = (o) => onChange(value.includes(o) ? value.filter((x) => x !== o) : [...value, o]);
+  return (
+    <div className="fs-multiselect">
+      <div className="fs-field-label">{label}{value.length > 0 && <button className="fs-clear" onClick={() => onChange([])}>clear</button>}</div>
+      <div className="chips">
+        {options.map((o) => <button key={o} type="button" aria-pressed={value.includes(o)} onClick={() => toggle(o)}>{o}</button>)}
+      </div>
+    </div>
+  );
+}
+
+export function TextInput({ label, value, onChange, placeholder, type = "text", min, max, step }) {
+  const id = useId();
+  return (
+    <div className="block text-xs">
+      <label htmlFor={id} className="text-gray-700">{label}</label>
+      <input id={id} type={type} value={value ?? ""} placeholder={placeholder} min={min} max={max} step={step}
+        onChange={(e) => onChange(type === "number" ? (e.target.value === "" ? 0 : Number(e.target.value)) : e.target.value)}
+        className="mt-1 w-full rounded-md border border-line px-2 py-1.5 text-sm text-gray-900" />
+    </div>
+  );
+}
+
+/** Scrollable table (st.dataframe). columns: [{key, label, link?, format?}] */
+export function DataTable({ columns, rows, maxHeight = 420 }) {
+  const show = (c, r) => {
+    const v = r[c.key];
+    if (c.format) return c.format(v, r);
+    if (v == null || v === "") return <span className="text-gray-400">—</span>;
+    if (c.link) return <a href={v} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">{c.linkText || "open ↗"}</a>;
+    if (typeof v === "number") return fmt(v);
+    if (typeof v === "boolean") return v ? "Yes" : "No";
+    return String(v);
+  };
+  return (
+    <div role="region" aria-label="Data table" tabIndex={0} className="scroll-region data-table" style={{ maxHeight }}>
+      <table>
+        <thead><tr>{columns.map((c) => <th key={c.key}>{c.label ?? c.key}</th>)}</tr></thead>
+        <tbody>{rows.map((r, i) => <tr key={i}>{columns.map((c) => <td key={c.key} title={typeof r[c.key] === "string" && !c.link ? r[c.key] : undefined}>{show(c, r)}</td>)}</tr>)}</tbody>
+      </table>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- markdown (no HTML injection: builds React elements)
+
+function inline(text, keyBase = "") {
+  const out = [];
+  const re = /(\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)\s]+)\)|`([^`]+)`|(?<![\w*])[_*]([^_*\n]+)[_*](?![\w*]))/g;
+  let last = 0, m, i = 0;
+  while ((m = re.exec(text))) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    const k = `${keyBase}-${i++}`;
+    if (m[2] != null) out.push(<strong key={k}>{inline(m[2], k)}</strong>);
+    else if (m[3] != null) out.push(/^https?:\/\//.test(m[4]) ? <a key={k} href={m[4]} target="_blank" rel="noreferrer">{m[3]}</a> : m[3]);
+    else if (m[5] != null) out.push(<code key={k}>{m[5]}</code>);
+    else out.push(<em key={k}>{m[6]}</em>);
+    last = re.lastIndex;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
+export function Markdown({ text, className = "" }) {
+  const blocks = [];
+  const lines = String(text || "").replace(/\r/g, "").split("\n");
+  let para = [], list = null, quote = [];
+  const flushPara = () => { if (para.length) blocks.push(<p key={blocks.length}>{inline(para.join(" "), blocks.length)}</p>); para = []; };
+  const flushList = () => { if (list) { const T = list.ordered ? "ol" : "ul"; blocks.push(<T key={blocks.length}>{list.items.map((it, j) => <li key={j}>{inline(it, `${blocks.length}-${j}`)}</li>)}</T>); } list = null; };
+  const flushQuote = () => { if (quote.length) blocks.push(<blockquote key={blocks.length}>{inline(quote.join(" "), blocks.length)}</blockquote>); quote = []; };
+  const flush = () => { flushPara(); flushList(); flushQuote(); };
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+    const h = line.match(/^(#{1,6})\s+(.*)$/);
+    const li = line.match(/^\s*[-*•]\s+(.*)$/);
+    const ol = line.match(/^\s*\d+[.)]\s+(.*)$/);
+    const q = line.match(/^>\s?(.*)$/);
+    if (!line.trim()) { flush(); continue; }
+    if (/^\s*(-{3,}|\*{3,})\s*$/.test(line)) { flush(); blocks.push(<hr key={blocks.length} />); continue; }
+    if (h) { flush(); blocks.push(<h4 key={blocks.length}>{inline(h[2], blocks.length)}</h4>); continue; }
+    if (li || ol) {
+      flushPara(); flushQuote();
+      const ordered = !!ol && !li;
+      if (!list || list.ordered !== ordered) { flushList(); list = { ordered, items: [] }; }
+      list.items.push((li || ol)[1]); continue;
+    }
+    if (q) { flushPara(); flushList(); quote.push(q[1]); continue; }
+    if (list && /^\s{2,}/.test(raw)) { list.items[list.items.length - 1] += " " + line.trim(); continue; }
+    flushList(); flushQuote(); para.push(line.trim());
+  }
+  flush();
+  return <div className={`markdown ${className}`}>{blocks}</div>;
+}

@@ -23,6 +23,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from . import core
+from .firesafe_api import router as firesafe_router
 from .agent import ChatUnavailable, chat, model_name, provider
 
 def _warm_up():
@@ -123,6 +124,9 @@ class ChatInput(BaseModel):
 
 
 # ------------------------------------------------------------------ routes
+
+app.include_router(firesafe_router)  # /api/fs/...: the Streamlit pages' backend, used by the React UI
+
 
 @app.get("/", include_in_schema=False)
 def root():

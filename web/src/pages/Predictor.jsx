@@ -1,184 +1,212 @@
-import { useMemo, useState } from "react";
-import { Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceArea, ReferenceLine, ResponsiveContainer, Scatter, Tooltip, XAxis, YAxis } from "recharts";
-import { api } from "../api.js";
-import { Card, CoverageBadge, ErrorBox, Select, Slider, Spinner, Toggle, Value, Warning, fmt, useAsync, useDebounced } from "../components/ui.jsx";
+// Combustion Predictor: estimates only inside what NASA tested, plus a short "How reliable" tab.
+import { useState } from "react";
+import { fs } from "../api.js";
+import { EstimateCurve } from "../components/charts.jsx";
+import { Callout, Caption, Card, ErrorBox, Label, Metric, Note, PageHeader, Radio, Select, Slider, Spinner, Toggle, fmt,
+  useAsync, useDebounced } from "../components/ui.jsx";
 
-function initialScenario(flex, fuel, family = "Oxygen + nitrogen") {
-  return flex.scenarios.find((s) => s.inputs.fuel === fuel && s.gas_family === family)
-    || flex.scenarios.find((s) => s.inputs.fuel === fuel);
+const EXPERIMENT = { "PSI-25": "BASS-II", "PSI-26": "BASS", "PSI-69": "FLEX" };
+const SCENARIO = { ignition_trial: "Freshly lit", ongoing_burn_trial: "Already burning" };
+const MIX = { air: "Oxygen + nitrogen", co2: "With carbon dioxide (CO₂)", helium: "With helium" };
+const pct = (p) => `${Math.round(p * 100)}%`;
+const tenths = (p) => (p * 10).toFixed(1).replace(/\.0$/, "");
+const snap = (x) => Math.round(x * 1e6) / 1e6; // drop float noise like 14.000000000000002
+const lo = (r, d = 1) => Math.ceil(snap(r[0] * 10 ** d)) / 10 ** d;
+const hi = (r, d = 1) => Math.floor(snap(r[1] * 10 ** d)) / 10 ** d;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const mid = (r, d = 1) => Math.round(((r[0] + r[1]) / 2) * 10 ** d) / 10 ** d;
+
+function diff(mine, theirs, unit) {
+  const gap = theirs - mine;
+  return Math.abs(gap) < 0.05 ? "the same" : `${Math.abs(gap).toFixed(1)} ${unit} ${gap > 0 ? "higher" : "lower"}`;
 }
 
-export default function Predictor({ options, openExperiment, askChat }) {
-  const flex = options.flex;
-  const first = initialScenario(flex, flex.fuels[0]);
-  const [anchor, setAnchor] = useState(first);
-  const [vals, setVals] = useState(first.inputs);
-  const [vary, setVary] = useState("oxygen_pct");
-  const [model, setModel] = useState("extinction");
-  const rawKey = JSON.stringify(vals);
-  const body = useDebounced(vals, 180);
-  const key = JSON.stringify(body);
-  const pending = rawKey !== key;
-  const controls = useAsync(() => api.predictionControls(vals), [rawKey]);
-  const ext = useAsync(() => api.predictExtinction(body), [key]);
-  const burn = useAsync(() => api.predictBurnTime(body), [key]);
-  const curve = useAsync(() => api.whatIf({ ...body, model, vary, points: 40 }), [key, model, vary]);
-  const families = [...new Set(flex.scenarios.filter((s) => s.inputs.fuel === vals.fuel).map((s) => s.gas_family))];
-  const scenarios = flex.scenarios.filter((s) => s.inputs.fuel === vals.fuel && s.gas_family === anchor.gas_family);
-  const choose = (s) => { setAnchor(s); setVals({ ...s.inputs }); };
-  const nitrogen = 1 - vals.oxygen_pct / 100 - vals.co2_fraction - vals.helium_fraction;
-  const support = controls.data?.support;
-
+export default function Predictor({ fsOptions }) {
+  const [tab, setTab] = useState("solid");
   return (
     <div className="space-y-5">
-      <div className="page-heading flex flex-wrap items-end justify-between gap-3">
-        <div><h1>Change the air.</h1>
-          <p>Explore how a fuel droplet's flame might respond.</p></div>
-      </div>
-      <div className="grid items-start gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <Card title="Your conditions" className="space-y-5">
-          <Toggle value={vals.fuel} onChange={(fuel) => choose(initialScenario(flex, fuel))} options={flex.fuels.map((f) => ({ value: f, label: f }))} />
-          <Select label="Gas mixture" value={anchor.gas_family} onChange={(family) => choose(initialScenario(flex, vals.fuel, family))} options={families} />
-          <Select label="Starting NASA test" value={anchor.experiment_id} onChange={(id) => choose(scenarios.find((s) => s.experiment_id === id))}
-            options={scenarios.map((s) => ({ value: s.experiment_id, label: `Test ${s.test_id} · ${fmt(s.inputs.oxygen_pct)}% O₂ · ${fmt(s.inputs.pressure_kpa)} kPa` }))} />
-          <div className="border-t border-line pt-4">
-            <div className="mb-3 flex items-center justify-between"><span className="eyebrow">Fine-tune nearby</span><button className="text-xs text-indigo-700 hover:underline" onClick={() => setVals({ ...anchor.inputs })}>Reset to test</button></div>
-            <div className="space-y-4" aria-busy={controls.loading}>
-              {flex.fields.filter((f) => (f.unit !== "mole fraction" || vals[f.name] > 0) && (controls.loading || (controls.data?.fields.find((c) => c.name === f.name)?.values || []).length > 1)).map((f) => <SupportedControl key={f.name} field={f} value={vals[f.name]} settings={controls.data?.fields.find((c) => c.name === f.name)?.values || []}
-                disabled={controls.loading || pending} onChange={(v) => setVals((s) => ({ ...s, [f.name]: v }))} />)}
-            </div>
-          </div>
-          <ErrorBox error={controls.error} />
-          <details className="border-t border-line pt-3"><summary>Mixture & fixed settings</summary><div className="space-y-3 text-xs text-gray-500">
-            <div className="flex flex-wrap justify-between gap-2 font-mono text-indigo-700"><span>N₂ {fmt(nitrogen * 100)}%</span><span>CO₂ {fmt(vals.co2_fraction * 100)}%</span><span>He {fmt(vals.helium_fraction * 100)}%</span></div>
-            {!controls.loading && flex.fields.filter((f) => (f.unit !== "mole fraction" || vals[f.name] > 0) && (controls.data?.fields.find((c) => c.name === f.name)?.values || []).length <= 1).map((f) => <div key={f.name} className="flex justify-between gap-2"><span>{f.label.replace(" fraction", "")}</span><span>{fmt(f.unit === "mole fraction" ? vals[f.name] * 100 : vals[f.name])} {f.unit === "mole fraction" ? "%" : f.unit}</span></div>)}
-            <p>Only settings with at least three nearby screened sample groups are selectable. Nearby tests do not guarantee accuracy.</p>
-          </div></details>
-          <button className="primary-button w-full" onClick={() => openExperiment(anchor.experiment_id)}>Inspect starting NASA test ↗</button>
-        </Card>
-        <div className="min-w-0 space-y-4">
-          <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-panel/60 px-4 py-3 text-xs">
-            <span className="flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${support?.supported ? "bg-indigo-500" : "bg-amber-300"}`} />{controls.loading ? "Checking nearby evidence…" : support?.supported ? `${support.nearby_groups} nearby NASA sample groups` : "Coverage check unavailable"}</span>
-            <span className="text-gray-500">Same fuel · same gas family</span>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <ResultCard title="Estimated chance the flame goes out" r={ext.data} error={ext.error} loading={ext.loading || pending} valueKey="probability_extinction"
-              extra={ext.data?.compared_with_typical && <div className="text-xs text-gray-700">{ext.data.compared_with_typical.label}</div>} />
-            <ResultCard title="Estimated burn time" r={burn.data} error={burn.error} loading={burn.loading || pending} valueKey="burn_time_s" />
-          </div>
-          {(ext.data?.warnings || []).map((w, i) => <Warning key={i}>{w.message}</Warning>)}
-          <Card title="Change one condition" subtitle="Model estimates and recorded NASA tests."
-            right={<div className="flex flex-wrap gap-2">
-              <Toggle value={model} onChange={setModel} options={[{ value: "extinction", label: "Extinction" }, { value: "burn_time", label: "Burn time" }]} />
-              <select aria-label="Condition to vary" value={vary} onChange={(e) => setVary(e.target.value)} className="rounded-md border border-line bg-ink px-2 text-sm text-gray-900">
-                {flex.fields.map((f) => <option key={f.name} value={f.name}>{f.label}</option>)}
-              </select>
-            </div>}>
-            {(curve.loading || pending) && <Spinner label="Checking supported curve…" />}
-            <ErrorBox error={curve.error} />
-            {!pending && curve.data && <WhatIfChart d={curve.data} current={vals[vary]} />}
-            <details className="mt-3 border-t border-line pt-3"><summary>About this chart</summary><p className="text-xs leading-relaxed text-gray-500">The line is an estimate; dots are screened NASA observations with other inputs that may differ. Gaps indicate unsupported combinations.{model === "extinction" && " Recorded outcomes appear at 100% for extinction and 0% for completion."}</p></details>
+      <PageHeader eyebrow="Machine-learning estimate" title="Combustion Predictor"
+        caption="Will a flame keep burning in space? Models trained on NASA's station tests answer, only for conditions NASA tested.">
+        <Toggle value={tab} onChange={setTab} options={[{ value: "solid", label: "Solid materials" }, { value: "flex", label: "Fuel droplets" }, { value: "trust", label: "How reliable?" }]} />
+      </PageHeader>
+      {tab === "solid" && <Solid o={fsOptions} />}
+      {tab === "flex" && <Droplet o={fsOptions} />}
+      {tab === "trust" && <Trust r={fsOptions.reliability} />}
+    </div>
+  );
+}
+
+function Score({ r }) {
+  return <Note>Right on {tenths(r.accuracy)} of 10 NASA tests it never saw (always guessing the usual result: {tenths(r.baseline_accuracy)} of 10).</Note>;
+}
+
+function Solid({ o }) {
+  const sm = o.solid;
+  const start = sm.materials.includes("PMMA") ? "PMMA" : sm.materials[0];
+  const [mat, setMat] = useState(start);
+  const [proto, setProto] = useState(sm.protocols_by_material[start][0]);
+  const rng = sm.ranges[mat];
+  const [oxy, setOxy] = useState(clamp(21, lo(rng.oxygen_pct), hi(rng.oxygen_pct)));
+  const [air, setAir] = useState(clamp(10, lo(rng.airflow_cm_s), hi(rng.airflow_cm_s)));
+  const [vary, setVary] = useState("oxygen");
+  const body = useDebounced({ material: mat, protocol: proto, oxygen_pct: oxy, airflow_cm_s: air, vary }, 150);
+  const r = useAsync(() => fs.predictSolid(body), [JSON.stringify(body)]);
+  const chooseMat = (m) => {
+    const g = sm.ranges[m];
+    setMat(m); setProto(sm.protocols_by_material[m][0]);
+    setOxy(clamp(oxy, lo(g.oxygen_pct), hi(g.oxygen_pct))); setAir(clamp(air, lo(g.airflow_cm_s), hi(g.airflow_cm_s)));
+  };
+  const protos = sm.protocols_by_material[mat];
+  const fixedOxy = hi(rng.oxygen_pct) - lo(rng.oxygen_pct) < 0.2;
+
+  return (
+    <div className="predictor-layout">
+      <Card className="h-fit space-y-4">
+        <Select label="Material" value={mat} onChange={chooseMat} options={sm.materials} />
+        {protos.length > 1
+          ? <Radio label="Flame" value={proto} onChange={setProto} options={protos.map((p) => ({ value: p, label: SCENARIO[p] }))} />
+          : <Note>NASA only tested {mat} {proto === "ignition_trial" ? "as a freshly lit flame" : "while already burning"}.</Note>}
+        {fixedOxy ? <Note>Oxygen: {fmt(oxy)}% (the only level tested).</Note>
+          : <Slider label="Oxygen" unit="%" value={oxy} min={lo(rng.oxygen_pct)} max={hi(rng.oxygen_pct)} step={0.1} onChange={setOxy} />}
+        <Slider label="Airflow" unit="cm/s" value={air} min={lo(rng.airflow_cm_s)} max={hi(rng.airflow_cm_s)} step={0.5} onChange={setAir} />
+        <Note>Sliders show only what NASA tested for {mat}.</Note>
+      </Card>
+
+      <div className="min-w-0 space-y-4">
+        <ErrorBox error={r.error} />
+        {!r.data && r.loading && <Spinner label="Running the model…" />}
+        {r.data && <>
+          <Card>
+            <Metric label="Chance the flame keeps burning" value={pct(r.data.probability)} />
+            <Score r={o.reliability.solid} />
           </Card>
-          <details className="technical-details"><summary>Supporting tests & input effects</summary><div className="grid gap-4 xl:grid-cols-2">
-            {!pending && ext.data?.available && <Factors f={ext.data.factors} title="How inputs affect the estimate" />}
-            {!pending && ext.data && <Nearest n={ext.data.nearest_tests} openExperiment={openExperiment} />}
-          </div></details>
-          <button disabled={pending || ext.loading} onClick={() => askChat({ page: "atmosphere_predictor", inputs: body, extinction: ext.data, burn_time: burn.data })} className="secondary-button">Explain these results ↗</button>
-        </div>
+          <Card className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Label>How the estimate changes</Label>
+              <Toggle value={vary} onChange={setVary} options={[{ value: "oxygen", label: "Oxygen" }, { value: "airflow", label: "Airflow" }]} />
+            </div>
+            {r.data.vary === vary && <EstimateCurve curve={r.data.curve} runs={r.data.runs}
+              current={vary === "oxygen" ? oxy : air} xLabel={vary === "oxygen" ? "Oxygen (%)" : "Airflow (cm/s)"} />}
+            <Note>Line: estimate. Dotted line: your setting. Dots: real NASA tests.</Note>
+          </Card>
+          <Label>Closest NASA tests</Label>
+          <div className="space-y-2">{r.data.nearest.slice(0, 3).map((n) => <SolidRun key={n.stage_id} n={n} est={r.data} />)}</div>
+        </>}
       </div>
     </div>
   );
 }
 
-function SupportedControl({ field, value, settings, disabled, onChange }) {
-  const fraction = field.unit === "mole fraction";
-  const unit = fraction ? "%" : field.unit;
-  const display = (v) => fmt(fraction ? v * 100 : v);
-  const index = settings.reduce((best, v, i) => Math.abs(v - value) < Math.abs(settings[best] - value) ? i : best, 0);
-  const fixed = settings.length <= 1;
-  return <div>
-    <div className="flex items-center justify-between gap-3 text-xs"><span className="text-gray-700">{field.label.replace(" fraction", "")}</span><output className="rounded-md border border-line bg-ink/80 px-2 py-1 font-mono text-indigo-700">{display(value)} <span className="text-gray-500">{unit}</span></output></div>
-    <input aria-label={field.label} aria-valuetext={`${display(value)} ${unit}`} type="range" min={0} max={Math.max(1, settings.length - 1)} step={1} value={index}
-      style={{ "--range-fill": `${index / Math.max(1, settings.length - 1) * 100}%` }}
-      disabled={disabled || fixed} onChange={(e) => onChange(settings[Number(e.target.value)])} className="mt-1 w-full disabled:opacity-30" />
-    <div className="flex justify-between text-[10px] text-gray-500">{fixed ? <span>{disabled ? "Checking settings…" : "Fixed for this gas mixture / nearby coverage"}</span> : <><span>{display(settings[0])} {unit}</span><span>{display(settings.at(-1))} {unit}</span></>}</div>
-  </div>;
-}
-
-function ResultCard({ title, r, valueKey, extra, loading, error }) {
-  return <Card title={title} className="result-number border-t-indigo-200/35">
-    {loading ? <div className="py-5"><Spinner label="Updating estimate…" /></div> : error ? <ErrorBox error={error} /> : r?.available ? (
-      <div className="space-y-3"><Value v={r[valueKey]} big />{extra}<details><summary>Estimate details</summary><p className="text-xs leading-relaxed text-gray-500">{r[valueKey].note}</p></details></div>
-    ) : <div className="space-y-2 text-sm"><div className="text-amber-800">Estimate unavailable</div><p className="text-gray-700">{r?.reason || "Select a supported NASA starting test."}</p><p className="text-xs text-gray-500">Use the real tests below to review available evidence.</p></div>}
-  </Card>;
-}
-
-function WhatIfChart({ d, current }) {
-  const isProb = d.y_unit === "probability";
-  const data = useMemo(() => d.curve.map((p) => ({ x: p.x, y: p.y, band: p.low != null ? [p.low, p.high] : null })), [d]);
-  const real = d.real_tests.map((t) => ({ x: t.x, real: isProb ? (t.y === 1 ? 1 : 0) : t.y, outcome: t.outcome }));
-  const [lo, hi] = d.tested_range;
-  const xs = d.curve.map((p) => p.x);
+function SolidRun({ n, est }) {
+  const went = n.sustained_flame ? "kept burning" : "went out";
+  const agrees = (est.probability >= 0.5) === Boolean(n.sustained_flame);
   return (
-    <div className="h-80">
-      <ResponsiveContainer>
-        <ComposedChart margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
-          <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
-          <XAxis type="number" dataKey="x" domain={[Math.min(...xs), Math.max(...xs)]} tick={{ fill: "#6b7280", fontSize: 11 }}
-            tickFormatter={(v) => fmt(v)} label={{ value: `${d.label}${d.unit ? ` (${d.unit})` : ""}`, position: "bottom", fill: "#6b7280", fontSize: 12 }} allowDuplicatedCategory={false} />
-          <YAxis domain={isProb ? [0, 1] : ["auto", "auto"]} tick={{ fill: "#6b7280", fontSize: 11 }}
-            tickFormatter={(v) => (isProb ? `${Math.round(v * 100)}%` : fmt(v))} />
-          <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #e5e7eb", fontSize: 12 }}
-            formatter={(v, name) => (Array.isArray(v) ? `${fmt(v[0], d.y_unit)}–${fmt(v[1], d.y_unit)}` : isProb ? fmt(v, "probability") : fmt(v)) + (name === "real" ? "" : "")}
-            labelFormatter={(v) => `${d.label}: ${fmt(v)}`} />
-          <Legend verticalAlign="top" height={24} wrapperStyle={{ fontSize: 12 }} />
-          <ReferenceArea x1={Math.min(...xs)} x2={lo} fill="#64748b" fillOpacity={0.12} />
-          <ReferenceArea x1={hi} x2={Math.max(...xs)} fill="#64748b" fillOpacity={0.12} />
-          <Area data={data} dataKey="band" name="model range" stroke="none" fill="#4f46e5" fillOpacity={0.2} connectNulls={false} isAnimationActive={false} />
-          <Line data={data} dataKey="y" name={d.y_label} stroke="#4f46e5" strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={false} />
-          <Scatter data={real} dataKey="real" name="NASA tests" fill="#818cf8" fillOpacity={0.6} isAnimationActive={false} />
-          {current != null && <ReferenceLine x={current} stroke="#f59e0b" strokeDasharray="4 4" label={{ value: "you", fill: "#f59e0b", fontSize: 11 }} />}
-        </ComposedChart>
-      </ResponsiveContainer>
+    <details className="expander"><summary>{EXPERIMENT[n.source_record] || n.source_record} test {n.test_id}: {went}</summary>
+      <p className="text-sm text-gray-700">At {n.oxygen_pct.toFixed(1)}% oxygen and {fmt(n.airflow_cm_s)} cm/s the flame {went}. Crew note: "{n.evidence_quote}"</p>
+      <Note className="mt-2">Oxygen {diff(est.oxygen_pct, n.oxygen_pct, "points")}, airflow {diff(est.airflow_cm_s, n.airflow_cm_s, "cm/s")}. {agrees ? "Agrees with" : "Differs from"} the estimate. <a href={n.source_url} target="_blank" rel="noreferrer">NASA record</a></Note>
+    </details>
+  );
+}
+
+function initial(m) {
+  return { oxygen_pct: clamp(21, lo(m.oxygen_pct), hi(m.oxygen_pct)), droplet_diameter_mm: mid(m.droplet_diameter_mm, 2),
+    pressure_kpa: clamp(101, lo(m.pressure_kpa, 0), hi(m.pressure_kpa, 0)), co2: Math.round(m.co2_fraction[0] * 100), he: Math.round(m.helium_fraction[0] * 100) };
+}
+
+function Droplet({ o }) {
+  const fuels = o.flex.fuels;
+  const [fuel, setFuel] = useState(fuels[0]);
+  const [mix, setMix] = useState("air");
+  const m = o.flex.mixtures[fuel][mix];
+  const [v, setV] = useState(() => initial(o.flex.mixtures[fuels[0]].air));
+  const set = (k) => (x) => setV((s) => ({ ...s, [k]: x }));
+  const choose = (f, x) => {
+    const mx = o.flex.mixtures[f][x] ? x : "air";
+    const g = o.flex.mixtures[f][mx];
+    setFuel(f); setMix(mx);
+    setV((s) => ({ oxygen_pct: clamp(s.oxygen_pct, lo(g.oxygen_pct), hi(g.oxygen_pct)),
+      droplet_diameter_mm: clamp(s.droplet_diameter_mm, lo(g.droplet_diameter_mm, 2), hi(g.droplet_diameter_mm, 2)),
+      pressure_kpa: clamp(s.pressure_kpa, lo(g.pressure_kpa, 0), hi(g.pressure_kpa, 0)),
+      co2: mx === "co2" ? clamp(s.co2 || 20, Math.round(g.co2_fraction[0] * 100), Math.round(g.co2_fraction[1] * 100)) : 0,
+      he: mx === "helium" ? clamp(s.he || 20, Math.round(g.helium_fraction[0] * 100), Math.round(g.helium_fraction[1] * 100)) : 0 }));
+  };
+  const body = useDebounced({ fuel, oxygen_pct: v.oxygen_pct, droplet_diameter_mm: v.droplet_diameter_mm,
+    co2_fraction: v.co2 / 100, helium_fraction: v.he / 100, pressure_kpa: v.pressure_kpa }, 150);
+  const r = useAsync(() => fs.predictFlex(body), [JSON.stringify(body)]);
+  return (
+    <div className="predictor-layout">
+      <Card className="h-fit space-y-4">
+        <Toggle value={fuel} onChange={(f) => choose(f, mix)} options={fuels.map((f) => ({ value: f, label: f }))} />
+        <Select label="Gas around the drop" value={mix} onChange={(x) => choose(fuel, x)}
+          options={Object.keys(o.flex.mixtures[fuel]).map((x) => ({ value: x, label: MIX[x] || x }))} />
+        <Slider label="Oxygen" unit="%" value={v.oxygen_pct} min={lo(m.oxygen_pct)} max={hi(m.oxygen_pct)} step={0.5} onChange={set("oxygen_pct")} />
+        {mix === "co2" && <Slider label="Carbon dioxide (CO₂)" unit="%" value={v.co2} min={Math.round(m.co2_fraction[0] * 100)} max={Math.round(m.co2_fraction[1] * 100)} step={1} onChange={set("co2")} />}
+        {mix === "helium" && <Slider label="Helium" unit="%" value={v.he} min={Math.round(m.helium_fraction[0] * 100)} max={Math.round(m.helium_fraction[1] * 100)} step={1} onChange={set("he")} />}
+        <Slider label="Drop size" unit="mm" value={v.droplet_diameter_mm} min={lo(m.droplet_diameter_mm, 2)} max={hi(m.droplet_diameter_mm, 2)} step={0.05} onChange={set("droplet_diameter_mm")} />
+        <Slider label="Pressure" unit="kPa" value={v.pressure_kpa} min={lo(m.pressure_kpa, 0)} max={hi(m.pressure_kpa, 0)} step={1} onChange={set("pressure_kpa")} hint="Sea level is about 101 kPa." />
+        <Note>Sliders show only what NASA tested for {fuel.toLowerCase()} in this gas.</Note>
+      </Card>
+      <div className="min-w-0 space-y-4">
+        <ErrorBox error={r.error} />
+        {!r.data && r.loading && <Spinner label="Running the model…" />}
+        {r.data && <>
+          <Card>
+            <Metric label="Chance the flame goes out before the fuel is used up" value={pct(r.data.probability)} />
+            <Score r={o.reliability.flex} />
+          </Card>
+          <Label>Closest NASA tests</Label>
+          <div className="space-y-2">{r.data.nearest.slice(0, 3).map((n) => <DropletRun key={n.experiment_id} n={n} est={r.data} />)}</div>
+        </>}
+      </div>
     </div>
   );
 }
 
-function Factors({ f, title }) {
-  const max = Math.max(...f.items.map((i) => Math.abs(i.effect)), 1);
+function DropletRun({ n, est }) {
+  const went = n.extinguished ? "went out early" : "burned to the end";
+  const extra = [["co2_fraction", "CO₂"], ["helium_fraction", "helium"]].filter(([k]) => n[k] > 0).map(([k, g]) => `${Math.round(n[k] * 100)}% ${g}`);
+  const agrees = (est.probability >= 0.5) === Boolean(n.extinguished);
   return (
-    <Card title={title} subtitle={f.method}>
-      <p className="mb-3 text-xs text-gray-500">Model sensitivity, not a causal effect. Unsupported comparisons are omitted.</p>
-      <ul className="space-y-2 text-xs">
-        {f.items.map((i) => (
-          <li key={i.feature}>
-            <div className="flex justify-between text-gray-700">
-              <span>{i.label}: {fmt(i.your_value)} <span className="text-gray-500">(typical {fmt(i.typical_value)})</span></span>
-              <span className={i.effect > 0 ? "text-indigo-700" : "text-violet-700"}>{i.effect > 0 ? "+" : ""}{fmt(i.effect)} pts</span>
-            </div>
-            <div className="mt-1 h-1.5 rounded bg-ink">
-              <div className={`h-1.5 rounded ${i.effect > 0 ? "bg-indigo-500/70" : "bg-violet-400/70"}`} style={{ width: `${(Math.abs(i.effect) / max) * 100}%` }} />
-            </div>
-          </li>
-        ))}
-      </ul>
-    </Card>
+    <details className="expander"><summary>FLEX test {n.test_id}: {went}</summary>
+      <p className="text-sm text-gray-700">A {n.droplet_diameter_mm.toFixed(1)} mm drop at {Math.round(n.oxygen_pct)}% oxygen{extra.length ? ` with ${extra.join(" and ")}` : ""}, {Math.round(n.pressure_kpa)} kPa: it {went}.</p>
+      <Note className="mt-2">{agrees ? "Agrees with" : "Differs from"} the estimate. <a href={n.source_url} target="_blank" rel="noreferrer">NASA record</a></Note>
+    </details>
   );
 }
 
-function Nearest({ n, openExperiment }) {
+function Trust({ r }) {
+  const s = r.solid, f = r.flex;
   return (
-    <Card title="Closest real NASA tests" right={<CoverageBadge coverage={n.coverage} />}>
-      <ul className="space-y-1 text-xs">
-        {n.matches.map((m) => (
-          <li key={m.experiment_id}>
-            <button onClick={() => openExperiment(m.experiment_id)} className="w-full rounded px-1.5 py-1 text-left hover:bg-gray-50">
-              <span className="text-indigo-600">FLEX test {m.test_id}</span>
-              <span className="text-gray-500"> · {fmt(m.oxygen_pct.value)}% O₂ · {fmt(m.pressure_kpa.value)} kPa · {fmt(m.droplet_diameter_mm.value)} mm · {m.outcome.label}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </Card>
+    <div className="grid gap-5 lg:grid-cols-2">
+      <Card className="space-y-4">
+        <h3 className="trust-title">Solid materials</h3>
+        <Callout kind="warning">A rough guide. Knowing only the material predicts about as well.</Callout>
+        <div className="trust-stats">
+          <Metric label="This model" value={`${tenths(s.accuracy)} / 10`} />
+          <Metric label="Material only" value={`${tenths(s.material_only_accuracy)} / 10`} />
+          <Metric label="Always guess “keeps burning”" value={`${tenths(s.baseline_accuracy)} / 10`} />
+        </div>
+        <Note>How many of 10 NASA tests each approach got right, scored only on tests it never saw.</Note>
+        <ul className="limitations">
+          <li>Learned from {s.n} closely measured runs on {s.groups} samples, so one test can shift it.</li>
+          <li>Oxygen and airflow change the answer only a little so far.</li>
+          <li>Only five materials, all tested at normal air pressure in orbit.</li>
+        </ul>
+      </Card>
+      <Card className="space-y-4">
+        <h3 className="trust-title">Fuel droplets</h3>
+        <Callout kind="info">Useful. Oxygen, pressure and added gases clearly change its answer.</Callout>
+        <div className="trust-stats">
+          <Metric label="This model" value={`${tenths(f.accuracy)} / 10`} />
+          <Metric label="Always guess “goes out early”" value={`${tenths(f.baseline_accuracy)} / 10`} />
+          <Metric label="Spots drops that burn to the end" value={pct(f.rare_recall)} />
+        </div>
+        <Note>Most drops went out early, so always guessing that already scores high. The last number shows how often it catches the rarer case.</Note>
+        <ul className="limitations">
+          <li>Learned from {f.n} NASA droplet tests of heptane and methanol.</li>
+          <li>Describes fuel drops, not solid materials. The Material Advisor doesn't use it.</li>
+        </ul>
+      </Card>
+    </div>
   );
 }

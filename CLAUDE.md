@@ -7,13 +7,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 NASA Space Apps 2026 (team AstraBuilders). A curated, verified package of NASA PSI (Physical Sciences Informatics) microgravity combustion data and its build pipeline (`data/`), with two front ends that share it:
 
 - **Streamlit app** (`app/`, backend `firesafe/`, models `model/train.py` → `model/*.joblib` + `model/metrics.json`): Material Advisor, DeepSeek research assistant, combustion predictor + model card, data explorer.
-- **React web UI + FastAPI** (`web/`, `api/`, models `model/train_flex.py` → `model/artifacts/`): two trained FLEX droplet models and a chat agent. See `docs/API.md`. There are no safety rankings: the advisor ranks evidence.
+- **React web UI + FastAPI** (`web/`, `api/`): the hackathon front end. Its pages (Material Advisor, Research Assistant, Combustion Predictor with a "How reliable?" tab, NASA Data Explorer) call `/api/fs/...` in `api/firesafe_api.py`, which wraps the same `firesafe/` backend and models as Streamlit. That layer enforces the UI rules: microgravity at ~1 atm only (no mission or pressure inputs), estimates only inside NASA's tested ranges (422 otherwise; FLEX ranges are per fuel and gas mixture), and the advisor lists only materials that have an estimate at the chosen conditions. Explorer summaries live in `api/investigation_summaries.json`. The older `/api/...` routes and `model/train_flex.py` → `model/artifacts/` models are no longer used by the UI (see `docs/API.md`).
 
 ## Backend and models (React/FastAPI)
 
 - `model/train_flex.py` trains the extinction classifier with grouped CV and the burn-time regressor with disjoint fitting, calibration and audit groups and writes `model/artifacts/` (joblib files with sklearn built-ins only, `metrics.json`, `oof_predictions.json`). See `docs/PREDICTION_LIMITS.md` for conditional controls, same-family support checks and the interval audit. Each model has a promotion gate; a failed gate disables that prediction in the API. The extinction model is unweighted on purpose so its probabilities stay calibrated (balanced weights gave a Brier score worse than the base rate). `model/evaluate_models.py` runs the stress tests into `evaluation.json`; rerun it after retraining.
-- `api/core.py` holds every function (options, explorer, similarity, advisor, predictions, what-if, search). Numbers go through `val()` with a trust label. `api/main.py` exposes them over HTTP; `api/agent.py` gives the same functions to a language model as tools: DeepSeek (`deepseek-flash`, OpenAI-compatible SDK, `DEEPSEEK_API_KEY`) by default, or Claude (`ANTHROPIC_API_KEY`); both loops share `TOOLS`, `run_tool` and the system prompt.
-- Run: `.venv/Scripts/python -m uvicorn api.main:app --reload --port 8000`. Test: `.venv/Scripts/python -m pytest api/tests -q`.
+- `api/core.py` holds every function (options, explorer, similarity, advisor, predictions, what-if, search). Numbers go through `val()` with a trust label. `api/main.py` exposes them over HTTP; `api/agent.py` gives the same functions to a language model as tools: DeepSeek (`deepseek-flash`, OpenAI-compatible SDK, `DEEPSEEK_API_KEY`) by default, or Claude (`ANTHROPIC_API_KEY`); `CHAT_PROVIDER`/`CHAT_MODEL` override the choice, and with no key `/api/chat` returns 503. Both loops share `TOOLS`, `run_tool` and the system prompt. `api/config.py` loads the root `.env` (template `.env.example`) without overriding variables already set in the environment.
+- `web/` is React 19 + Vite + Tailwind + Recharts and talks only to the API through `web/src/api.js`. Every form is built from `GET /api/fs/options`, so slider ranges and dropdowns follow the tested data. The dev server proxies `/api` to port 8000; deployed builds use `VITE_API_URL`. Never put API keys in `web/` or any `VITE_` variable: they ship to the browser.
+
+Commands (the docs use the Windows venv path `.venv/Scripts/python`; on macOS/Linux use `.venv/bin/python`):
+
+```sh
+.venv/bin/python -m pip install -r api/requirements.txt              # API deps (fastapi, uvicorn, openai, anthropic, pytest)
+.venv/bin/python -m uvicorn api.main:app --reload --port 8000        # API; docs at http://localhost:8000/docs
+cd web && npm install && npm run dev                                 # UI at http://localhost:5173
+.venv/bin/python model/train_flex.py && .venv/bin/python model/evaluate_models.py   # retrain FLEX models, then stress tests
+.venv/bin/python -m pytest api/tests model/tests -q                  # API + training-partition tests
+.venv/bin/python -m pytest api/tests/test_api.py -q -k <name>        # one test
+```
 
 `data/DATA_HANDOFF.md` is the authoritative description of the data: what was corrected, what each teammate should use, and what must not be claimed. Read it before you change data semantics.
 

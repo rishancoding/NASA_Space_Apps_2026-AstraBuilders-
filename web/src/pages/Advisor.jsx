@@ -1,165 +1,220 @@
-import { useState } from "react";
-import { api } from "../api.js";
-import { Card, CoverageBadge, ErrorBox, Select, Slider, Spinner, Toggle, TrustBadge, Value, Warning, fmt, useAsync, useDebounced } from "../components/ui.jsx";
+// Material Advisor: rank NASA-tested materials for your cabin conditions (structure follows app/pages/advisor.py).
+import { useEffect, useState } from "react";
+import { fs } from "../api.js";
+import { plottable, ProbabilityBars, TestsScatter } from "../components/charts.jsx";
+import { Badge, Caption, Card, DataTable, ErrorBox, Label, Markdown, Metric, Note, PageHeader, Radio, Select, Slider,
+  Spinner, TextInput, Toggle } from "../components/ui.jsx";
 
-const STATUS = {
-  met: ["✓ met", "text-emerald-700"],
-  failed: ["✗ failed", "text-red-700"],
-  cannot_check: ["? can't check", "text-gray-500"],
-};
+const STRENGTH_BADGE = { strong: ["Lots of NASA tests", "green"], moderate: ["Some NASA tests", "blue"],
+  weak: ["Few NASA tests", "orange"], none: ["No nearby tests", "gray"] };
+const PRIORITY_LABEL = { sustained: "Least likely to keep burning", ignition: "Least likely to catch fire",
+  spread: "Slowest flame spread", evidence: "Most NASA test data" };
+const CHECK_ICON = { meets: ["✓", "check-meets"], fails: ["✗", "check-fails"], "cannot assess": ["?", "check-unknown"], "outside data": ["!", "check-outside"] };
+const CHECK_NAME = { Oxygen: "Oxygen level", Airflow: "Airflow", Shape: "Shape", "Max thickness": "Thickness limit" };
+const OUTCOME_WORDS = { "sustained burn": "kept burning", "burned, then went out": "went out",
+  "brief flame, not sustained": "went out", "suppressed (agent/N2)": "went out", "no ignition": "never lit" };
+const SHAPES = { any: "Any shape", fabric: "Fabric", film: "Film", sheet: "Sheet", slab: "Slab", rod: "Rod", sphere: "Sphere", candle: "Candle" };
 
-export default function Advisor({ options, openExperiment, askChat }) {
-  const solids = options.solids;
-  const [form, setForm] = useState({
-    mode: "discover", oxygen_pct: 21, airflow_cm_s: 10, material: solids.materials[0].name,
-    mission: "space_station", pressure_kpa: 101.3, max_thickness_mm: null, priority: "evidence_strength", geometry: null, protocol: "ignition_trial",
+function testsLine(tests) {
+  if (!tests.length) return "No NASA tests near your oxygen level.";
+  const counts = {};
+  for (const t of tests) { const w = OUTCOME_WORDS[t.outcome_group] || "unclear"; counts[w] = (counts[w] || 0) + 1; }
+  const parts = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([w, n]) => `${n} ${w}`).join(", ");
+  return `${tests.length} NASA test${tests.length !== 1 ? "s" : ""} nearby: ${parts}.`;
+}
+
+const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, v));
+const round = (v, d = 1) => Math.round(v * 10 ** d) / 10 ** d;
+
+export default function Advisor({ fsOptions, advisor, setAdvisor, goTo }) {
+  const sm = fsOptions.solid;
+  const [form, setForm] = useState(advisor.form || { mode: "discover", material: "PMMA", oxygen_pct: 21, airflow_cm_s: 10,
+    priority: "sustained", geometry: "any", max_thickness_mm: 0, require_geometry: false });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  // Sliders cover only what NASA tested: one material's range when analyzing it, all materials' range otherwise.
+  const span = form.mode === "analyze" ? sm.ranges[form.material] : sm.advisor_ranges;
+  const oxyRange = [round(span.oxygen_pct[0]), round(span.oxygen_pct[1])];
+  const airRange = [round(span.airflow_cm_s[0]), round(span.airflow_cm_s[1])];
+  const update = (patch) => setForm((f) => {
+    const n = { ...f, ...patch };
+    const s = n.mode === "analyze" ? sm.ranges[n.material] : sm.advisor_ranges;
+    return { ...n, oxygen_pct: clamp(n.oxygen_pct, [round(s.oxygen_pct[0]), round(s.oxygen_pct[1])]),
+      airflow_cm_s: clamp(n.airflow_cm_s, [round(s.airflow_cm_s[0]), round(s.airflow_cm_s[1])]) };
   });
-  const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
-  const q = useDebounced(form, 250);
-  const res = useAsync(() => api.advisor({ ...q, material: q.mode === "analyze" ? q.material : null }), [JSON.stringify(q)]);
+  const set = (k) => (v) => update({ [k]: v });
 
+  async function run(f = form) {
+    setBusy(true); setError(null);
+    try {
+      const result = await fs.advisor({ ...f, material: f.mode === "analyze" ? f.material : null });
+      setAdvisor({ form: f, result, explanation: null });
+    } catch (e) { setError(e); } finally { setBusy(false); }
+  }
+  useEffect(() => { if (!advisor.result) run(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const res = advisor.result;
   return (
     <div className="space-y-5">
-      <div className="page-heading flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1>Compare materials.</h1>
-          <p>See how they behaved in NASA's fire tests.</p>
-        </div>
-        <Toggle value={form.mode} onChange={set("mode")}
-          options={[{ value: "discover", label: "Find materials" }, { value: "analyze", label: "Analyze a material" }]} />
-      </div>
+      <PageHeader eyebrow="NASA fire tests in orbit" title="Material Advisor"
+        caption="See how spacecraft materials burned in NASA's space station fire tests, ranked for your cabin conditions.">
+        <Toggle value={form.mode} onChange={set("mode")} options={[{ value: "discover", label: "Find a material" }, { value: "analyze", label: "Check one material" }]} />
+      </PageHeader>
 
       <div className="advisor-layout">
-        {/* ---------------- inputs */}
-        <Card title="Your conditions" className="advisor-controls h-fit space-y-5">
-          <div className="presets">
-            {options.presets.filter((p) => p.oxygen_pct >= solids.oxygen_pct.min && p.oxygen_pct <= solids.oxygen_pct.max).map((p) => (
-              <button key={p.id} title={p.note} aria-pressed={form.oxygen_pct === p.oxygen_pct && form.airflow_cm_s === p.airflow_cm_s && form.pressure_kpa === p.pressure_kpa}
-                onClick={() => setForm((f) => ({ ...f, oxygen_pct: p.oxygen_pct, airflow_cm_s: p.airflow_cm_s, pressure_kpa: p.pressure_kpa }))}
-                >
-                {p.id === "iss_cabin" ? "Standard cabin" : p.label.replace("ISS-like cabin", "Standard cabin").replace("Stagnant corner (low airflow)", "Low airflow")}
-              </button>
-            ))}
-          </div>
-          {form.mode === "analyze" && (
-            <Select label="Material to analyze" value={form.material} onChange={set("material")}
-              options={solids.materials.map((m) => ({ value: m.name, label: `${m.name} (${m.tests} tests)` }))} />
-          )}
-          <Slider label="Oxygen" unit="%" value={form.oxygen_pct} min={solids.oxygen_pct.min} max={solids.oxygen_pct.max} step={0.1} onChange={set("oxygen_pct")} />
-          <Slider label="Airflow" unit="cm/s" value={form.airflow_cm_s} min={0} max={solids.airflow_cm_s.max} step={0.5} onChange={set("airflow_cm_s")} />
-          <details className="border-t border-line pt-4"><summary>More options</summary><div className="space-y-4">
-          <Select label="Sample shape" value={form.geometry} onChange={set("geometry")} allowEmpty="All shapes" options={solids.geometries} />
-          <Select label="Trial type" value={form.protocol} onChange={set("protocol")} options={options.protocols} />
-          <label className="block text-xs">
-            <span className="text-gray-700">Maximum thickness (mm)</span>
-            <input type="number" min={0} step={0.1} value={form.max_thickness_mm ?? ""} placeholder="mm"
-              onChange={(e) => set("max_thickness_mm")(e.target.value === "" ? null : Number(e.target.value))}
-              className="mt-1 w-full rounded-md border border-line bg-ink px-2 py-1.5 text-sm text-gray-900" />
-          </label>
-          <Select label="Mission" value={form.mission} onChange={set("mission")} options={options.missions} />
-          <p className="text-[11px] leading-relaxed text-gray-500">Pressure is fixed for solid tests. Partial-gravity behavior is unknown in this dataset.</p>
-          </div></details>
-        </Card>
+        <form className="advisor-controls" onSubmit={(e) => { e.preventDefault(); run(); }}>
+          <Card className="space-y-4">
+            <Label>Your cabin</Label>
+            {form.mode === "analyze" && <Select label="Material" value={form.material} onChange={set("material")} options={sm.materials} />}
+            <Slider label="Oxygen" unit="%" value={form.oxygen_pct} min={oxyRange[0]} max={oxyRange[1]} step={0.1} onChange={set("oxygen_pct")} hint="Earth air is 21%." />
+            <Slider label="Airflow" unit="cm/s" value={form.airflow_cm_s} min={airRange[0]} max={airRange[1]} step={0.5} onChange={set("airflow_cm_s")} hint="Station fans: about 5–20 cm/s." />
+            <Note>Sliders cover only conditions NASA tested.</Note>
+            <Radio label="Rank by" value={form.priority} onChange={set("priority")}
+              options={Object.keys(fsOptions.priorities).map((value) => ({ value, label: PRIORITY_LABEL[value] || fsOptions.priorities[value] }))} />
+            <details className="border-t border-line pt-4"><summary>Shape and size</summary><div className="space-y-4">
+              <Select label="Shape" value={form.geometry} onChange={set("geometry")} options={fsOptions.geometries.map((g) => ({ value: g, label: SHAPES[g] || g }))} />
+              <label className="fs-check"><input type="checkbox" checked={form.require_geometry} onChange={(e) => set("require_geometry")(e.target.checked)} /> Only materials tested in this shape</label>
+              <TextInput label="Thickest piece you can use (mm, 0 = no limit)" type="number" min={0} max={100} step={0.1} value={form.max_thickness_mm} onChange={set("max_thickness_mm")} />
+            </div></details>
+            <button type="submit" disabled={busy} className="primary-button w-full">{busy ? "Ranking…" : "Rank materials"}</button>
+          </Card>
+        </form>
 
-        {/* ---------------- results */}
         <div className="advisor-results space-y-4" aria-live="polite">
-          {res.loading && !res.data && <Spinner />}
-          <ErrorBox error={res.error} />
-          {res.data && (
-            <>
-              {res.data.warnings.filter((w) => w.code !== "initial_oxygen").map((w) => <Warning key={w.code}>{w.message}</Warning>)}
-              <div className="results-toolbar">
-                <h2 title={res.data.rank_basis}>Material matches <span className="ml-1 text-gray-400">{res.data.candidates.length}</span></h2>
-                <button onClick={() => askChat({ page: "material_advisor", inputs: res.data.inputs,
-                  ranking: res.data.candidates.map((c) => ({ rank: c.rank, material: c.material, evidence: c.evidence, events: c.condition_linked_events_nearby })) })}
-                  className="text-xs text-indigo-600 hover:underline">
-                  Explain ranking ↗
-                </button>
-              </div>
-              <div className="candidate-grid">
-                {res.data.candidates.map((c) => <CandidateCard key={c.material} c={c} openExperiment={openExperiment} />)}
-              </div>
-              <details><summary>How matches are ranked</summary><p className="mt-2 text-xs leading-relaxed text-gray-500">{res.data.rank_basis}. {res.data.not_a_safety_rating}</p></details>
-            </>
-          )}
+          <ErrorBox error={error} />
+          {!res && busy && <Spinner label="Ranking materials…" />}
+          {res && <Results res={res} />}
         </div>
       </div>
+
+      {res && <Explanation advisor={advisor} setAdvisor={setAdvisor} online={fsOptions.assistant_online} goTo={goTo} />}
     </div>
   );
 }
 
-function CandidateCard({ c, openExperiment }) {
-  const ev = c.condition_linked_events_nearby;
-  const outcomes = Object.entries(c.observed_outcomes_nearby.counts);
+function Results({ res }) {
+  const [tab, setTab] = useState("ranked");
+  const sc = res.scenario;
+  const all = [...res.selected, ...res.candidates];
+  const withTests = all.filter((c) => plottable(c.comparable_tests)).map((c) => c.material);
+  const [pick, setPick] = useState(null);
+  const chosen = withTests.includes(pick) ? pick : withTests[0];
+  const c = all.find((x) => x.material === chosen);
+  if (!all.length) return <Card><p className="text-sm text-gray-700">No material was tested near these conditions. Try an oxygen level closer to 21%.</p></Card>;
   return (
-    <Card className={`candidate-card ${c.is_selected ? "ring-2 ring-flame" : ""}`}
-      title={<span className="flex items-center gap-2"><span className="rank">#{c.rank}</span> {c.material}
-        {c.is_selected && <span className="rounded bg-flame/20 px-1.5 text-[10px] text-flame">your material</span>}</span>}
-      right={<CoverageBadge coverage={c.evidence.coverage} />}>
-      <div className="candidate-stats">
-        <Stat n={c.evidence.nearby_tests} label="nearby tests" />
-        <Stat n={c.evidence.total_tests} label="tests total" />
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Toggle value={tab} onChange={setTab} options={[{ value: "ranked", label: "Ranking" }, { value: "charts", label: "Charts" }]} />
+        <Caption>Not a safety certification.</Caption>
       </div>
-
-      <div className="candidate-body mt-4 space-y-3 text-xs">
-        <div>
-          <div className="mb-2 text-gray-500">Recorded outcomes</div>
-          {outcomes.length ? (
-            <div className="flex flex-wrap gap-1.5">
-              {outcomes.slice(0, 2).map(([k, n]) => <span key={k} className="candidate-outcome">{n} {k.toLowerCase().replace('brief flame, not sustained', 'brief flames').replace('burned until fuel ran out', 'used up fuel').replace('did not ignite', 'did not light').replace('unclear from the notes', 'unclear')}</span>)}
-              {outcomes.length > 2 && <span className="candidate-outcome">+{outcomes.length - 2} outcomes</span>}
-            </div>
-          ) : <div className="text-gray-500">No NASA test near these conditions.</div>}
-          {outcomes.length > 0 && <div className="candidate-progress" aria-hidden="true">{outcomes.map(([k, n]) => <span key={k} style={{ flex: n }} />)}</div>}
+      {tab === "ranked" ? (
+        <div className="space-y-4">
+          {res.selected.map((x) => <CandidateCard key={x.material} c={x} />)}
+          {res.selected.length > 0 && res.candidates.length > 0 && <Label>Other materials</Label>}
+          {res.candidates.map((x) => <CandidateCard key={x.material} c={x} />)}
+          {res.not_tested_here?.length > 0 && <Caption>Not tested near these conditions: {res.not_tested_here.join(", ")}.</Caption>}
+          {res.excluded.length > 0 && (
+            <details className="expander"><summary>{res.excluded.length} hidden by your shape or size filters</summary>
+              <div className="space-y-4">{res.excluded.map((x) => <CandidateCard key={x.material} c={x} />)}</div></details>
+          )}
         </div>
-        {ev.events > 0 && (
-          <div className="text-gray-700">
-            <div className="mb-1 text-gray-500">{ev.protocol === "ignition_trial" ? "Starting a flame" : "Already-burning trials"}</div>
-            <b className="text-gray-900">{ev.sustained_flame}</b> kept burning · <b className="text-gray-900">{ev.not_sustained}</b> did not
-          </div>
-        )}
-        <details className="border-t border-line pt-3"><summary>Test details</summary><div className="space-y-3 leading-relaxed text-gray-500">
-        <div>{outcomes.map(([k,n]) => <span key={k} className="mr-3">{k}: {n}</span>)}</div>
-        <p>Whole-test outcomes may cover multiple airflow stages. Condition matching uses initial oxygen; oxygen at each event is unknown and observation durations vary.</p>
-        {ev.events > 0 && <div><div className="mb-2 font-medium text-gray-700">Supporting events · {ev.events}</div><ul className="space-y-2">{ev.evidence.map((e) => <li key={e.stage_id} className="rounded-md bg-ink p-3"><p className="italic">“{e.quote}”</p><button className="mt-1 text-indigo-600 hover:underline" onClick={() => openExperiment(e.experiment_id)}>{e.geometry} · initial {fmt(e.oxygen_initial_pct)}% O₂ · {fmt(e.airflow_cm_s)} cm/s ↗</button></li>)}</ul></div>}
-        {c.earth_reference?.earth_tests?.length > 0 && (
-          <div className="text-gray-700">
-            Earth-gravity oxygen limit (lowest ULOI): <Value v={c.earth_reference.earth_tests.reduce((a, b) => (b.uloi_oxygen_pct.value < a.uloi_oxygen_pct.value ? b : a)).uloi_oxygen_pct} />
-          </div>
-        )}
-        <ul className="space-y-0.5">
-          {c.constraint_checks.map((ch, i) => (
-            <li key={i} title={ch.reason}><span className={STATUS[ch.status][1]}>{STATUS[ch.status][0]}</span> <span className="text-gray-500">{ch.constraint.replaceAll("_", " ")}: {ch.reason}</span></li>
-          ))}
-        </ul>
-        {c.concerns.length > 0 && (
-          <ul className="list-inside list-disc text-amber-800/80">{c.concerns.map((x) => <li key={x}>{x}</li>)}</ul>
-        )}
-        </div></details>
-      </div>
+      ) : (
+        <Card className="space-y-4">
+          <Label>Chance a flame keeps burning</Label>
+          <ProbabilityBars candidates={all} />
+          <Note>Lower is better. Small gaps don't mean much.</Note>
+          {withTests.length > 0 && <>
+            <Label className="pt-3">NASA tests near your conditions</Label>
+            <Toggle value={chosen} onChange={setPick} options={withTests.map((m) => ({ value: m, label: m }))} />
+            <TestsScatter tests={c.comparable_tests} oxygen={sc.oxygen_pct} airflow={sc.airflow_cm_s} height={420} />
+            <Note>Each mark is one {chosen} test. The star is your cabin.</Note>
+          </>}
+        </Card>
+      )}
+    </>
+  );
+}
 
-      <details className="mt-3 border-t border-line pt-3">
-        <summary>Closest NASA tests</summary>
-        <ul className="space-y-1">
-          {c.top_tests.map((t) => (
-            <li key={t.experiment_id}>
-              <button onClick={() => openExperiment(t.experiment_id)} className="w-full rounded px-1.5 py-1 text-left text-xs hover:bg-gray-50">
-                <span className="text-indigo-600">{t.investigation} test {t.test_id}</span>
-                <span className="text-gray-500"> · {fmt(t.oxygen_pct.value)}% O₂ · {t.airflow_raw ? `${t.airflow_raw} cm/s` : "airflow n/a"} · {t.outcome.label}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+function CandidateCard({ c }) {
+  const [label, color] = STRENGTH_BADGE[c.evidence_strength];
+  const head = c.is_selected ? "Your material" : c.rank ? `#${c.rank}` : "Hidden";
+  const p = c.prediction.probability;
+  const [tab, setTab] = useState("tests");
+  return (
+    <Card className={`candidate-card ${c.is_selected ? "is-selected" : ""}`}>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 flex-1 space-y-2">
+          <Label>{head}</Label>
+          <h3>{c.material}</h3>
+          <Badge color={color}>{label}</Badge>
+          <p className="text-sm text-gray-700">{testsLine(c.comparable_tests)}</p>
+          {c.excluded_reason && <Caption>Hidden: {c.excluded_reason}.</Caption>}
+        </div>
+        <Metric label="Chance it keeps burning" value={`${Math.round(p * 100)}%`}
+          help="Model estimate for a flame on this material at your oxygen and airflow." />
+      </div>
+      <details className="mt-4 border-t border-line pt-3"><summary>Tests and sources</summary>
+        <div className="space-y-3">
+          <Toggle value={tab} onChange={setTab} options={[{ value: "tests", label: "NASA tests" }, { value: "fit", label: "Fit" }, { value: "sources", label: "Sources" }]} />
+          {tab === "tests" && <TestsTab c={c} />}
+          {tab === "fit" && <ul className="space-y-1.5 text-sm">
+            {c.checks.map((ch) => <li key={ch.name}><span className={`check-icon ${CHECK_ICON[ch.status]?.[1]}`}>{CHECK_ICON[ch.status]?.[0]}</span> <b>{CHECK_NAME[ch.name] || ch.name}:</b> {ch.detail}</li>)}
+            {c.concerns.map((x) => <li key={x} className="text-amber-800">⚠ {x}</li>)}
+          </ul>}
+          {tab === "sources" && <Citations items={c.citations} />}
+        </div>
       </details>
     </Card>
   );
 }
 
-function Stat({ n, label }) {
+function TestsTab({ c }) {
   return (
-    <div className="candidate-stat">
-      <b>{n}</b>
-      <span>{label}</span>
+    <div className="space-y-3 text-sm">
+      {Object.entries(c.stage_evidence).map(([proto, v]) => (
+        <p key={proto}>{proto === "ignition_trial" ? "Freshly lit" : "Already burning"}: the flame stayed lit in <b>{v.sustained} of {v.n}</b> closely measured runs.</p>))}
+      {c.comparable_tests.length > 0 && (
+        <DataTable maxHeight={220} rows={c.comparable_tests.map((t) => ({ ...t, result: OUTCOME_WORDS[t.outcome_group] || "unclear" }))}
+          columns={[{ key: "investigation", label: "Experiment" }, { key: "test_id", label: "Test" }, { key: "oxygen_pct", label: "Oxygen %" },
+            { key: "airflow_raw", label: "Airflow (cm/s)" }, { key: "result", label: "Result" }, { key: "notes", label: "Crew notes" }]} />
+      )}
+      {c.saffire.length > 0 && <><b>Large fire tests (Saffire)</b>
+        <DataTable maxHeight={180} rows={c.saffire} columns={[{ key: "source_record", label: "Experiment" }, { key: "sample", label: "Sample" },
+          { key: "spread_rate", label: "Spread rate" }, { key: "result", label: "Result" }]} /></>}
     </div>
+  );
+}
+
+export function Citations({ items }) {
+  const seen = new Set();
+  const list = (items || []).filter((x) => x.url && !seen.has(`${x.label}|${x.url}`) && seen.add(`${x.label}|${x.url}`));
+  if (!list.length) return null;
+  return (
+    <ul className="list-disc space-y-1 pl-5 text-sm">{list.map((x) => <li key={`${x.label}|${x.url}`}><a className="text-indigo-600 hover:underline" href={x.url} target="_blank" rel="noreferrer">{x.label}</a></li>)}</ul>
+  );
+}
+
+function Explanation({ advisor, setAdvisor, online, goTo }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  async function explain() {
+    setBusy(true); setError(null);
+    try {
+      const out = await fs.explain(advisor.result);
+      setAdvisor((a) => ({ ...a, explanation: out.text }));
+    } catch (e) { setError(e); } finally { setBusy(false); }
+  }
+  return (
+    <section className="explanation">
+      <Label>In short</Label>
+      <div className="explanation-grid">
+        <Card><Markdown text={advisor.explanation || advisor.result.summary} /></Card>
+        <div className="space-y-3">
+          {online && <button className="primary-button w-full" disabled={busy} onClick={explain}>{busy ? "Reading the tests…" : "Explain with AI"}</button>}
+          <button className="secondary-button w-full" onClick={() => goTo("assistant")}>Ask a follow-up question</button>
+          <ErrorBox error={error} />
+        </div>
+      </div>
+    </section>
   );
 }

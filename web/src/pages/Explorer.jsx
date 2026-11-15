@@ -1,194 +1,122 @@
-import { useState } from "react";
-import { api } from "../api.js";
-import investigationDescriptions from "../investigationDescriptions.json";
-import { Card, ErrorBox, Select, SourceLink, Spinner, Toggle, TrustBadge, Value, useAsync, useDebounced } from "../components/ui.jsx";
+// NASA Data Explorer: the investigations and the cleaned test data (data/clean/) in plain terms.
+import { useMemo, useState } from "react";
+import { fs } from "../api.js";
+import { TestsScatter } from "../components/charts.jsx";
+import { Caption, Card, DataTable, ErrorBox, MultiSelect, Note, PageHeader, Spinner, Toggle, useAsync } from "../components/ui.jsx";
 
-export default function Explorer({ options, openExperiment }) {
+const TABS = [["investigations", "Investigations"], ["solids", "Solid material tests"], ["flex", "Fuel droplet tests"]];
+const PHASE = { solid: "Solid materials", liquid_droplet: "Fuel droplets", gas: "Gas flames", smoke_aerosol: "Smoke and dust" };
+const RESULT = { "sustained burn": "Kept burning", "burned, then went out": "Went out", "brief flame, not sustained": "Brief flame",
+  "suppressed (agent/N2)": "Put out by gas", "no ignition": "Never lit", "not usable": "Unclear" };
+const uniq = (xs) => [...new Set(xs.filter((x) => x != null && x !== ""))].sort();
+
+export default function Explorer() {
   const [tab, setTab] = useState("investigations");
-  const [record, setRecord] = useState(null);
   return (
     <div className="space-y-5">
-      <div className="page-heading flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1>Explore the experiments.</h1>
-          <p>The observations behind every answer.</p>
-        </div>
-        <Toggle value={tab} onChange={setTab} options={[
-          { value: "investigations", label: "Investigations" }, { value: "tests", label: "Tests" }, { value: "search", label: "Search reports" }]} />
-      </div>
-      {tab === "investigations" && <Investigations onTests={(r) => { setRecord(r); setTab("tests"); }} />}
-      {tab === "tests" && <Tests options={options} record={record} setRecord={setRecord} openExperiment={openExperiment} />}
-      {tab === "search" && <Search />}
+      <PageHeader eyebrow="19 NASA investigations" title="NASA Data Explorer"
+        caption="The NASA fire experiments behind this app, and every test result we use.">
+        <Toggle value={tab} onChange={setTab} options={TABS.map(([value, label]) => ({ value, label }))} />
+      </PageHeader>
+      {tab === "investigations" && <Investigations />}
+      {tab === "solids" && <SolidTests />}
+      {tab === "flex" && <DropletTests />}
     </div>
   );
 }
 
-const PHASES = { solid: "Solid", liquid_droplet: "Liquid droplet", gas: "Gas flame", smoke_aerosol: "Smoke / dust" };
-
-function Investigations({ onTests }) {
-  const [phase, setPhase] = useState(null);
-  const [open, setOpen] = useState(null);
-  const list = useAsync(() => api.investigations({ fuel_phase: phase }), [phase]);
-  const detail = useAsync(() => (open ? api.investigation(open) : Promise.resolve(null)), [open]);
+function Investigations() {
+  const cat = useAsync(() => fs.catalog(), []);
+  if (cat.loading) return <Spinner />;
+  if (cat.error) return <ErrorBox error={cat.error} />;
+  const groups = Object.keys(PHASE).map((k) => [k, cat.data.filter((r) => r.fuel_phase === k)]).filter(([, rows]) => rows.length);
   return (
-    <div className="space-y-4">
-      <div className="w-56"><Select label="Fuel type" value={phase} onChange={setPhase} allowEmpty="All"
-        options={Object.entries(PHASES).map(([value, label]) => ({ value, label }))} /></div>
-      <ErrorBox error={list.error} />
-      {list.loading && <Spinner />}
-      <div className="investigation-grid grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {list.data?.map((i) => (
-          <Card key={i.source_record} className="investigation-card" title={i.name} right={<span className="record-id">{i.source_record}</span>}>
-            <div className="investigation-kind">{PHASES[i.fuel_phase] || i.fuel_phase}{i.role === "earth_comparison" ? " · Earth gravity" : ""}</div>
-            <p className="text-sm leading-relaxed text-gray-500">{investigationDescriptions[i.source_record] || i.summary}</p>
-            <div className="mt-3 flex flex-wrap gap-x-3 text-[11px] text-gray-500">
-              {i.counts.solid_tests > 0 && <span>{i.counts.solid_tests} solid tests</span>}
-              {i.counts.flex_tests > 0 && <span>{i.counts.flex_tests} droplet tests</span>}
-              <span>{i.counts.publications} publications</span>
-            </div>
-            <div className="mt-3 flex gap-3 text-xs">
-              <button aria-expanded={open === i.source_record} className="text-indigo-600 hover:underline" onClick={() => setOpen(open === i.source_record ? null : i.source_record)}>
-                {open === i.source_record ? "Hide details" : "Details"}</button>
-              {(i.counts.solid_tests > 0 || i.counts.flex_tests > 0) && <button className="text-indigo-600 hover:underline" onClick={() => onTests(i.source_record)}>View tests</button>}
-              <a href={i.url} target="_blank" rel="noreferrer" className="text-gray-500 hover:underline">NASA record ↗</a>
-            </div>
-            {open === i.source_record && detail.loading && <Spinner />}
-            {open === i.source_record && <ErrorBox error={detail.error} />}
-            {open === i.source_record && detail.data && (
-              <div className="mt-3 space-y-2 border-t border-line pt-3 text-xs text-gray-700">
-                <p>{i.summary}</p>
-                <div><b className="text-gray-800">Objective.</b> {detail.data.objective}</div>
-                <div><b className="text-gray-800">Approach.</b> {detail.data.approach}</div>
-                {detail.data.measured_variables && <div><b className="text-gray-800">Measured.</b> {detail.data.measured_variables}</div>}
-                {detail.data.publications?.length > 0 && <details><summary>Publications ({detail.data.publications.length})</summary><ul className="space-y-3">{detail.data.publications.map((p,index) => <li key={p.doi || index}>{p.url ? <a className="text-indigo-600 hover:underline" href={p.url} target="_blank" rel="noreferrer">{p.title} ↗</a> : p.title}</li>)}</ul></details>}
-              </div>
-            )}
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function Tests({ options, record, setRecord, openExperiment }) {
-  const [dataset, setDataset] = useState(record === "PSI-69" ? "flex" : "solid");
-  const [f, setF] = useState({ material: null, fuel: null, outcome: null, q: "" });
-  const [page, setPage] = useState(1);
-  const [picked, setPicked] = useState([]);
-  const q = useDebounced(f, 250);
-  const params = { dataset, source_record: record, ...q, page, page_size: 20 };
-  const res = useAsync(() => api.experiments(params), [JSON.stringify(params)]);
-  const cmp = useAsync(() => (picked.length === 2 ? api.compare(picked[0], picked[1]) : Promise.resolve(null)), [picked.join("|")]);
-  const set = (k) => (v) => { setF((s) => ({ ...s, [k]: v })); setPage(1); };
-  const pages = res.data ? Math.max(1, Math.ceil(res.data.total / 20)) : 1;
-  const togglePick = (id) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p.slice(-1), id]));
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3">
-        <Toggle value={dataset} onChange={(v) => { setDataset(v); setRecord(null); setPage(1); setPicked([]); setF({ material: null, fuel: null, outcome: null, q: "" }); }}
-          options={[{ value: "solid", label: "Solid materials" }, { value: "flex", label: "Fuel droplets" }]} />
-        {record && <button onClick={() => setRecord(null)} className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-800">{record} ✕</button>}
-        <div className="w-48">{dataset === "solid"
-          ? <Select label="Material" value={f.material} onChange={set("material")} allowEmpty="Any" options={options.solids.materials.map((m) => m.name)} />
-          : <Select label="Fuel" value={f.fuel} onChange={set("fuel")} allowEmpty="Any" options={options.flex.fuels} />}</div>
-        <div className="w-56">{dataset === "solid"
-          ? <Select label="Outcome" value={f.outcome} onChange={set("outcome")} allowEmpty="Any" options={options.solids.outcomes} />
-          : <Select label="Outcome" value={f.outcome} onChange={set("outcome")} allowEmpty="Any" options={["Extinction", "Completion", "Disruption"]} />}</div>
-        {dataset === "solid" && (
-          <label className="block text-xs"><span className="text-gray-700">Search crew notes</span>
-            <input value={f.q} onChange={(e) => set("q")(e.target.value)} placeholder="e.g. soot"
-              className="mt-1 block w-48 rounded-md border border-line bg-ink px-2 py-1.5 text-sm text-gray-900" /></label>
-        )}
-      </div>
-      <ErrorBox error={res.error} />
-      <div role="region" aria-label="Experiment results" tabIndex={0} className="scroll-region overflow-x-auto rounded-lg border border-line">
-        <table className="w-full min-w-[760px] text-left text-xs">
-          <thead className="bg-panel text-gray-500">
-            <tr>
-              <th className="p-2">Compare</th><th className="p-2">Test</th>
-              <th className="p-2">{dataset === "solid" ? "Material" : "Fuel"}</th><th className="p-2">O₂</th>
-              <th className="p-2">{dataset === "solid" ? "Airflow" : "Pressure"}</th>
-              {dataset === "flex" && <th className="p-2">Droplet</th>}
-              <th className="p-2">Outcome</th>
-            </tr>
-          </thead>
-          <tbody>
-            {res.data?.items.map((r) => (
-              <tr key={r.experiment_id} onClick={() => openExperiment(r.experiment_id)} className="cursor-pointer border-t border-line hover:bg-gray-50">
-                <td className="p-2" onClick={(e) => e.stopPropagation()}>
-                  <input aria-label={`Compare ${r.investigation} test ${r.test_id}`} type="checkbox" checked={picked.includes(r.experiment_id)} onChange={() => togglePick(r.experiment_id)} /></td>
-                <td className="p-2 text-indigo-600">{r.investigation} {r.test_id}<div className="text-[10px] text-gray-500">{r.date}</div></td>
-                <td className="p-2 text-gray-800">{r.material || r.fuel}{r.geometry ? <span className="text-gray-500"> · {r.geometry}</span> : null}</td>
-                <td className="p-2"><Value v={r.oxygen_pct} showTrust={false} /></td>
-                <td className="p-2">{dataset === "solid" ? (r.airflow_raw || "—") : <Value v={r.pressure_kpa} showTrust={false} />}</td>
-                {dataset === "flex" && <td className="p-2"><Value v={r.droplet_diameter_mm} showTrust={false} /></td>}
-                <td className="p-2"><span className="text-gray-800">{r.outcome.label}</span> <TrustBadge trust={r.outcome.trust} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {res.loading && <div className="p-3"><Spinner /></div>}
-      </div>
-      <div className="flex items-center justify-between text-xs text-gray-500">
-        <span>{res.data?.total ?? 0} tests · select two to compare</span>
-        <div className="flex items-center gap-2">
-          <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="rounded border border-line px-2 py-1 disabled:opacity-40">Prev</button>
-          <span>Page {page} of {pages}</span>
-          <button disabled={page >= pages} onClick={() => setPage(page + 1)} className="rounded border border-line px-2 py-1 disabled:opacity-40">Next</button>
-        </div>
-      </div>
-      {cmp.data && <Compare c={cmp.data} onClose={() => setPicked([])} />}
-    </div>
-  );
-}
-
-function Compare({ c, onClose }) {
-  const show = (v) => {
-    if (v == null) return "—";
-    if (typeof v !== "object") return String(v);
-    if (v.label) return v.label;
-    if (typeof v.value === "boolean") return v.value ? "Yes" : "No";
-    if (typeof v.value === "string") return v.value;
-    if ("value" in v) return <Value v={v} showTrust={false} />;
-    return JSON.stringify(v);
-  };
-  return (
-    <Card title="Side-by-side comparison" subtitle={c.note} right={<button onClick={onClose} className="text-xs text-gray-500 hover:text-gray-900">Clear</button>}>
-    <div className="scroll-region overflow-x-auto"><table className="w-full text-xs">
-        <thead className="text-gray-500"><tr><th className="p-1 text-left">Field</th><th className="p-1 text-left">{c.a.investigation} {c.a.test_id}</th><th className="p-1 text-left">{c.b.investigation} {c.b.test_id}</th></tr></thead>
-        <tbody>
-          {c.fields.filter((r) => !["experiment_id", "dataset", "url", "source_record"].includes(r.field)).map((r) => (
-            <tr key={r.field} className={`border-t border-line ${r.different ? "bg-flame/5" : ""}`}>
-              <td className="p-1 text-gray-500">{r.field.replaceAll("_", " ")}</td><td className="p-1">{show(r.a)}</td><td className="p-1">{show(r.b)}</td>
-            </tr>
+    <div className="space-y-6">
+      {groups.map(([phase, rows]) => (
+        <section key={phase} className="space-y-2">
+          <div className="fs-label">{PHASE[phase]}</div>
+          {rows.map((r) => (
+            <details key={r.source_record} className="expander">
+              <summary><b>{r.investigation_name}</b></summary>
+              <p className="text-sm leading-relaxed text-gray-700">{r.summary}</p>
+              <a className="mt-3 inline-block text-sm text-indigo-600 hover:underline" href={r.url} target="_blank" rel="noreferrer">Open the NASA record ↗</a>
+            </details>
           ))}
-        </tbody>
-      </table></div>
-    </Card>
+        </section>
+      ))}
+    </div>
   );
 }
 
-function Search() {
-  const [text, setText] = useState("");
-  const q = useDebounced(text.trim(), 300);
-  const res = useAsync(() => (q ? api.search(q, { k: 10 }) : Promise.resolve(null)), [q]);
+function toCsv(rows, cols) {
+  const esc = (v) => (v == null ? "" : /[",\n]/.test(String(v)) ? `"${String(v).replaceAll('"', '""')}"` : String(v));
+  return [cols.map((c) => c.label).join(","), ...rows.map((r) => cols.map((c) => esc(r[c.key])).join(","))].join("\n");
+}
+
+function download(rows, cols, name) {
+  const url = URL.createObjectURL(new Blob([toCsv(rows, cols)], { type: "text/csv" }));
+  Object.assign(document.createElement("a"), { href: url, download: name }).click();
+  URL.revokeObjectURL(url);
+}
+
+const SOLID_COLS = [{ key: "investigation_name", label: "Experiment" }, { key: "test_id", label: "Test" }, { key: "test_date", label: "Date" },
+  { key: "material", label: "Material" }, { key: "sample_geometry", label: "Shape" }, { key: "oxygen_pct", label: "Oxygen %" },
+  { key: "airflow_raw", label: "Airflow (cm/s)" }, { key: "result", label: "Result" }, { key: "notes", label: "Crew notes" },
+  { key: "source_url", label: "NASA record", link: true }];
+
+function SolidTests() {
+  const s = useAsync(() => fs.solids(), []);
+  const [mats, setMats] = useState([]);
+  const [recs, setRecs] = useState([]);
+  const [outs, setOuts] = useState([]);
+  const rows = useMemo(() => (s.data || []).map((r) => ({ ...r, result: RESULT[r.outcome_group] || r.outcome_group || "Unclear" })), [s.data]);
+  const v = rows.filter((r) => (!mats.length || mats.includes(r.material)) && (!recs.length || recs.includes(r.investigation_name))
+    && (!outs.length || outs.includes(r.result)));
+  if (s.loading) return <Spinner />;
+  if (s.error) return <ErrorBox error={s.error} />;
   return (
     <div className="space-y-4">
-      <input autoFocus value={text} onChange={(e) => setText(e.target.value)} placeholder="Search NASA reports, e.g. “opposed flow flame spread”"
-        className="w-full rounded-lg border border-line bg-panel px-4 py-3 text-sm text-gray-900" />
-      {res.loading && q && <Spinner />}
-      <ErrorBox error={res.error} />
-      {res.data?.results.length === 0 && <div className="text-sm text-gray-500">No passages found.</div>}
-      <div className="space-y-3">
-        {res.data?.results.map((r) => (
-          <Card key={r.chunk_id} title={`${r.investigation} · ${r.source_record}`}
-            right={<SourceLink url={r.url} />}>
-            {r.caution && <div className="mb-2 text-xs text-amber-800">⚠ {r.caution}</div>}
-            <p className="text-sm text-gray-700">{r.snippet}</p>
-          </Card>
-        ))}
+      <Card className="grid gap-5 md:grid-cols-3">
+        <MultiSelect label="Material" options={uniq(rows.map((r) => r.material))} value={mats} onChange={setMats} />
+        <MultiSelect label="Experiment" options={uniq(rows.map((r) => r.investigation_name))} value={recs} onChange={setRecs} />
+        <MultiSelect label="Result" options={uniq(rows.map((r) => r.result))} value={outs} onChange={setOuts} />
+      </Card>
+      <Card>
+        <TestsScatter tests={v} height={400} />
+        <Note>Each mark is one test, placed by oxygen and airflow and colored by what the flame did.</Note>
+      </Card>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Caption>{v.length} of {rows.length} tests on the space station. Results checked by our team against crew notes.</Caption>
+        <button className="secondary-button" onClick={() => download(v, SOLID_COLS, "nasa_solid_tests.csv")}>Download CSV</button>
       </div>
+      <DataTable rows={v} maxHeight={460} columns={SOLID_COLS} />
+    </div>
+  );
+}
+
+const FLEX_COLS = [{ key: "test_id", label: "Test" }, { key: "test_date", label: "Date" }, { key: "fuel", label: "Fuel" },
+  { key: "oxygen_pct", label: "Oxygen %" }, { key: "co2_pct", label: "CO₂ %" }, { key: "helium_pct", label: "Helium %" },
+  { key: "pressure_kpa", label: "Pressure (kPa)" }, { key: "droplet_diameter_mm", label: "Drop size (mm)" },
+  { key: "burn_time_s", label: "Burn time (s)" }, { key: "result", label: "Result" }, { key: "source_url", label: "NASA record", link: true }];
+
+function DropletTests() {
+  const d = useAsync(() => fs.flex(), []);
+  const [fuels, setFuels] = useState([]);
+  const [outs, setOuts] = useState([]);
+  if (d.loading) return <Spinner />;
+  if (d.error) return <ErrorBox error={d.error} />;
+  const v = d.data.filter((r) => (!fuels.length || fuels.includes(r.fuel)) && (!outs.length || outs.includes(r.result)));
+  return (
+    <div className="space-y-4">
+      <Card className="grid gap-5 md:grid-cols-2">
+        <MultiSelect label="Fuel" options={uniq(d.data.map((r) => r.fuel))} value={fuels} onChange={setFuels} />
+        <MultiSelect label="Result" options={uniq(d.data.map((r) => r.result))} value={outs} onChange={setOuts} />
+      </Card>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Caption>{v.length} of {d.data.length} FLEX tests: single fuel drops lit on the space station.</Caption>
+        <button className="secondary-button" onClick={() => download(v, FLEX_COLS, "nasa_droplet_tests.csv")}>Download CSV</button>
+      </div>
+      <DataTable rows={v} maxHeight={520} columns={FLEX_COLS} />
     </div>
   );
 }
