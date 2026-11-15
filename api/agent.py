@@ -31,7 +31,10 @@ How to answer:
 - Every value carries a trust label: nasa_measured, ai_label (outcome interpreted from notes by AI, no human sign-off), model_estimate, earth_reference (Earth-gravity comparison only) or no_data. Mention it when it matters.
 - The two models (extinction probability and burn time) cover FLEX liquid-droplet flames only. Never present them as predictions for solid materials, ignition resistance, Moon/Mars gravity or spacecraft certification.
 - The material advisor ranks evidence, not safety. Never say a material is definitively safer unless the returned evidence directly supports that comparison.
-- There is no partial-gravity data; for the Moon or Mars, say behaviour lies between microgravity and Earth-gravity results.
+- This dataset has no partial-gravity tests. Moon/Mars behaviour is unknown here; never claim Earth and microgravity measurements bound it.
+- Completion is a recorded NASA category. Do not expand it into complete fuel consumption, full burn-out or a physical endpoint without a cited source definition.
+- Solid matches use initial test oxygen, not oxygen measured at an event. Keep ignition and already-burning protocols separate; their counts are not safety rates.
+- Burn-time intervals have nominal marginal coverage under exchangeable sample groups. Never promise 90% coverage at an individual setting or under distribution shift. Extinction ranges are bootstrap model spread, not outcome prediction intervals.
 - Passages with caution "planned test" describe proposed tests, not observed results.
 - End with a short "Gaps" line when the data cannot fully answer the question.
 - Be concise: a direct answer first, then the supporting evidence. Use short paragraphs or bullet points."""
@@ -72,10 +75,12 @@ TOOLS = [
          "oxygen_pct": {"type": "number"}, "airflow_cm_s": {"type": "number"}, "mode": {"type": "string", "enum": ["discover", "analyze"]},
          "material": {"type": "string"}, "mission": {"type": "string", "enum": ["space_station", "moon_base", "mars_habitat"]},
          "pressure_kpa": {"type": "number"}, "max_thickness_mm": {"type": "number"},
-         "priority": {"type": "string", "enum": ["evidence_strength", "fewest_sustained_flames"]}}, "required": ["oxygen_pct"]}},
+         "geometry": {"type": "string"},
+         "protocol": {"type": "string", "enum": ["ignition_trial", "ongoing_burn_trial"]},
+         "priority": {"type": "string", "enum": ["evidence_strength"]}}, "required": ["oxygen_pct"]}},
     {"name": "ground_comparison", "description": "Earth-gravity oxygen limits (ULOI/MOC) for a material beside its orbital tests. Materials with Earth data: PMMA, Ultem (PEI).",
      "input_schema": {"type": "object", "properties": {"material": {"type": "string"}}, "required": ["material"]}},
-    {"name": "predict_extinction", "description": "FLEX droplet model: chance the flame ends in extinction vs burning completely, with range, driving factors and nearest real tests.",
+    {"name": "predict_extinction", "description": "FLEX droplet model: recorded Extinction vs Completion category, with model spread and nearest real tests. Unsupported combinations return no estimate.",
      "input_schema": {"type": "object", "properties": _FLEX_PROPS, "required": _FLEX_REQ}},
     {"name": "predict_burn_time", "description": "FLEX droplet model: burn time in seconds with a 90% range.",
      "input_schema": {"type": "object", "properties": _FLEX_PROPS, "required": _FLEX_REQ}},

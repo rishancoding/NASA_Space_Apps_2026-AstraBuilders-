@@ -33,3 +33,11 @@ For a deployed build, set `VITE_API_URL` to the API's public address, then `npm 
 | `src/components/ExperimentDrawer.jsx` | Full detail for one NASA test |
 
 Every form is built from `GET /api/options`, so slider ranges and dropdowns update when the data does.
+
+## Supported controls and validation
+
+The predictor starts from a screened NASA test. Fuel and gas-mixture switches reset all inputs, and sliders use conditional settings returned by `/api/predict/controls`. Fixed zero gas components are shown in the composition summary. The backend also rejects unsupported combinations, including what-if curve points. See [prediction limits](../docs/PREDICTION_LIMITS.md).
+
+The Material Advisor separates ignition and already-burning events and labels initial oxygen as a proxy. The Model Accuracy page shows independent burn-time audit results separately from historical CV stress tests. The UI has responsive navigation, visible focus indicators, reduced-motion support, loading/error states and lazy-loaded pages.
+
+Checks: `npm ci && npm run build`; from the repository root, `python3 -m pytest api/tests model/tests -q` (with API requirements installed). Data/SQLite checks remain `python3 -m unittest discover -s data/tests` (with build requirements installed).

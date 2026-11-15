@@ -103,7 +103,8 @@ class AdvisorInput(BaseModel):
     geometry: Optional[str] = None
     max_thickness_mm: Optional[float] = None
     constraints: list[str] = Field(default_factory=list, description="Free-text constraints such as 'max mass 2 kg'; reported as cannot_check")
-    priority: Literal["evidence_strength", "fewest_sustained_flames"] = "evidence_strength"
+    priority: Literal["evidence_strength"] = "evidence_strength"
+    protocol: Literal["ignition_trial", "ongoing_burn_trial"] = "ignition_trial"
 
 
 class CompareInput(BaseModel):
@@ -205,6 +206,11 @@ def ground(material: str):
 @app.post("/api/predict/extinction", tags=["predict"])
 def predict_extinction(body: FlexInput):
     return core.predict_extinction(**body.model_dump())
+
+
+@app.post("/api/predict/controls", tags=["predict"])
+def prediction_controls(body: FlexInput):
+    return core.flex_controls(**body.model_dump())
 
 
 @app.post("/api/predict/burn-time", tags=["predict"])

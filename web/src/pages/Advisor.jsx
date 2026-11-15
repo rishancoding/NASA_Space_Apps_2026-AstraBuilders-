@@ -12,7 +12,7 @@ export default function Advisor({ options, openExperiment, askChat }) {
   const solids = options.solids;
   const [form, setForm] = useState({
     mode: "discover", oxygen_pct: 21, airflow_cm_s: 10, material: solids.materials[0].name,
-    mission: "space_station", pressure_kpa: 101.3, max_thickness_mm: null, priority: "evidence_strength",
+    mission: "space_station", pressure_kpa: 101.3, max_thickness_mm: null, priority: "evidence_strength", geometry: null, protocol: "ignition_trial",
   });
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
   const q = useDebounced(form, 250);
@@ -22,20 +22,20 @@ export default function Advisor({ options, openExperiment, askChat }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Material Advisor</h1>
+          <div className="eyebrow mb-2">01 / Find the evidence</div><h1 className="text-2xl font-semibold tracking-tight text-white">Material Advisor</h1>
           <p className="mt-1 max-w-2xl text-sm text-slate-400">
-            Enter your habitat's conditions and see what NASA actually observed when materials burned in orbit near them.
+            Compare NASA observations near your conditions. Rankings show evidence coverage; they do not identify a safest material.
           </p>
         </div>
         <Toggle value={form.mode} onChange={set("mode")}
-          options={[{ value: "discover", label: "Find a material" }, { value: "analyze", label: "Analyze a material" }]} />
+          options={[{ value: "discover", label: "Discover evidence" }, { value: "analyze", label: "Analyze a material" }]} />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
         {/* ---------------- inputs */}
         <Card title="Your conditions" className="h-fit space-y-4">
           <div className="flex flex-wrap gap-2">
-            {options.presets.map((p) => (
+            {options.presets.filter((p) => p.oxygen_pct >= solids.oxygen_pct.min && p.oxygen_pct <= solids.oxygen_pct.max).map((p) => (
               <button key={p.id} title={p.note}
                 onClick={() => setForm((f) => ({ ...f, oxygen_pct: p.oxygen_pct, airflow_cm_s: p.airflow_cm_s, pressure_kpa: p.pressure_kpa }))}
                 className="rounded-full border border-line px-2.5 py-1 text-xs text-slate-300 hover:border-flame hover:text-white">
@@ -47,19 +47,19 @@ export default function Advisor({ options, openExperiment, askChat }) {
             <Select label="Material to analyze" value={form.material} onChange={set("material")}
               options={solids.materials.map((m) => ({ value: m.name, label: `${m.name} (${m.tests} tests)` }))} />
           )}
-          <Slider label="Oxygen" unit="%" value={form.oxygen_pct} min={10} max={40} step={0.5} onChange={set("oxygen_pct")}
+          <Slider label="Initial test oxygen" unit="%" value={form.oxygen_pct} min={solids.oxygen_pct.min} max={solids.oxygen_pct.max} step={0.5} onChange={set("oxygen_pct")}
             hint={`Solid tests in orbit: ${solids.oxygen_pct.min}–${solids.oxygen_pct.max}%`} />
           <Slider label="Airflow" unit="cm/s" value={form.airflow_cm_s} min={0} max={solids.airflow_cm_s.max} step={0.5} onChange={set("airflow_cm_s")} />
-          <Slider label="Cabin pressure" unit="kPa" value={form.pressure_kpa} min={30} max={110} step={0.5} onChange={set("pressure_kpa")}
-            hint="Shown for context: solid tests did not vary pressure." />
-          <Select label="Mission" value={form.mission} onChange={set("mission")} options={options.missions} />
+          <Select label="Sample geometry" value={form.geometry} onChange={set("geometry")} allowEmpty="All recorded shapes" options={solids.geometries} />
+          <Select label="Compare flame events from" value={form.protocol} onChange={set("protocol")} options={options.protocols} />
+          <p className="text-xs leading-relaxed text-slate-400">{form.protocol === "ignition_trial" ? "Did a flame sustain after an ignition attempt?" : "What happened to a flame that was already burning?"} These are different protocols and are counted separately.</p>
           <label className="block text-xs">
             <span className="text-slate-300">Max sample thickness (optional)</span>
             <input type="number" min={0} step={0.1} value={form.max_thickness_mm ?? ""} placeholder="mm"
               onChange={(e) => set("max_thickness_mm")(e.target.value === "" ? null : Number(e.target.value))}
               className="mt-1 w-full rounded-md border border-line bg-ink px-2 py-1.5 text-sm text-slate-100" />
           </label>
-          <Select label="Rank by" value={form.priority} onChange={set("priority")} options={options.priorities} />
+          <details className="border-t border-line pt-3 text-xs text-slate-400"><summary>Mission context</summary><div className="mt-3 space-y-3"><Select label="Mission" value={form.mission} onChange={set("mission")} options={options.missions} /><p>Pressure is not an adjustable solid-model input. Partial-gravity behaviour is unknown in this dataset.</p></div></details>
         </Card>
 
         {/* ---------------- results */}
@@ -105,18 +105,23 @@ function CandidateCard({ c, openExperiment }) {
 
       <div className="mt-3 space-y-2 text-xs">
         <div>
-          <div className="mb-1 flex items-center gap-2 text-slate-400">What happened in nearby tests <TrustBadge trust="ai_label" /></div>
+          <div className="mb-1 flex items-center gap-2 text-slate-400">Whole-test outcomes nearby <TrustBadge trust="ai_label" /></div>
           {outcomes.length ? (
             <div className="flex flex-wrap gap-1.5">
               {outcomes.map(([k, n]) => <span key={k} className="rounded bg-ink px-2 py-0.5 text-slate-200">{k}: {n}</span>)}
             </div>
           ) : <div className="text-slate-500">No NASA test near these conditions.</div>}
+          <p className="mt-1 text-slate-400">Whole-test outcomes can include multiple airflow stages; they are not results at one airflow.</p>
         </div>
         {ev.events > 0 && (
           <div className="text-slate-300">
-            Flame results tied to a specific airflow: <b className="text-white">{ev.sustained_flame}</b> sustained, <b className="text-white">{ev.not_sustained}</b> not sustained
+            <div className="mb-1 text-cyan-200">{ev.protocol === "ignition_trial" ? "Ignition trials" : "Already-burning trials"} · AI-read events</div>
+            <b className="text-white">{ev.sustained_flame}</b> sustained, <b className="text-white">{ev.not_sustained}</b> not sustained
+            <p className="mt-1 text-slate-400">Initial oxygen only; oxygen at the event is unknown. Observation durations vary.</p>
+            <details className="mt-2"><summary className="text-sky-300">Read the {ev.events} supporting event{ev.events === 1 ? "" : "s"}</summary><ul className="mt-2 space-y-2">{ev.evidence.map((e) => <li key={e.stage_id} className="rounded-lg bg-ink/80 p-2"><p className="italic text-slate-300">“{e.quote}”</p><button className="mt-1 text-sky-300 hover:underline" onClick={() => openExperiment(e.experiment_id)}>{e.geometry} · initial {fmt(e.oxygen_initial_pct)}% O₂ · {fmt(e.airflow_cm_s)} cm/s ↗</button></li>)}</ul></details>
           </div>
         )}
+        {ev.events === 0 && <p className="text-slate-400">No reviewed {ev.protocol === "ignition_trial" ? "ignition" : "already-burning"} events match these conditions and filters.</p>}
         {c.earth_reference?.earth_tests?.length > 0 && (
           <div className="text-slate-300">
             Earth-gravity oxygen limit (lowest ULOI): <Value v={c.earth_reference.earth_tests.reduce((a, b) => (b.uloi_oxygen_pct.value < a.uloi_oxygen_pct.value ? b : a)).uloi_oxygen_pct} />

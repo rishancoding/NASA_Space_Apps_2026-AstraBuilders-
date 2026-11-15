@@ -15,7 +15,7 @@ export default function ModelPage() {
   if (loading) return <Spinner />;
   if (error) return <ErrorBox error={error} />;
   const ex = data.extinction, bt = data.burn_time, st = data.stress_tests;
-  const exSel = ex.candidates[ex.selected_model], btSel = bt.candidates[bt.selected_model];
+  const exSel = ex.candidates[ex.selected_model], btSel = bt.audit;
   const calib = exSel.calibration.map((c) => ({ predicted: c.predicted_mean, observed: c.observed_rate, n: c.n }));
   const avp = data.out_of_fold.burn_time.map((r) => ({ actual: r.actual_s, predicted: r.predicted_s, fuel: r.fuel }));
   const maxT = Math.max(...avp.map((p) => Math.max(p.actual, p.predicted)));
@@ -23,18 +23,18 @@ export default function ModelPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-white">Model Accuracy</h1>
+        <div className="eyebrow mb-2">04 / Understand the limits</div><h1 className="text-2xl font-semibold text-white">Model Accuracy</h1>
         <p className="mt-1 max-w-3xl text-sm text-slate-400">
-          Both models were tested on NASA FLEX tests they never saw (5-fold cross-validation, repeat burns kept together).
-          Scope: liquid fuel droplets in the tested gas mixtures only.
+          Extinction uses grouped cross-validation. Burn time uses separate fitting, calibration and audit groups.
+          Scope: FLEX liquid droplets. Coverage does not guarantee accuracy at every condition.
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
         <Big label="Extinction: balanced accuracy" value={fmt(exSel.balanced_accuracy)} sub="0.50 = guessing" />
         <Big label="Extinction: probability error (Brier)" value={fmt(exSel.brier_score)} sub={`${fmt(ex.candidates.majority_baseline.brier_score)} for quoting the average`} />
-        <Big label="Burn time: R²" value={fmt(btSel.r2)} sub={`typical error ${fmt(btSel.mae_s)} s`} />
-        <Big label="Burn time: 90% range hit rate" value={`${Math.round(btSel.interval_coverage * 100)}%`} sub="target 90%" />
+        <Big label="Burn time: independent audit R²" value={fmt(btSel.r2)} sub={`typical error ${fmt(btSel.mae_s)} s`} />
+        <Big label="Burn time: audit interval coverage" value={`${Math.round(btSel.interval_coverage * 100)}%`} sub={`nominal target 90% · ${btSel.groups} audit groups`} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -54,7 +54,7 @@ export default function ModelPage() {
           </div>
         </Card>
 
-        <Card title="Burn time: predicted vs actual" subtitle="Each dot is a NASA test predicted by a model that never saw it.">
+        <Card title="Burn time: predicted vs actual" subtitle="Each dot is an independent audit test; none was used to fit, select or calibrate the deployed model.">
           <div className="h-72">
             <ResponsiveContainer>
               <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
@@ -77,14 +77,14 @@ export default function ModelPage() {
           <Table rows={Object.entries(ex.candidates).map(([k, v]) => [NAMES[k] || k, fmt(v.balanced_accuracy), fmt(v.roc_auc), fmt(v.brier_score)])}
             head={["Model", "Balanced acc.", "AUC", "Brier"]} selected={NAMES[ex.selected_model]} />
         </Card>
-        <Card title="Burn-time models compared" subtitle={`Selected: ${NAMES[bt.selected_model]}`}>
-          <Table rows={Object.entries(bt.candidates).map(([k, v]) => [NAMES[k] || k, fmt(v.r2), `${fmt(v.mae_s)} s`, `${Math.round(v.interval_coverage * 100)}%`])}
-            head={["Model", "R²", "Typical error", "90% range hit"]} selected={NAMES[bt.selected_model]} />
+        <Card title="Burn-time candidate selection" subtitle={`Grouped CV on ${bt.partitions.fit.rows} fitting rows only. Selected: ${NAMES[bt.selected_model]}`}>
+          <Table rows={Object.entries(bt.candidates).map(([k, v]) => [NAMES[k] || k, fmt(v.r2), `${fmt(v.mae_s)} s`, "—"])}
+            head={["Model", "CV R²", "CV error", "Interval audit"]} selected={NAMES[bt.selected_model]} />
         </Card>
       </div>
 
       {st && (
-        <Card title="Stress tests" subtitle="Extra checks beyond the main validation">
+        <Card title="Historical candidate stress tests" subtitle="Full-dataset CV experiments from the earlier model run. These do not measure the frozen burn-time pipeline or validate its new intervals.">
           <ul className="grid gap-2 text-sm text-slate-300 md:grid-cols-2">
             <li>20 different test splits: balanced accuracy {fmt(st.extinction_stability_20_shuffles.min)}–{fmt(st.extinction_stability_20_shuffles.max)}; burn-time R² {fmt(st.burn_time_stability_20_shuffles.r2_min)}–{fmt(st.burn_time_stability_20_shuffles.r2_max)}</li>
             <li>Shuffled labels: AUC drops from {fmt(st.extinction_permutation_test.real_auc)} to {fmt(st.extinction_permutation_test.shuffled_auc_mean)} (p = {fmt(st.extinction_permutation_test.p_value)})</li>
@@ -96,6 +96,10 @@ export default function ModelPage() {
         </Card>
       )}
 
+      <Card title="Burn-time interval audit" subtitle="Separate sample groups at every step; the deployed pipeline is not refitted after calibration.">
+        <div className="grid gap-4 text-sm sm:grid-cols-3">{[["Fit & select", bt.partitions.fit], ["Calibrate interval", bt.partitions.calibration], ["Independent audit", bt.partitions.audit]].map(([label, p]) => <div key={label} className="rounded-xl border border-line bg-ink/60 p-3"><div className="eyebrow">{label}</div><div className="mt-2 text-white">{p.rows} rows / {p.groups.length} groups</div></div>)}</div>
+        <p className="mt-4 text-xs leading-relaxed text-slate-400">{bt.uncertainty_method}. Coverage is marginal under exchangeable sample groups, not guaranteed for each atmosphere or fuel. Independent audit R²: {fmt(btSel.r2)} (95% group-bootstrap interval {fmt(btSel.r2_95ci[0])}–{fmt(btSel.r2_95ci[1])}).</p>
+      </Card>
       <Card title="What these models cannot do">
         <ul className="list-inside list-disc text-sm text-slate-300">
           {data.unsupported_claims.map((c) => <li key={c}>{c}</li>)}

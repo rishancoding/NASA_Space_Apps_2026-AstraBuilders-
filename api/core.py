@@ -54,7 +54,7 @@ OUTCOME_TEXT = {
     "partial_extinction": "Partly went out",
     "suppression_extinction": "Put out by suppressant",
     "Extinction": "Flame went out (extinction)",
-    "Completion": "Droplet burned completely",
+    "Completion": "Completion (NASA recorded category)",
     "Disruption": "Test disrupted (no clean ending)",
 }
 GROUND_FAMILY = {"PMMA": "PMMA", "Ultem (PEI)": "PEI"}
@@ -141,6 +141,16 @@ def airflow_ranges():
         if v is not None and r["reading_status"] == "exact_display":
             out[r["experiment_id"]].append(v)
     return {k: (min(v), max(v)) for k, v in out.items()}
+
+
+@lru_cache(maxsize=1)
+def airflow_values():
+    out = defaultdict(set)
+    for r in _csv("airflow_readings.csv"):
+        v = _num(r["airflow_display_cm_s"])
+        if v is not None and r["reading_status"] == "exact_display":
+            out[r["experiment_id"]].add(v)
+    return out
 
 
 @lru_cache(maxsize=1)
@@ -271,9 +281,13 @@ def get_options():
     flows = [v for r in s for v in (r["airflow_min"], r["airflow_max"]) if v is not None]
     m = metrics()
     return {
+        "dataset_counts": {"psi_records": sum(k.startswith("PSI-") for k in catalog()),
+                           "recorded_tests": len(s) + len(flex_all()), "screened_flex": len(flex_train())},
         "flex": {
             "fuels": SPEC["fuel_categories"],
             "fields": flex_fields,
+            "scenarios": flex_scenarios(),
+            "support_note": "Controls use screened NASA tests of the same fuel and gas family. Estimates require at least three nearby sample groups; this is a conservative coverage rule, not a guarantee of accuracy.",
             "nitrogen": "Nitrogen is the remainder: 1 − oxygen/100 − CO₂ − helium. It must not be negative.",
             "predictions": {
                 "extinction": {"enabled": m["extinction"]["prediction_enabled"], "reason": m["extinction"]["promotion_gate"]},
@@ -298,10 +312,9 @@ def get_options():
             {"id": "low_flow", "label": "Stagnant corner (low airflow)", "oxygen_pct": 21.0, "pressure_kpa": 101.3, "airflow_cm_s": 1.0,
              "note": "Low ventilation, where microgravity flames can behave differently from Earth."},
         ],
-        "priorities": [
-            {"value": "evidence_strength", "label": "Most NASA evidence near my conditions"},
-            {"value": "fewest_sustained_flames", "label": "Fewest sustained flames observed near my conditions"},
-        ],
+        "priorities": [{"value": "evidence_strength", "label": "Most NASA evidence near my conditions"}],
+        "protocols": [{"value": "ignition_trial", "label": "Ignition trials"},
+                      {"value": "ongoing_burn_trial", "label": "Already-burning trials"}],
         "trust_labels": TRUST,
         "outcome_labels": OUTCOME_TEXT,
     }
@@ -503,16 +516,18 @@ def _solid_distance(r, oxygen_pct, airflow_cm_s, oxygen_scale=1.5, flow_scale=4.
     parts = {"oxygen_gap_pct": _round(r["oxygen_pct"] - oxygen_pct, 2)}
     if airflow_cm_s is None:
         return abs(d_o), parts
-    lo, hi = r["airflow_min"], r["airflow_max"]
-    if lo is None:
+    readings = airflow_values().get(r["experiment_id"], set())
+    if not readings and r["airflow_cm_s"] is not None:
+        readings = {r["airflow_cm_s"]}
+    if not readings:
         d_f, parts["airflow_gap_cm_s"] = 2.0, None  # unknown airflow: fixed penalty
     else:
-        gap = 0.0 if lo <= airflow_cm_s <= hi else min(abs(airflow_cm_s - lo), abs(airflow_cm_s - hi))
+        gap = min(abs(airflow_cm_s - v) for v in readings)
         d_f, parts["airflow_gap_cm_s"] = gap / flow_scale, _round(gap, 2)
     return math.hypot(d_o, d_f), parts
 
 
-def find_similar_solid(oxygen_pct, airflow_cm_s=None, material=None, geometry=None, k=8):
+def find_similar_solid(oxygen_pct, airflow_cm_s=None, material=None, geometry=None, k=8, max_thickness_mm=None):
     _check_range("oxygen_pct", oxygen_pct, 0, 100)
     if airflow_cm_s is not None:
         _check_range("airflow_cm_s", airflow_cm_s, 0, 1000)
@@ -521,6 +536,8 @@ def find_similar_solid(oxygen_pct, airflow_cm_s=None, material=None, geometry=No
         if material and r["material"].lower() != material.lower():
             continue
         if geometry and r["sample_geometry"] != geometry:
+            continue
+        if max_thickness_mm is not None and (r["thickness_mm"] is None or r["thickness_mm"] > max_thickness_mm):
             continue
         d, parts = _solid_distance(r, oxygen_pct, airflow_cm_s)
         if d is not None:
@@ -531,7 +548,7 @@ def find_similar_solid(oxygen_pct, airflow_cm_s=None, material=None, geometry=No
     return {
         "query": {"oxygen_pct": oxygen_pct, "airflow_cm_s": airflow_cm_s, "material": material, "geometry": geometry},
         "coverage": {**_coverage_label(best), "nearest_distance": _round(best, 3) if best is not None else None},
-        "method": "Distance where 1 unit ≈ 1.5 oxygen points or 4 cm/s airflow outside the test's recorded airflow range. Tests with unknown airflow get a fixed penalty.",
+        "method": "Distance where 1 unit ≈ 1.5 initial oxygen points or 4 cm/s from an exact recorded airflow reading. No interpolation between airflow stages. Unknown airflow gets a fixed penalty.",
         "matches": [{**_solid_summary(r), "distance": _round(d, 3), "similarity": _round(math.exp(-d), 3), "gaps": parts}
                     for d, parts, r in top],
     }
@@ -542,6 +559,68 @@ def _flex_scale():
     return {f: float(df[f].std()) or 1.0 for f in FLEX_NUMERIC}
 
 
+def _gas_family(inputs):
+    co2, he = inputs["co2_fraction"] > 1e-9, inputs["helium_fraction"] > 1e-9
+    return "CO₂ + helium" if co2 and he else "CO₂ dilution" if co2 else "Helium dilution" if he else "Oxygen + nitrogen"
+
+
+@lru_cache(maxsize=16)
+def _flex_reference(fuel, family):
+    df = flex_train()
+    df = df[(df["fuel"] == fuel) & (df.apply(_gas_family, axis=1) == family)]
+    return df, df[FLEX_NUMERIC].to_numpy(), df["split_group"].to_numpy(), np.array([_flex_scale()[f] for f in FLEX_NUMERIC])
+
+
+def _flex_support(inputs):
+    """Coverage heuristic only; never count censored/invalid rows as model support.
+
+    Same fuel and gas family, >=3 distinct sample groups within Euclidean
+    distance 1.5 using training-set standard deviations across five features.
+    Per-feature range checks remain separate. No joint-domain accuracy claim.
+    """
+    _, matrix, groups, scale = _flex_reference(inputs["fuel"], _gas_family(inputs))
+    distances = np.linalg.norm((matrix - np.array([inputs[f] for f in FLEX_NUMERIC])) / scale, axis=1)
+    count = len(set(groups[distances <= 1.5]))
+    supported = count >= 3
+    return {"supported": supported, "nearby_groups": count, "required_groups": 3, "radius": 1.5,
+            "gas_family": _gas_family(inputs),
+            "reason": ("At least three screened NASA sample groups are nearby." if supported else
+                       "This combination lacks three nearby screened NASA sample groups of the same fuel and gas family. Choose a NASA starting test or reset the controls.")}
+
+
+@lru_cache(maxsize=1)
+def flex_scenarios():
+    return [{"experiment_id": r["experiment_id"], "test_id": str(r["test_id"]),
+             "gas_family": _gas_family(r), "inputs": {f: r[f] for f in FLEX_FEATURES}}
+            for r in flex_train().to_dict("records") if _flex_support(r)["supported"]]
+
+
+def flex_controls(**kwargs):
+    """Discrete conditional settings: every returned setting passes the same API gate.
+
+    Holding the other inputs fixed avoids treating a Cartesian min/max box as
+    measured coverage. Recompute after each change; gaps stay unselectable.
+    """
+    inputs = _validate_flex(kwargs)
+    df, _, _, _ = _flex_reference(inputs["fuel"], _gas_family(inputs))
+    fields = []
+    for field in FLEX_NUMERIC:
+        candidates = [] if df.empty else np.unique(np.r_[np.linspace(df[field].min(), df[field].max(), 41), df[field], inputs[field]])
+        values = []
+        for value in candidates:
+            p = dict(inputs, **{field: float(value)})
+            if _gas_family(p) != _gas_family(inputs):
+                continue
+            try:
+                p = _validate_flex(p)
+            except InputError:
+                continue
+            if not p["_outside"] and _flex_support(p)["supported"]:
+                values.append(float(value))
+        fields.append({"name": field, "values": values})
+    return {"fields": fields, "support": _flex_support(inputs)}
+
+
 def find_similar_flex(fuel, oxygen_pct, pressure_kpa, co2_fraction=0.0, helium_fraction=0.0, droplet_diameter_mm=None, k=6):
     inputs = _validate_flex(dict(fuel=fuel, oxygen_pct=oxygen_pct, pressure_kpa=pressure_kpa, co2_fraction=co2_fraction,
                                  helium_fraction=helium_fraction, droplet_diameter_mm=droplet_diameter_mm), allow_out_of_range=True)
@@ -549,8 +628,7 @@ def find_similar_flex(fuel, oxygen_pct, pressure_kpa, co2_fraction=0.0, helium_f
 
 
 def _flex_neighbours(inputs, k=6):
-    df = flex_all()
-    df = df[(df["fuel"] == inputs["fuel"]) & df[FLEX_NUMERIC].notna().all(axis=1)]
+    df, _, _, _ = _flex_reference(inputs["fuel"], _gas_family(inputs))
     scale = _flex_scale()
     d = np.sqrt(sum(((df[f] - inputs[f]) / scale[f]) ** 2 for f in FLEX_NUMERIC))
     order = np.argsort(d.to_numpy())[:k]
@@ -558,10 +636,14 @@ def _flex_neighbours(inputs, k=6):
     dist = d.to_numpy()[order]
     best = float(dist[0]) if len(dist) else None
     # FLEX distances are in standard deviations across 5 features, so loosen the labels.
+    support = _flex_support(inputs)
     cov = _coverage_label(None if best is None else best / 1.5)
+    if not support["supported"] and cov["level"] == "close":
+        cov = {"level": "partial", "label": "Too few comparable NASA sample groups"}
     return {
         "coverage": {**cov, "nearest_distance": _round(best, 3)},
-        "method": "Euclidean distance in standard deviations of the FLEX training data, same fuel only.",
+        "support": support,
+        "method": "Euclidean distance in training-set standard deviations; screened rows of the same fuel and gas family only.",
         "matches": [{**_flex_summary(r), "distance": _round(float(x), 3), "similarity": _round(math.exp(-float(x) / 1.5), 3)}
                     for r, x in zip(rows, dist)],
     }
@@ -644,6 +726,8 @@ def predict_extinction(fuel, oxygen_pct, pressure_kpa, co2_fraction=0.0, helium_
     if inputs["_outside"]:
         return _unavailable("Inputs are outside the tested range, so no model number is shown.", inputs, neighbours,
                             {"out_of_range": inputs["_outside"]})
+    if not neighbours["support"]["supported"]:
+        return _unavailable(neighbours["support"]["reason"], inputs, neighbours)
     X = _frame(inputs)
     p = float(art["model"].predict_proba(X)[0, 1])
     spread = np.array([e.predict_proba(X)[0, 1] for e in art["ensemble"]])
@@ -656,9 +740,9 @@ def predict_extinction(fuel, oxygen_pct, pressure_kpa, co2_fraction=0.0, helium_
                                       note="Range = spread across models refit on resampled NASA tests"),
         "compared_with_typical": {
             "leans": "extinction" if p >= art["threshold"] else "completion",
-            "label": ("Typical for FLEX: the flame most likely goes out before the droplet is used up"
+            "label": ("Above the model's Extinction decision threshold"
                       if p >= art["threshold"] else
-                      "Leans toward burning to completion compared with typical FLEX tests"),
+                      "Below the model's Extinction decision threshold; classified as Completion"),
             "base_rate": _round(art.get("base_rate", 0.87)),
             "threshold": _round(art["threshold"]),
             "note": "Most FLEX flames (87%) ended in extinction. The threshold was tuned to separate the two endings as well as possible.",
@@ -667,7 +751,7 @@ def predict_extinction(fuel, oxygen_pct, pressure_kpa, co2_fraction=0.0, helium_
         "nearest_tests": neighbours,
         "warnings": inputs["_warnings"] + ([{"field": None, "message": "Nearest NASA tests are not very close; treat this estimate with extra caution."}]
                                            if neighbours["coverage"]["level"] != "close" else [])
-                    + ([{"field": "fuel", "message": "Only 8 methanol tests burned to completion, so within methanol the model separates the two endings weakly (held-out AUC ≈ 0.6). The overall rate is reliable; small differences are not."}]
+                    + ([{"field": "fuel", "message": "Only 8 methanol tests were recorded as Completion. Within methanol the model separates the two categories weakly (held-out AUC ≈ 0.6); small differences are uncertain."}]
                        if inputs["fuel"] == "Methanol" else []),
         "model": {"name": m["selected_model"], "balanced_accuracy": m["candidates"][m["selected_model"]]["balanced_accuracy"],
                   "roc_auc": m["candidates"][m["selected_model"]]["roc_auc"], "brier_score": m["candidates"][m["selected_model"]]["brier_score"],
@@ -687,6 +771,8 @@ def predict_burn_time(fuel, oxygen_pct, pressure_kpa, co2_fraction=0.0, helium_f
     if inputs["_outside"]:
         return _unavailable("Inputs are outside the tested range, so no model number is shown.", inputs, neighbours,
                             {"out_of_range": inputs["_outside"]})
+    if not neighbours["support"]["supported"]:
+        return _unavailable(neighbours["support"]["reason"], inputs, neighbours)
     X = _frame(inputs)
     pred = float(art["model"].predict(X)[0])
     q = art["conformal_q_log"]
@@ -696,13 +782,15 @@ def predict_burn_time(fuel, oxygen_pct, pressure_kpa, co2_fraction=0.0, helium_f
         "inputs": _public(inputs),
         "burn_time_s": val(seconds, "s", trust="model_estimate", low=max(0.0, float(np.expm1(pred - q))), high=float(np.expm1(pred + q)),
                            source={"record": "PSI-69", "url": SPEC["source_url"], "model": m["selected_model"]},
-                           note=f"{int(art['conformal_level'] * 100)}% range from held-out errors (measured coverage {m['candidates'][m['selected_model']]['interval_coverage']:.0%})"),
+                           note=f"Nominal {int(art['conformal_level'] * 100)}% interval, calibrated on separate sample groups. Independent audit coverage {m['audit']['group_interval_coverage']:.0%} across {m['audit']['groups']} groups; not guaranteed at each condition or under distribution shift."),
         "factors": _factors(inputs, lambda X_: float(np.expm1(art["model"].predict(X_)[0])), "seconds"),
         "nearest_tests": neighbours,
         "warnings": inputs["_warnings"],
-        "model": {"name": m["selected_model"], "r2": m["candidates"][m["selected_model"]]["r2"],
-                  "mae_s": m["candidates"][m["selected_model"]]["mae_s"], "rows": m["rows"]},
-        "scope": "Liquid droplet (FLEX) flames only. Burn time ends at extinction or full burn-out.",
+        "model": {"name": m["selected_model"], "r2": m["audit"]["r2"],
+                  "mae_s": m["audit"]["mae_s"], "rows": m["partitions"]["fit"]["rows"]},
+        "interval_validation": {"nominal_level": art["conformal_level"], "audit": m["audit"],
+                                "limitation": "Marginal under exchangeable sample groups, not guaranteed at each condition or under distribution shift."},
+        "scope": "Liquid droplet (FLEX) flames only. Recorded burn time among Extinction/Completion rows; Completion is retained as NASA's category, without inferring a physical endpoint.",
     }
 
 
@@ -715,6 +803,10 @@ def _factors(inputs, f, unit):
     for feat in FLEX_NUMERIC:
         alt = dict(inputs)
         alt[feat] = float(typical[feat])
+        if alt["oxygen_pct"] / 100 + alt["co2_fraction"] + alt["helium_fraction"] > 1:
+            continue
+        if _validate_flex(alt)["_outside"] or not _flex_support(alt)["supported"]:
+            continue
         delta = base - f(_frame(alt))
         if unit == "probability points":
             delta *= 100
@@ -739,27 +831,36 @@ def what_if(model, vary, fuel, oxygen_pct, pressure_kpa, co2_fraction=0.0, heliu
     pad = (hi - lo) * 0.15
     xs = np.linspace(max(0.0, lo - pad), hi + pad, points)
     art = extinction_model() if model == "extinction" else burn_time_model()
-    curve = []
+    curve, supported_inputs, supported_indices = [], [], []
     for x in xs:
         p = dict(base)
         p[vary] = float(x)
         n2 = 1 - p["oxygen_pct"] / 100 - p["co2_fraction"] - p["helium_fraction"]
         dom_all = SPEC["domains_by_fuel"][base["fuel"]]["fields"]
-        in_range = all(dom_all[f]["min"] - 1e-9 <= p[f] <= dom_all[f]["max"] + 1e-9 for f in FLEX_NUMERIC) and n2 >= -1e-9
+        in_range = (all(dom_all[f]["min"] - 1e-9 <= p[f] <= dom_all[f]["max"] + 1e-9 for f in FLEX_NUMERIC)
+                    and n2 >= -1e-9 and _flex_support(p)["supported"])
         point = {"x": _round(float(x), 4), "in_tested_range": bool(in_range), "y": None, "low": None, "high": None}
         if in_range and art["enabled"]:
-            X = _frame(p)
-            if model == "extinction":
-                ens = [e.predict_proba(X)[0, 1] for e in art["ensemble"]]
-                point.update(y=_round(float(art["model"].predict_proba(X)[0, 1])), low=_round(float(np.percentile(ens, 10))),
-                             high=_round(float(np.percentile(ens, 90))))
-            else:
-                y = float(art["model"].predict(X)[0])
-                q = art["conformal_q_log"]
-                point.update(y=_round(float(np.expm1(y))), low=_round(max(0.0, float(np.expm1(y - q)))), high=_round(float(np.expm1(y + q))))
+            supported_indices.append(len(curve))
+            supported_inputs.append({f: p[f] for f in FLEX_FEATURES})
         curve.append(point)
-    df = flex_all()
-    df = df[(df["fuel"] == base["fuel"]) & df[vary].notna() & df["test_end_raw"].isin(["Extinction", "Completion"])]
+    # Batch the curve: one call per pipeline instead of one per point. This
+    # keeps slider updates responsive and preserves unsupported gaps exactly.
+    if supported_inputs:
+        X = pd.DataFrame(supported_inputs)
+        if model == "extinction":
+            predictions = art["model"].predict_proba(X)[:, 1]
+            spread = np.array([e.predict_proba(X)[:, 1] for e in art["ensemble"]])
+            lows, highs = np.percentile(spread, [10, 90], axis=0)
+        else:
+            log_predictions = art["model"].predict(X)
+            q = art["conformal_q_log"]
+            predictions = np.expm1(log_predictions)
+            lows, highs = np.maximum(0.0, np.expm1(log_predictions - q)), np.expm1(log_predictions + q)
+        for idx, y, low, high in zip(supported_indices, predictions, lows, highs):
+            curve[idx].update(y=_round(float(y)), low=_round(float(low)), high=_round(float(high)))
+    df, _, _, _ = _flex_reference(base["fuel"], _gas_family(base))
+    df = df[df[vary].notna()]
     real = [{"x": _round(float(r[vary]), 4), "y": (1 if r["test_end_raw"] == "Extinction" else 0) if model == "extinction" else _round(r["burn_time_s"]),
              "outcome": r["test_end_raw"], "experiment_id": r["experiment_id"]}
             for r in df.to_dict("records") if model == "extinction" or not pd.isna(r["burn_time_s"])]
@@ -770,7 +871,7 @@ def what_if(model, vary, fuel, oxygen_pct, pressure_kpa, co2_fraction=0.0, heliu
         "tested_range": [_round(lo, 4), _round(hi, 4)],
         "held_constant": {k: v for k, v in _public(base).items() if k != vary},
         "curve": curve, "real_tests": real,
-        "note": "Only the chosen input changes; real tests along the axis differ in other inputs too. Points outside the tested range have no value.",
+        "note": "Only the chosen input changes. Curves have gaps wherever range or joint-coverage checks fail; nearby evidence is not a guarantee of accuracy.",
         "trust": "model_estimate",
     }
 
@@ -800,7 +901,8 @@ def ground_comparison(material):
 
 
 def advisor(oxygen_pct, airflow_cm_s=None, mode="discover", material=None, mission="space_station", pressure_kpa=None,
-            geometry=None, max_thickness_mm=None, constraints=None, priority="evidence_strength", per_material=3):
+            geometry=None, max_thickness_mm=None, constraints=None, priority="evidence_strength", per_material=3,
+            protocol="ignition_trial"):
     """Material Advisor. Ranks PSI-tested materials by how much NASA evidence exists near the user's conditions.
 
     It never assigns a safety score. Constraints the data cannot check are returned as `cannot_check`.
@@ -812,6 +914,12 @@ def advisor(oxygen_pct, airflow_cm_s=None, mode="discover", material=None, missi
     if mission not in MISSIONS:
         raise InputError({"field": "mission", "message": f"mission must be one of {list(MISSIONS)}"})
     _check_range("oxygen_pct", oxygen_pct, 0, 100)
+    if protocol not in ("ignition_trial", "ongoing_burn_trial"):
+        raise InputError({"field": "protocol", "message": "Choose ignition_trial or ongoing_burn_trial"})
+    if priority != "evidence_strength":
+        raise InputError({"field": "priority", "message": "Materials can only be ranked by evidence; protocols are not comparable safety trials."})
+    if max_thickness_mm is not None:
+        _check_range("max_thickness_mm", max_thickness_mm, 0, 1000)
     known = {r["material"] for r in solids() if r["material"] != "Unresolved material"}
     if material and material not in known:
         match = next((m for m in known if m.lower() == material.lower()), None)
@@ -829,7 +937,8 @@ def advisor(oxygen_pct, airflow_cm_s=None, mode="discover", material=None, missi
     if oxygen_pct < min(oxy_all) - 0.5:
         warnings.append({"code": "oxygen_below_tested", "message": f"{oxygen_pct:g}% oxygen is below every solid-fuel test (min {min(oxy_all):.1f}%)."})
     if MISSIONS[mission]["gravity_g"] > 0:
-        warnings.append({"code": "partial_gravity", "message": f"No NASA PSI data exists at {MISSIONS[mission]['label']}. Real behaviour lies somewhere between these microgravity tests and Earth-gravity tests; this tool cannot narrow it further."})
+        warnings.append({"code": "partial_gravity", "message": f"This dataset has no tests at {MISSIONS[mission]['label']}. Behaviour at partial gravity is unknown here; Earth and microgravity results do not establish upper or lower bounds."})
+    warnings.append({"code": "initial_oxygen", "message": "Solid-test matching uses initial oxygen. Oxygen at the flame event was not measured, so these are approximate condition matches."})
 
     checks_common = [
         {"constraint": "pressure", "status": "cannot_check",
@@ -841,14 +950,18 @@ def advisor(oxygen_pct, airflow_cm_s=None, mode="discover", material=None, missi
     stage = stage_training()
     candidates = []
     for mat in sorted(known):
-        sim = find_similar_solid(oxygen_pct, airflow_cm_s, material=mat, geometry=geometry, k=50)
+        sim = find_similar_solid(oxygen_pct, airflow_cm_s, material=mat, geometry=geometry,
+                                 k=len(solids()), max_thickness_mm=max_thickness_mm)
         close = [m for m in sim["matches"] if m["distance"] <= 1.0]
         near = [m for m in sim["matches"] if m["distance"] <= 2.5]
         outcomes = Counter(m["outcome"]["label"] for m in near)
-        st = [s for s in stage if s["material"] == mat and s["oxygen_initial_pct"] is not None and s["airflow_cm_s"] is not None
+        parent_ids = {m["experiment_id"] for m in sim["matches"]}
+        matched_stages = [s for s in stage if s["experiment_id"] in parent_ids and s["oxygen_initial_pct"] is not None and s["airflow_cm_s"] is not None
               and math.hypot((s["oxygen_initial_pct"] - oxygen_pct) / 1.5, 0 if airflow_cm_s is None else (s["airflow_cm_s"] - airflow_cm_s) / 4.0) <= 2.5]
+        st = [s for s in matched_stages if s["protocol"] == protocol]
         sustained = sum(s["sustained_flame_binary"] == "1" for s in st)
-        thick = [r["thickness_mm"] for r in solids() if r["material"] == mat and r["thickness_mm"] is not None]
+        thick = [r["thickness_mm"] for r in solids() if r["material"] == mat
+                 and (not geometry or r["sample_geometry"] == geometry) and r["thickness_mm"] is not None]
         checks = list(checks_common)
         if max_thickness_mm is not None:
             if not thick:
@@ -870,7 +983,15 @@ def advisor(oxygen_pct, airflow_cm_s=None, mode="discover", material=None, missi
                                          "note": "Outcomes of the whole test, which often changed airflow during the burn."},
             "condition_linked_events_nearby": {
                 "events": len(st), "sustained_flame": sustained, "not_sustained": len(st) - sustained, "trust": "ai_label",
-                "note": "Events where the notes link a flame result to a specific airflow (from solid_stage_training.csv).",
+                "protocol": protocol,
+                "oxygen_basis": "initial test measurement; oxygen at event unknown",
+                "note": "Only the selected protocol and matching geometry/thickness are counted. Sustained observations have varying durations; counts are not material safety rates.",
+                "by_protocol": {p: {"events": len(ss := [s for s in matched_stages if s["protocol"] == p]),
+                                    "sustained_flame": sum(s["sustained_flame_binary"] == "1" for s in ss)}
+                                for p in ("ignition_trial", "ongoing_burn_trial")},
+                "evidence": [{"stage_id": s["stage_id"], "experiment_id": s["experiment_id"],
+                              "quote": s["evidence_quote"], "airflow_cm_s": s["airflow_cm_s"],
+                              "oxygen_initial_pct": s["oxygen_initial_pct"], "geometry": s["sample_geometry"]} for s in st],
             },
             "earth_reference": ground_comparison(mat) if mat in GROUND_FAMILY else None,
             "constraint_checks": checks,
@@ -878,14 +999,8 @@ def advisor(oxygen_pct, airflow_cm_s=None, mode="discover", material=None, missi
             "concerns": _concerns(mat, near, st, thick),
         })
 
-    if priority == "fewest_sustained_flames":
-        key = lambda c: (-(c["condition_linked_events_nearby"]["events"] > 0),
-                         c["condition_linked_events_nearby"]["sustained_flame"] / max(1, c["condition_linked_events_nearby"]["events"]),
-                         -c["evidence"]["score"])
-        rank_basis = "Share of condition-linked events with a sustained flame near your conditions (lowest first); materials with no such events go last."
-    else:
-        key = lambda c: -c["evidence"]["score"]
-        rank_basis = "Amount and closeness of NASA tests near your conditions (most evidence first)."
+    key = lambda c: -c["evidence"]["score"]
+    rank_basis = "Amount and closeness of NASA tests near your conditions (most evidence first)."
     candidates.sort(key=key)
     if mode == "analyze":
         sel = next(c for c in candidates if c["is_selected"])
@@ -896,7 +1011,7 @@ def advisor(oxygen_pct, airflow_cm_s=None, mode="discover", material=None, missi
 
     return {
         "mode": mode, "inputs": {"oxygen_pct": oxygen_pct, "airflow_cm_s": airflow_cm_s, "material": material, "mission": mission,
-                                 "pressure_kpa": pressure_kpa, "geometry": geometry, "max_thickness_mm": max_thickness_mm, "priority": priority},
+                                 "pressure_kpa": pressure_kpa, "geometry": geometry, "max_thickness_mm": max_thickness_mm, "priority": priority, "protocol": protocol},
         "rank_basis": rank_basis,
         "not_a_safety_rating": "This ranks NASA evidence, not material safety. Materials were tested in different shapes, sizes and airflow sequences, so no material is shown as definitively safer.",
         "warnings": warnings,

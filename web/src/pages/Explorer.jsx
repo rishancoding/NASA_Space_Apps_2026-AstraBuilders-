@@ -81,7 +81,7 @@ function Tests({ options, record, setRecord, openExperiment }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
-        <Toggle value={dataset} onChange={(v) => { setDataset(v); setRecord(null); setPage(1); setPicked([]); }}
+        <Toggle value={dataset} onChange={(v) => { setDataset(v); setRecord(null); setPage(1); setPicked([]); setF({ material: null, fuel: null, outcome: null, q: "" }); }}
           options={[{ value: "solid", label: "Solid materials" }, { value: "flex", label: "Fuel droplets" }]} />
         {record && <button onClick={() => setRecord(null)} className="rounded-full bg-white/10 px-3 py-1 text-xs text-slate-200">{record} ✕</button>}
         <div className="w-48">{dataset === "solid"

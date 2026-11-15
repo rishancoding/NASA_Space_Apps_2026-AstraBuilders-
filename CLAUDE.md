@@ -8,7 +8,7 @@ NASA Space Apps 2026 (team AstraBuilders). Curated NASA PSI (Physical Sciences I
 
 ## Backend and models
 
-- `model/train_flex.py` trains the extinction classifier and burn-time regressor with grouped CV and writes `model/artifacts/` (joblib files with sklearn built-ins only, `metrics.json`, `oof_predictions.json`). Each model has a promotion gate; a failed gate disables that prediction in the API. The extinction model is unweighted on purpose so its probabilities stay calibrated (balanced weights gave a Brier score worse than the base rate). `model/evaluate_models.py` runs the stress tests into `evaluation.json`; rerun it after retraining.
+- `model/train_flex.py` trains the extinction classifier with grouped CV and the burn-time regressor with disjoint fitting, calibration and audit groups and writes `model/artifacts/` (joblib files with sklearn built-ins only, `metrics.json`, `oof_predictions.json`). See `docs/PREDICTION_LIMITS.md` for conditional controls, same-family support checks and the interval audit. Each model has a promotion gate; a failed gate disables that prediction in the API. The extinction model is unweighted on purpose so its probabilities stay calibrated (balanced weights gave a Brier score worse than the base rate). `model/evaluate_models.py` runs the stress tests into `evaluation.json`; rerun it after retraining.
 - `api/core.py` holds every function (options, explorer, similarity, advisor, predictions, what-if, search). Numbers go through `val()` with a trust label. `api/main.py` exposes them over HTTP; `api/agent.py` gives the same functions to a language model as tools: DeepSeek (`deepseek-flash`, OpenAI-compatible SDK, `DEEPSEEK_API_KEY`) by default, or Claude (`ANTHROPIC_API_KEY`); both loops share `TOOLS`, `run_tool` and the system prompt.
 - Run: `.venv/Scripts/python -m uvicorn api.main:app --reload --port 8000`. Test: `.venv/Scripts/python -m pytest api/tests -q`.
 
@@ -42,7 +42,7 @@ The pipeline runs in one direction: **fetch → build → clean package → read
 - `data/scripts/ground_reference.py` holds a hand transcription of the NTRS 20110008636 ULOI/MOC tables, with table/page provenance on each row (`ground_thresholds.csv`).
 - `data/access.py` provides the dependency-free readers (`query_experiments`, `load_catalog`, `load_source_tables`, `load_evidence`, `load_quality_report`) that the dashboard, agent and model code use. `query_experiments` validates filter names and converts numeric blanks to `None`.
 - Join key across catalog, observations, evidence and tables: `source_record` (e.g. `PSI-25`). `table_index.json` maps each source table to its file, original headers, encoding and row count.
-- `data/annotations/` holds the human-reviewed labels. Rebuilds overwrite `data/clean/`, so copy `label_review_queue.csv` here before you edit it.
+- `data/annotations/` holds AI-reviewed labels without human sign-off. Rebuilds overwrite `data/clean/`, so copy `label_review_queue.csv` here before you edit it.
 
 ## Data invariants (enforced by tests or required by the handoff)
 

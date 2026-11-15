@@ -6,9 +6,9 @@
    rows. This is a second, separate exploratory model added after the spec;
    it shares the spec's features, groups and leakage rules.
 
-Validation follows the spec: 5 outer StratifiedGroupKFold folds (seed 42),
-groups = split_group, preprocessing fit inside each training fold, majority /
-mean baselines. Each model has a promotion gate; if it fails, the API reports
+Classifier validation uses five outer StratifiedGroupKFold folds. Burn-time
+validation uses a fixed group-disjoint fit/calibration/audit split, with grouped
+CV for candidate choice inside fitting rows only. Preprocessing never sees held-out rows. Each model has a promotion gate; if it fails, the API reports
 the prediction as unavailable instead of showing a number.
 
 Run from the repo root:  .venv/Scripts/python model/train_flex.py
@@ -28,7 +28,7 @@ from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.metrics import (balanced_accuracy_score, brier_score_loss, confusion_matrix, f1_score,
                              log_loss, mean_absolute_error, precision_recall_fscore_support, r2_score,
                              roc_auc_score)
-from sklearn.model_selection import GroupKFold, StratifiedGroupKFold
+from sklearn.model_selection import GroupKFold, GroupShuffleSplit, StratifiedGroupKFold
 from sklearn.pipeline import Pipeline
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
@@ -179,70 +179,122 @@ def train_classifier(df, rng):
     }, oof
 
 
+def regression_partitions(df):
+    """Fixed, disjoint groups: 60% fitting/selection, 20% calibration, 20% audit.
+
+    Never retry seeds based on results. Calibration and audit labels must not
+    influence preprocessing, candidate selection, fitting or feature choices.
+    """
+    groups = df[GROUP].to_numpy()
+    remaining, audit = next(GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED).split(df, groups=groups))
+    fit_local, cal_local = next(GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=SEED + 1).split(
+        df.iloc[remaining], groups=groups[remaining]))
+    fit, cal = remaining[fit_local], remaining[cal_local]
+    assert not set(groups[fit]) & set(groups[cal])
+    assert not set(groups[fit]) & set(groups[audit])
+    assert not set(groups[cal]) & set(groups[audit])
+    return fit, cal, audit
+
+
+def conformal_quantile(residuals, groups, level=CONFORMAL_LEVEL):
+    """Finite-sample order statistic of group-maximum absolute log errors.
+
+    One score per sample group, keeping repeat burns together. A nominal
+    marginal interval under exchangeability of groups, not conditional coverage
+    for every fuel/atmosphere, and not a guarantee under distribution shift.
+    """
+    scores = np.array([np.max(residuals[groups == g]) for g in np.unique(groups)])
+    rank = int(np.ceil((len(scores) + 1) * level))
+    if not 1 <= rank <= len(scores):
+        raise ValueError("Too few calibration groups for a finite interval at this level")
+    return float(np.sort(scores)[rank - 1])
+
+
 def train_regressor(df, rng):
     df = df[df["burn_time_s"].notna()].reset_index(drop=True)
     X, groups = df[FEATURES], df[GROUP].to_numpy()
     y_s = df["burn_time_s"].to_numpy()
-    y = np.log1p(y_s)  # burn times are skewed (0.3-39 s); model in log space
-    folds = list(GroupKFold(n_splits=5).split(X, y, groups))
-
-    results, oof_by_model = {}, {}
+    y = np.log1p(y_s)
+    fit, cal, audit = regression_partitions(df)
+    results = {}
+    # Candidate choice uses the fitting partition only, with grouped inner CV.
     for name, model in regressor_candidates().items():
-        pred = np.zeros(len(y))
-        for tr, te in folds:
-            pred[te] = clone(model).fit(X.iloc[tr], y[tr]).predict(X.iloc[te])
+        pred = np.zeros(len(fit))
+        for tr, te in GroupKFold(n_splits=5).split(X.iloc[fit], y[fit], groups[fit]):
+            pred[te] = clone(model).fit(X.iloc[fit[tr]], y[fit[tr]]).predict(X.iloc[fit[te]])
         pred_s = np.expm1(pred)
-        # Honest conformal coverage: each fold's interval width comes only from other folds' residuals.
-        covered, widths = [], []
-        for k, (tr, te) in enumerate(folds):
-            other = np.concatenate([f[1] for j, f in enumerate(folds) if j != k])
-            res = np.abs(y[other] - pred[other])
-            q = np.quantile(res, min(1.0, CONFORMAL_LEVEL * (1 + 1 / len(res))))
-            lo, hi = np.expm1(pred[te] - q), np.expm1(pred[te] + q)
-            covered += list((y_s[te] >= lo) & (y_s[te] <= hi))
-            widths += list(hi - lo)
-        results[name] = {
-            "mae_s": mean_absolute_error(y_s, pred_s),
-            "r2": r2_score(y_s, pred_s),
-            "r2_log_space": r2_score(y, pred),
-            "r2_95ci": bootstrap_ci(y_s, pred_s, r2_score, rng),
-            "interval_coverage": float(np.mean(covered)),
-            "median_interval_width_s": float(np.median(widths)),
-        }
-        oof_by_model[name] = pred
-
-    contenders = {k: v for k, v in results.items() if k != "mean_baseline"}
-    selected = max(contenders, key=lambda k: contenders[k]["r2"])
-    enabled = results[selected]["r2_95ci"][0] > 0.2
-    gate = ("passed: lower 95% bound of R² is above 0.2" if enabled
-            else "failed: R² is not reliably above 0.2; predictions disabled")
-    residuals = np.abs(y - oof_by_model[selected])
-    q = float(np.quantile(residuals, min(1.0, CONFORMAL_LEVEL * (1 + 1 / len(residuals)))))
-    final = clone(regressor_candidates()[selected]).fit(X, y)
+        results[name] = {"mae_s": mean_absolute_error(y_s[fit], pred_s), "r2": r2_score(y_s[fit], pred_s),
+                         "r2_log_space": r2_score(y[fit], pred), "evaluation": "grouped CV within fitting partition only"}
+    selected = max((k for k in results if k != "mean_baseline"), key=lambda k: results[k]["r2"])
+    final = clone(regressor_candidates()[selected]).fit(X.iloc[fit], y[fit])
+    cal_residuals = np.abs(y[cal] - final.predict(X.iloc[cal]))
+    q = conformal_quantile(cal_residuals, groups[cal])
+    # The deployed pipeline is frozen before inspecting the independent audit.
+    pred_log = final.predict(X.iloc[audit])
+    pred_s = np.expm1(pred_log)
+    low, high = np.maximum(0, np.expm1(pred_log - q)), np.expm1(pred_log + q)
+    covered = (y_s[audit] >= low) & (y_s[audit] <= high)
+    audit_groups = groups[audit]
+    group_coverage = float(np.mean([covered[audit_groups == g].all() for g in np.unique(audit_groups)]))
+    scores = []
+    unique_groups = np.unique(audit_groups)
+    for _ in range(N_BOOT):
+        idx = np.concatenate([np.flatnonzero(audit_groups == g) for g in rng.choice(unique_groups, len(unique_groups), replace=True)])
+        scores.append(r2_score(y_s[audit][idx], pred_s[idx]))
+    ci = [float(np.percentile(scores, 2.5)), float(np.percentile(scores, 97.5))]
+    audit_metrics = {"rows": len(audit), "groups": len(unique_groups), "r2": r2_score(y_s[audit], pred_s),
+                     "r2_95ci": ci, "mae_s": mean_absolute_error(y_s[audit], pred_s),
+                     "interval_coverage": float(covered.mean()), "group_interval_coverage": group_coverage,
+                     "median_interval_width_s": float(np.median(high - low))}
+    enabled = ci[0] > 0.2 and group_coverage >= 0.85
+    gate = ("passed: independent audit R² lower 95% bound > 0.2 and group interval coverage >= 85%" if enabled else
+            "failed: independent audit did not meet both R² and interval-coverage requirements; burn-time predictions disabled")
+    partitions = {name: {"rows": len(idx), "groups": sorted(set(groups[idx])),
+                          "experiment_ids": df.iloc[idx]["experiment_id"].tolist()}
+                  for name, idx in [("fit", fit), ("calibration", cal), ("audit", audit)]}
     joblib.dump({"model": final, "features": FEATURES, "selected": selected, "enabled": enabled,
-                 "target_transform": "log1p", "conformal_q_log": q, "conformal_level": CONFORMAL_LEVEL},
+                 "target_transform": "log1p", "conformal_q_log": q, "conformal_level": CONFORMAL_LEVEL,
+                 "interval_method": "independent_group_split_conformal", "partitions": partitions},
                 ARTIFACTS / "burn_time_model.joblib", compress=3)
-
-    oof = [{"experiment_id": e, "fuel": fu, "actual_s": float(a), "predicted_s": round(float(np.expm1(p)), 3)}
-           for e, fu, a, p in zip(df["experiment_id"], df["fuel"], y_s, oof_by_model[selected])]
+    predictions = [{"experiment_id": row["experiment_id"], "fuel": row["fuel"], "actual_s": float(y_s[i]),
+                    "predicted_s": float(pp), "low_s": float(lo), "high_s": float(hi), "partition": "independent_audit"}
+                   for i, pp, lo, hi, row in zip(audit, pred_s, low, high, df.iloc[audit].to_dict("records"))]
     return {
         "task": "regression", "target": "burn_time_s", "target_meaning":
-            "Recorded FLEX burn time in seconds, among the same screened Extinction/Completion rows",
-        "rows": len(y), "groups": int(len(np.unique(groups))),
-        "validation": "5-fold GroupKFold by split_group, out-of-fold predictions; model fit on log1p(seconds)",
-        "candidates": results, "selected_model": selected, "prediction_enabled": enabled, "promotion_gate": gate,
-        "uncertainty_method": f"split-conformal {int(CONFORMAL_LEVEL * 100)}% interval from out-of-fold log residuals",
-        "notes": ["Added after model_spec.json as a separate exploratory model; same features and leakage rules.",
-                  "Burn time ends at either extinction or completion, so it is not a pure burning-rate measure."],
-    }, oof
+            "Recorded FLEX burn time among screened Extinction/Completion rows; no inferred physical definition of Completion",
+        "trained_with": {"scikit_learn": sklearn.__version__, "python": sys.version.split()[0]},
+        "rows": len(y), "groups": len(set(groups)), "partitions": partitions,
+        "validation": "Fixed group-disjoint 60/20/20 fit, calibration and audit split, seeds 42/43. Candidate selection by 5-fold grouped CV on fitting rows only. Deployed pipeline never refit on calibration/audit rows.",
+        "candidates": results, "selected_model": selected, "audit": audit_metrics,
+        "prediction_enabled": enabled, "promotion_gate": gate,
+        "uncertainty_method": "Nominal 90% group split-conformal interval using independent calibration group-maximum absolute log residuals and finite-sample order statistic",
+        "interval_level": CONFORMAL_LEVEL, "conformal_q_log": q,
+        "method_reference": "https://arxiv.org/abs/2107.07511",
+        "notes": ["Audit was held out from fitting, candidate choice and interval calibration.",
+                  "Nominal coverage assumes exchangeable sample groups. It is marginal, not guaranteed at each condition or under distribution shift.",
+                  "Historical stress tests describe full-data CV candidates, not this frozen deployed pipeline."],
+    }, predictions
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--task", choices=["all", "burn-time"], default="all")
+    args = parser.parse_args()
     ARTIFACTS.mkdir(exist_ok=True)
     rng = np.random.default_rng(SEED)
     df = load_flex_training()
+    if args.task == "burn-time":
+        metrics = json.loads((ARTIFACTS / "metrics.json").read_text())
+        predictions = json.loads((ARTIFACTS / "oof_predictions.json").read_text())
+        metrics["burn_time"], predictions["burn_time"] = train_regressor(df, rng)
+        (ARTIFACTS / "metrics.json").write_text(json.dumps(to_jsonable(metrics), indent=2) + "\n")
+        (ARTIFACTS / "oof_predictions.json").write_text(json.dumps(to_jsonable(predictions)) + "\n")
+        print(json.dumps(to_jsonable(metrics["burn_time"]["audit"]), indent=2))
+        print(metrics["burn_time"]["promotion_gate"])
+        return
     clf_metrics, clf_oof = train_classifier(df, rng)
-    reg_metrics, reg_oof = train_regressor(df, rng)
+    reg_metrics, reg_oof = train_regressor(df, np.random.default_rng(SEED))
     domains = SPEC["domains_by_fuel"]
     metrics = {"trained_with": {"scikit_learn": sklearn.__version__, "python": sys.version.split()[0]},
                "dataset": SPEC["dataset"], "source_record": SPEC["source_record"], "source_url": SPEC["source_url"],
@@ -256,8 +308,8 @@ def main():
     for label, m, key in [("Extinction classifier", clf_metrics, "balanced_accuracy"), ("Burn-time regressor", reg_metrics, "r2")]:
         print(f"\n{label}: selected {m['selected_model']} | enabled={m['prediction_enabled']}")
         for name, r in m["candidates"].items():
-            extra = f"  CI {np.round(r.get('balanced_accuracy_95ci', r.get('r2_95ci')), 3)}"
-            print(f"  {name:22s} {key}={r[key]:.3f}{extra}" + (f"  MAE={r['mae_s']:.2f}s cover={r['interval_coverage']:.2f}" if 'mae_s' in r else f"  F1={r['macro_f1']:.3f} AUC={r['roc_auc']:.3f}"))
+            extra = f"  CI {np.round(r.get('balanced_accuracy_95ci', r.get('r2_95ci', [])), 3)}"
+            print(f"  {name:22s} {key}={r[key]:.3f}{extra}" + (f"  MAE={r['mae_s']:.2f}s" if 'mae_s' in r else f"  F1={r['macro_f1']:.3f} AUC={r['roc_auc']:.3f}"))
         print("  gate:", m["promotion_gate"])
 
 

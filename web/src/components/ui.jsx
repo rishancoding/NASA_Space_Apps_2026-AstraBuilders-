@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 // ---------------------------------------------------------------- hooks
 
@@ -8,10 +8,11 @@ export function useAsync(fn, deps) {
   const seq = useRef(0);
   useEffect(() => {
     const id = ++seq.current;
-    setState((s) => ({ ...s, loading: true, error: null }));
+    setState({ data: null, loading: true, error: null });
     fn()
       .then((data) => id === seq.current && setState({ data, error: null, loading: false }))
       .catch((error) => id === seq.current && setState({ data: null, error, loading: false }));
+    return () => { seq.current += 1; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
   return state;
@@ -81,9 +82,9 @@ export function Value({ v, big = false, showTrust = true }) {
 
 export function Card({ title, subtitle, children, className = "", right }) {
   return (
-    <section className={`rounded-xl border border-line bg-panel p-4 ${className}`}>
+    <section className={`surface-card rounded-2xl border border-line p-5 ${className}`}>
       {(title || right) && (
-        <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
           <div>
             {title && <h3 className="text-sm font-semibold text-white">{title}</h3>}
             {subtitle && <p className="mt-0.5 text-xs text-slate-400">{subtitle}</p>}
@@ -99,7 +100,7 @@ export function Card({ title, subtitle, children, className = "", right }) {
 export function ErrorBox({ error }) {
   if (!error) return null;
   return (
-    <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
+    <div role="alert" className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
       {error.errors?.length ? error.errors.map((e, i) => (
         <div key={i}>{e.field ? <b className="mr-1">{e.field}:</b> : null}{e.message}</div>
       )) : String(error.message || error)}
@@ -113,7 +114,7 @@ export function Warning({ children }) {
 
 export function Spinner({ label = "Loading…" }) {
   return (
-    <div className="flex items-center gap-2 text-sm text-slate-400">
+    <div role="status" className="flex items-center gap-2 text-sm text-slate-400">
       <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-500 border-t-transparent" />
       {label}
     </div>
@@ -140,7 +141,7 @@ export function Slider({ label, unit, value, min, max, step, onChange, hint, err
           <span className="w-10 text-slate-400">{unit}</span>
         </span>
       </div>
-      <input type="range" className="mt-1 w-full" min={min} max={max} step={step} value={value ?? min}
+      <input aria-label={`${label} slider`} type="range" className="mt-1 w-full" min={min} max={max} step={step} value={value ?? min}
         onChange={(e) => onChange(Number(e.target.value))} />
       {hint && <div className="text-[11px] text-slate-500">{hint}</div>}
       {error && <div className="text-[11px] text-red-300">{error}</div>}
@@ -149,31 +150,43 @@ export function Slider({ label, unit, value, min, max, step, onChange, hint, err
 }
 
 export function Select({ label, value, onChange, options, allowEmpty }) {
+  const id = useId();
   return (
-    <label className="block text-xs">
-      <span className="text-slate-300">{label}</span>
-      <select value={value ?? ""} onChange={(e) => onChange(e.target.value || null)}
+    <div className="block text-xs">
+      <label htmlFor={id} className="text-slate-300">{label}</label>
+      <select id={id} value={value ?? ""} onChange={(e) => onChange(e.target.value || null)}
         className="mt-1 w-full rounded-md border border-line bg-ink px-2 py-1.5 text-sm text-slate-100">
         {allowEmpty && <option value="">{allowEmpty}</option>}
         {options.map((o) => (
           <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>
         ))}
       </select>
-    </label>
+    </div>
   );
 }
 
 export function Toggle({ value, onChange, options }) {
   return (
-    <div className="inline-flex rounded-lg border border-line bg-ink p-1">
+    <div className="inline-flex max-w-full flex-wrap rounded-xl border border-line bg-ink/60 p-1">
       {options.map((o) => (
-        <button key={o.value} onClick={() => onChange(o.value)}
+        <button key={o.value} aria-pressed={value === o.value} onClick={() => onChange(o.value)}
           className={`rounded-md px-3 py-1.5 text-sm transition ${value === o.value ? "bg-flame text-white" : "text-slate-300 hover:text-white"}`}>
           {o.label}
         </button>
       ))}
     </div>
   );
+}
+
+export function Icon({ name, className = "h-5 w-5" }) {
+  const paths = {
+    advisor: <><path d="m12 3 8 4v6c0 4-8 8-8 8s-8-4-8-8V7z"/><path d="m8 12 3 3 5-6"/></>,
+    predictor: <><path d="M3 12h4l3-8 4 16 3-8h4"/></>,
+    explorer: <><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6M7 10h6m-3-3v6"/></>,
+    model: <><path d="M4 3v17h17M8 16v-5m5 5V7m5 9V4"/></>,
+    chat: <><path d="M20 14a3 3 0 0 1-3 3H8l-5 4V6a3 3 0 0 1 3-3h11a3 3 0 0 1 3 3zM7 8h9M7 12h6"/></>,
+  };
+  return <svg aria-hidden="true" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{paths[name] || paths.predictor}</svg>;
 }
 
 export function SourceLink({ url, children }) {

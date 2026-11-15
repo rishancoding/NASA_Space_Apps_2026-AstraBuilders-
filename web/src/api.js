@@ -46,6 +46,7 @@ export const api = {
   advisor: (body) => post("/api/advisor", body),
   similarSolid: (body) => post("/api/similar/solid", body),
   predictExtinction: (body) => post("/api/predict/extinction", body),
+  predictionControls: (body) => post("/api/predict/controls", body),
   predictBurnTime: (body) => post("/api/predict/burn-time", body),
   whatIf: (body) => post("/api/what-if", body),
   model: () => get("/api/model"),

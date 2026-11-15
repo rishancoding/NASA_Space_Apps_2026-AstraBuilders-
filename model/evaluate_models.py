@@ -1,4 +1,7 @@
-"""Stress-test the FLEX models beyond the single CV run in train_flex.py.
+"""Exploratory full-dataset CV stress tests for FLEX model candidates.
+
+These experiments do not audit the frozen split-conformal burn-time pipeline
+or calibrate its intervals. Its independent audit is in train_flex.py/metrics.json.
 
 Checks:
  1. Stability: grouped CV repeated with 20 different shuffles.

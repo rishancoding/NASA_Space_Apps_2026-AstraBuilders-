@@ -75,7 +75,8 @@ tests instead of a number.
 | Material Advisor | `POST /api/similar/solid` | "Closest NASA tests" list and coverage badge for oxygen + airflow. |
 | Material Advisor | `GET /api/ground/{material}` | Earth-gravity oxygen limits beside the orbital tests (PMMA, Ultem). |
 | Predictor | `POST /api/predict/extinction` | Chance a droplet flame ends in extinction, with range, driving factors, nearest tests and warnings. |
-| Predictor | `POST /api/predict/burn-time` | Burn time in seconds with a 90% range. |
+| Predictor | `POST /api/predict/burn-time` | Burn time with a nominal 90% independently calibrated group interval. |
+| Predictor controls | `POST /api/predict/controls` | Conditional supported settings, with other inputs held fixed. |
 | Predictor | `POST /api/what-if` | A curve for one slider: `curve[]` of `{x, y, low, high, in_tested_range}` and `real_tests[]` to plot as dots. Call on slider change (debounce about 150 ms). |
 | Predictor | `POST /api/similar/flex` | Nearest real droplet tests. |
 | Model page | `GET /api/model` | Metrics for every candidate model and baseline, fold checks, confusion matrix, and out-of-fold predictions for actual-vs-predicted charts. |
@@ -102,14 +103,14 @@ await fetch("/api/advisor", {method: "POST", headers: {"content-type": "applicat
 
 Retrain with `.venv/Scripts/python model/train_flex.py`. It rewrites `model/artifacts/`.
 
-| Model | Data | Validation (out-of-fold, grouped by sample) | Status |
+| Model | Data | Validation | Status |
 | --- | --- | --- | --- |
 | Extinction vs completion: unweighted logistic regression (chosen over balanced-weight LR and a small random forest by Brier score) | 202 FLEX tests (176 extinction / 26 completion) | Balanced accuracy 0.80 (95% CI 0.71–0.89) vs 0.50 for always guessing; ROC AUC 0.81; Brier 0.083 vs 0.112 for quoting the base rate. Probabilities are calibrated: tests given about 62% ended in extinction 61% of the time | Enabled |
-| Burn time: random forest on log(seconds) (chosen over ridge) | 200 of those tests | R² 0.75 (CI 0.69–0.80), MAE 2.7 s; the 90% range covered 89% of held-out tests | Enabled |
-| Similarity | All 250 solid + 274 FLEX tests | Distance in typical-difference units, with coverage levels `close`, `partial`, `none` | n/a |
+| Burn time: random forest on log(seconds), selected within fitting rows | 119 fit / 41 calibration / 40 independent audit rows | Audit R² 0.612 (group-bootstrap CI 0.36–0.81), MAE 2.90 s; nominal 90% interval covered 36/40 audit groups | Enabled where coverage permits |
+| Similarity | 250 solid tests; 202 screened FLEX rows of matching fuel/gas family | Distance in typical-difference units, with coverage levels `close`, `partial`, `none` | n/a |
 | Evidence search | 757 NASA text passages | TF-IDF keywords + latent semantic analysis, built in memory at startup | n/a |
 
-### Accuracy stress tests (`model/evaluate_models.py` → `model/artifacts/evaluation.json`, also in `GET /api/model` → `stress_tests`)
+### Historical candidate accuracy stress tests (`model/evaluate_models.py` → `model/artifacts/evaluation.json`, also in `GET /api/model` → `stress_tests`)
 
 | Check | Extinction model | Burn-time model |
 | --- | --- | --- |
@@ -121,9 +122,7 @@ Retrain with `.venv/Scripts/python model/train_flex.py`. It rewrites `model/arti
 | More data? | Learning curve flattens after about 70% of rows | n/a |
 | Physics direction | More oxygen → less extinction; more CO₂/helium and bigger droplets → more extinction | Driven mainly by droplet size, as expected |
 
-What this means: the models are reliable **inside** the tested gas mixtures and
-weak at extrapolating to new ones, which is why the API returns nearest tests and
-coverage levels with every estimate. Methanol estimates carry a warning.
+These stress tests describe earlier full-dataset CV candidates, not the frozen burn-time pipeline or its independently calibrated intervals. Nearby tests are not a guarantee of accuracy. Predictions require physical validity, per-fuel bounds and three nearby screened sample groups of the same fuel and gas family. Methanol estimates carry a warning. See [prediction and evidence limits](PREDICTION_LIMITS.md) for the complete policy and audit method.
 
 **Data used:** every labeled row NASA publishes for FLEX (PSI-69's 274-test table).
 202 are used. 61 ended in a disruption with no clean ending, and 11 more have a
@@ -140,3 +139,5 @@ it uses the same features, groups and leakage rules.
 **Scope:** both models describe FLEX **liquid droplet** flames only. They do not
 predict solid materials, ignition resistance, Moon or Mars behaviour, or
 certification. The advisor ranks **evidence**, never safety.
+
+Material comparisons accept `protocol` (`ignition_trial` or `ongoing_burn_trial`) and apply geometry/thickness consistently to tests and stages. `priority` only accepts `evidence_strength`. Event oxygen is unknown; initial oxygen is used as a proxy. Completion remains a literal NASA category. Partial-gravity behaviour is unknown in this dataset.
