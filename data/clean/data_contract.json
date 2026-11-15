@@ -6,7 +6,7 @@
   "primary_key": "experiment_id",
   "cross_validation_group": "validation_group in stage files; whole-test split_group retained for compatibility",
   "join_to_catalog": "source_record",
-  "training_gate": "Use solid_stage_training.csv or separate flex_training.csv; validate grouped splits and feature coverage before fitting",
+  "training_gate": "Use the selected FLEX scope and feature list in model/model_spec.json; solid-stage candidates remain exploratory evidence, not the selected predictor",
   "columns": {
     "experiment_id": {
       "type": "string",
@@ -257,11 +257,11 @@
         "fuel",
         "pressure_kpa",
         "oxygen_pct",
-        "nitrogen_fraction",
         "co2_fraction",
         "helium_fraction",
         "droplet_diameter_mm"
       ]
     }
-  }
+  },
+  "selected_model_spec": "model/model_spec.json"
 }

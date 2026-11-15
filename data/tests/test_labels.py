@@ -7,7 +7,7 @@ import unittest
 
 DATA = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(DATA / "scripts"))
-from label_data import airflow_readings, source_hash
+from label_data import airflow_readings, source_hash, flex_initial_problems
 
 
 def read(name):
@@ -84,9 +84,23 @@ class LabelTests(unittest.TestCase):
         disrupted = [r for r in labeled if r["test_end_raw"] == "Disruption"]
         self.assertEqual(len(disrupted), 61)
         self.assertTrue(all(r["extinction_binary"] == "" and r["training_eligible"] == "false" for r in disrupted))
-        self.assertEqual(len(training), 207)
-        self.assertEqual(sum(r["extinction_binary"] == "1" for r in training), 180)
+        self.assertEqual(len(training), 202)
+        self.assertEqual(sum(r["extinction_binary"] == "1" for r in training), 176)
         self.assertTrue(all(r["source_record"] == "PSI-69" and r["exclusion_reasons"] == "" for r in training))
+
+    def test_flex_initial_physical_sanity(self):
+        labeled = read("flex_labeled.csv")
+        zero_pressure = next(r for r in labeled if r["test_id"] == "114")
+        self.assertEqual(float(zero_pressure["pressure_kpa"]), 0)
+        self.assertIn("nonpositive_initial_feature:pressure_kpa", zero_pressure["exclusion_reasons"])
+        self.assertEqual(zero_pressure["training_eligible"], "false")
+        for test in ["69", "75", "76", "79"]:
+            row = next(r for r in labeled if r["test_id"] == test)
+            self.assertIn("initial_gas_fractions_do_not_sum_to_one", row["exclusion_reasons"])
+        valid = read("flex_training.csv")[0]
+        self.assertEqual(flex_initial_problems(valid), [])
+        for field, value in [("pressure_kpa", "NaN"), ("droplet_diameter_mm", "-1"), ("oxygen_pct", "101"), ("co2_fraction", "1.1")]:
+            self.assertTrue(flex_initial_problems({**valid, field: value}))
 
 
 if __name__ == "__main__":

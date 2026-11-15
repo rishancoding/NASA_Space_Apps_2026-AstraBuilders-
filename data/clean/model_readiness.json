@@ -1,0 +1,558 @@
+{
+  "audit_version": "1.0.0",
+  "checked_on": "2026-11-14",
+  "model_fitted": false,
+  "provenance": "AI-assisted review and code by OpenAI Codex; descriptive counts computed in Python; no human scientific sign-off",
+  "solid_candidates": {
+    "rows": 47,
+    "classes": {
+      "1": 31,
+      "0": 16
+    },
+    "groups": 41,
+    "fields": {
+      "material": {
+        "missing": 0,
+        "counts": {
+          "SIBAL (cotton/fiberglass)": 12,
+          "PMMA": 23,
+          "Nomex": 7,
+          "Ultem (PEI)": 2,
+          "Japan wax": 3
+        }
+      },
+      "protocol": {
+        "missing": 0,
+        "counts": {
+          "ongoing_burn_trial": 24,
+          "ignition_trial": 23
+        }
+      },
+      "oxygen_initial_pct": {
+        "missing": 0,
+        "min": 14.5,
+        "max": 22.52546357
+      },
+      "airflow_cm_s": {
+        "missing": 0,
+        "min": 1.0,
+        "max": 30.0
+      },
+      "sample_geometry": {
+        "missing": 0,
+        "counts": {
+          "fabric": 19,
+          "sphere": 3,
+          "unknown": 5,
+          "sheet": 2,
+          "slab": 6,
+          "candle": 3,
+          "film": 5,
+          "rod": 3,
+          "spherical_section": 1
+        }
+      },
+      "thickness_mm": {
+        "missing": 40,
+        "min": 0.1,
+        "max": 3.0
+      },
+      "diameter_mm": {
+        "missing": 40,
+        "min": 6.35,
+        "max": 40.0
+      },
+      "width_mm": {
+        "missing": 26,
+        "min": 10.0,
+        "max": 20.0
+      },
+      "pressure_kpa": {
+        "missing": 22,
+        "min": 98.28525,
+        "max": 102.09826974
+      }
+    },
+    "by_protocol": {
+      "ignition_trial": {
+        "rows": 23,
+        "classes": {
+          "1": 10,
+          "0": 13
+        },
+        "groups": 22,
+        "fields": {
+          "material": {
+            "missing": 0,
+            "counts": {
+              "SIBAL (cotton/fiberglass)": 7,
+              "PMMA": 7,
+              "Nomex": 7,
+              "Ultem (PEI)": 2
+            }
+          }
+        }
+      },
+      "ongoing_burn_trial": {
+        "rows": 24,
+        "classes": {
+          "1": 21,
+          "0": 3
+        },
+        "groups": 20,
+        "fields": {
+          "material": {
+            "missing": 0,
+            "counts": {
+              "SIBAL (cotton/fiberglass)": 5,
+              "PMMA": 16,
+              "Japan wax": 3
+            }
+          }
+        }
+      }
+    },
+    "by_material": {
+      "Japan wax": {
+        "1": 3
+      },
+      "Nomex": {
+        "0": 6,
+        "1": 1
+      },
+      "PMMA": {
+        "1": 18,
+        "0": 5
+      },
+      "SIBAL (cotton/fiberglass)": {
+        "1": 9,
+        "0": 3
+      },
+      "Ultem (PEI)": {
+        "0": 2
+      }
+    },
+    "decision": "retain_as_observed_evidence; do_not_train_the_original_generic_material_burn_predictor",
+    "reasons": [
+      "Ignition trials and ongoing-burn endpoints are different observation processes.",
+      "Only three negative ongoing-burn observations remain; reported observation durations vary.",
+      "The M9 negative describes extinction after 15 minutes at 14 cm/s; this is not failure to sustain for a common fixed duration.",
+      "Actual oxygen at later stages is unknown; initial oxygen is a proxy.",
+      "Most thickness and diameter values are missing; some materials have only one observed class.",
+      "AI interpretation is disclosed, but no human scientific label review is recorded."
+    ]
+  },
+  "flex_candidates": {
+    "rows": 202,
+    "classes": {
+      "1": 176,
+      "0": 26
+    },
+    "groups": 201,
+    "fields": {
+      "fuel": {
+        "missing": 0,
+        "counts": {
+          "Methanol": 128,
+          "Heptane": 74
+        }
+      },
+      "pressure_kpa": {
+        "missing": 0,
+        "min": 70.1675625,
+        "max": 309.26789803
+      },
+      "oxygen_pct": {
+        "missing": 0,
+        "min": 12.0,
+        "max": 34.0
+      },
+      "co2_fraction": {
+        "missing": 0,
+        "min": 0.0,
+        "max": 0.7
+      },
+      "helium_fraction": {
+        "missing": 0,
+        "min": 0.0,
+        "max": 0.45
+      },
+      "droplet_diameter_mm": {
+        "missing": 0,
+        "min": 1.13,
+        "max": 4.67
+      }
+    },
+    "by_fuel": {
+      "Heptane": {
+        "rows": 74,
+        "classes": {
+          "1": 56,
+          "0": 18
+        },
+        "groups": 73,
+        "fields": {
+          "pressure_kpa": {
+            "missing": 0,
+            "min": 70.39421053,
+            "max": 207.15629605
+          },
+          "oxygen_pct": {
+            "missing": 0,
+            "min": 14.000000000000002,
+            "max": 30.0
+          },
+          "co2_fraction": {
+            "missing": 0,
+            "min": 0.0,
+            "max": 0.7
+          },
+          "helium_fraction": {
+            "missing": 0,
+            "min": 0.0,
+            "max": 0.45
+          },
+          "droplet_diameter_mm": {
+            "missing": 0,
+            "min": 1.13,
+            "max": 4.67
+          }
+        }
+      },
+      "Methanol": {
+        "rows": 128,
+        "classes": {
+          "1": 120,
+          "0": 8
+        },
+        "groups": 128,
+        "fields": {
+          "pressure_kpa": {
+            "missing": 0,
+            "min": 70.1675625,
+            "max": 309.26789803
+          },
+          "oxygen_pct": {
+            "missing": 0,
+            "min": 12.0,
+            "max": 34.0
+          },
+          "co2_fraction": {
+            "missing": 0,
+            "min": 0.0,
+            "max": 0.7
+          },
+          "helium_fraction": {
+            "missing": 0,
+            "min": 0.0,
+            "max": 0.45
+          },
+          "droplet_diameter_mm": {
+            "missing": 0,
+            "min": 1.61,
+            "max": 4.53
+          }
+        }
+      }
+    },
+    "decision": "selected_for_one_exploratory_model_in_step_3",
+    "label_source": "NASA PSI-69 experimental table Test end; Extinction=1, Completion=0; no causal interpretation",
+    "majority_class_reference_accuracy_not_model_evaluation": 0.8712871287128713,
+    "majority_class_reference_balanced_accuracy_not_model_evaluation": 0.5,
+    "excluded_rows": [
+      {
+        "experiment_id": "PSI-69:1:20CAL08",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:7:20CAL13",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:8:30CAL06",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:9:30CAL07",
+        "reason": "disruption_censored_not_extinction_or_completion|missing_initial_feature:droplet_diameter_mm"
+      },
+      {
+        "experiment_id": "PSI-69:12:264F003",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:17:240R003",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:19:196F001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:21:192F002",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:22:192F003",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:23:196F002",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:24:196F003",
+        "reason": "disruption_censored_not_extinction_or_completion|missing_initial_feature:droplet_diameter_mm"
+      },
+      {
+        "experiment_id": "PSI-69:26:191F001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:27:195F001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:28:195F002",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:31:182F001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:37:220R001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:38:220R002",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:39:224F001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:40:219R001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:41:219F001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:42:223F001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:43:223F002",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:44:206F001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:46:205R001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:48:205F001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:52:210F002",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:53:209F002",
+        "reason": "disruption_censored_not_extinction_or_completion|missing_initial_feature:droplet_diameter_mm"
+      },
+      {
+        "experiment_id": "PSI-69:55:218F001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:69:193R002",
+        "reason": "initial_gas_fractions_do_not_sum_to_one"
+      },
+      {
+        "experiment_id": "PSI-69:75:203R002",
+        "reason": "initial_gas_fractions_do_not_sum_to_one"
+      },
+      {
+        "experiment_id": "PSI-69:76:203F001",
+        "reason": "initial_gas_fractions_do_not_sum_to_one"
+      },
+      {
+        "experiment_id": "PSI-69:79:179F001",
+        "reason": "initial_gas_fractions_do_not_sum_to_one"
+      },
+      {
+        "experiment_id": "PSI-69:80:207F001",
+        "reason": "missing_initial_feature:droplet_diameter_mm|initial_gas_fractions_do_not_sum_to_one"
+      },
+      {
+        "experiment_id": "PSI-69:81:207F002",
+        "reason": "missing_initial_feature:droplet_diameter_mm|initial_gas_fractions_do_not_sum_to_one"
+      },
+      {
+        "experiment_id": "PSI-69:83:304F002",
+        "reason": "missing_initial_feature:droplet_diameter_mm"
+      },
+      {
+        "experiment_id": "PSI-69:88:053R001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:89:053F001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:90:141R001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:91:141F001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:92:061F002",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:93:149F001",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:96:C08H301",
+        "reason": "disruption_censored_not_extinction_or_completion|missing_initial_feature:droplet_diameter_mm"
+      },
+      {
+        "experiment_id": "PSI-69:105:C08M301",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:106:C09M401",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:107:C08M401",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:114:C11M201",
+        "reason": "nonpositive_initial_feature:pressure_kpa"
+      },
+      {
+        "experiment_id": "PSI-69:131:C21H101",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:132:C21H201",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:133:C21H301",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:137:C21H303",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:138:C21H304",
+        "reason": "disruption_censored_not_extinction_or_completion|missing_initial_feature:droplet_diameter_mm"
+      },
+      {
+        "experiment_id": "PSI-69:139:C21H305",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:148:C01H101",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:149:C01H201",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:168:C15M101",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:173:C03H701",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:174:C08H502",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:175:C08H601",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:179:C09H601",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:182:C02H202",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:198:C01H701",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:204:N01H101",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:205:N01H102",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:206:N01H201",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:210:N02H201",
+        "reason": "missing_initial_feature:droplet_diameter_mm"
+      },
+      {
+        "experiment_id": "PSI-69:223:H01M104",
+        "reason": "missing_initial_feature:droplet_diameter_mm"
+      },
+      {
+        "experiment_id": "PSI-69:229:N01H502",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:231:H02H101",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:237:H04H302",
+        "reason": "disruption_censored_not_extinction_or_completion|missing_initial_feature:droplet_diameter_mm"
+      },
+      {
+        "experiment_id": "PSI-69:242:H05M202",
+        "reason": "missing_initial_feature:droplet_diameter_mm"
+      },
+      {
+        "experiment_id": "PSI-69:252:H10M102",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      },
+      {
+        "experiment_id": "PSI-69:254:H11M102",
+        "reason": "disruption_censored_not_extinction_or_completion"
+      }
+    ]
+  },
+  "scope_decision": "Use the previously planned FLEX fallback for the one learned model; keep material comparison evidence-based.",
+  "inputs_sha256": {
+    "solid_stage_training.csv": "f351c06754edd06eb3fc11b269efd3a2a1b7ab4e63df037b33e77c87bcfc9dc7",
+    "flex_training.csv": "51aabd13e37ed104128d6127f248e57a01d804bc6c82befa60263f0f8796c79b"
+  }
+}

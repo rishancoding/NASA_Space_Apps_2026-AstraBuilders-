@@ -1,0 +1,928 @@
+{
+  "trained_with": {
+    "scikit_learn": "1.9.1",
+    "python": "3.12.10"
+  },
+  "dataset": "data/clean/flex_training.csv",
+  "source_record": "PSI-69",
+  "source_url": "https://psi.nasa.gov/physci/repo/data/investigations/PSI-69",
+  "features": [
+    "fuel",
+    "pressure_kpa",
+    "oxygen_pct",
+    "co2_fraction",
+    "helium_fraction",
+    "droplet_diameter_mm"
+  ],
+  "units": {
+    "pressure_kpa": "kPa",
+    "oxygen_pct": "oxygen mole percent",
+    "co2_fraction": "mole fraction",
+    "helium_fraction": "mole fraction",
+    "droplet_diameter_mm": "mm"
+  },
+  "domains_by_fuel": {
+    "Heptane": {
+      "rows": 74,
+      "classes": {
+        "1": 56,
+        "0": 18
+      },
+      "groups": 73,
+      "fields": {
+        "pressure_kpa": {
+          "missing": 0,
+          "min": 70.394211,
+          "max": 207.156296
+        },
+        "oxygen_pct": {
+          "missing": 0,
+          "min": 14.0,
+          "max": 30.0
+        },
+        "co2_fraction": {
+          "missing": 0,
+          "min": 0.0,
+          "max": 0.7
+        },
+        "helium_fraction": {
+          "missing": 0,
+          "min": 0.0,
+          "max": 0.45
+        },
+        "droplet_diameter_mm": {
+          "missing": 0,
+          "min": 1.13,
+          "max": 4.67
+        }
+      }
+    },
+    "Methanol": {
+      "rows": 128,
+      "classes": {
+        "1": 120,
+        "0": 8
+      },
+      "groups": 128,
+      "fields": {
+        "pressure_kpa": {
+          "missing": 0,
+          "min": 70.167563,
+          "max": 309.267898
+        },
+        "oxygen_pct": {
+          "missing": 0,
+          "min": 12.0,
+          "max": 34.0
+        },
+        "co2_fraction": {
+          "missing": 0,
+          "min": 0.0,
+          "max": 0.7
+        },
+        "helium_fraction": {
+          "missing": 0,
+          "min": 0.0,
+          "max": 0.45
+        },
+        "droplet_diameter_mm": {
+          "missing": 0,
+          "min": 1.61,
+          "max": 4.53
+        }
+      }
+    }
+  },
+  "unsupported_claims": [
+    "solid-material burn probability or safety ranking",
+    "ignition resistance",
+    "causal suppressant effectiveness",
+    "fire-extinguisher success",
+    "flame spread rate",
+    "Moon/Mars or partial-gravity prediction",
+    "spacecraft certification"
+  ],
+  "extinction": {
+    "task": "binary_classification",
+    "target": "extinction_binary",
+    "target_meaning": "Recorded Test end category Extinction versus Completion among non-disrupted, valid-feature FLEX observations",
+    "classes": {
+      "0": "Completion",
+      "1": "Extinction"
+    },
+    "rows": 202,
+    "groups": 201,
+    "class_counts": {
+      "Extinction": 176,
+      "Completion": 26
+    },
+    "validation": "5-fold StratifiedGroupKFold by split_group, seed 42, out-of-fold predictions; decision threshold tuned by inner grouped CV on each training fold only",
+    "folds": [
+      {
+        "fold": 0,
+        "test_rows": 41,
+        "test_completion": 5,
+        "test_extinction": 36
+      },
+      {
+        "fold": 1,
+        "test_rows": 40,
+        "test_completion": 5,
+        "test_extinction": 35
+      },
+      {
+        "fold": 2,
+        "test_rows": 40,
+        "test_completion": 5,
+        "test_extinction": 35
+      },
+      {
+        "fold": 3,
+        "test_rows": 40,
+        "test_completion": 5,
+        "test_extinction": 35
+      },
+      {
+        "fold": 4,
+        "test_rows": 41,
+        "test_completion": 6,
+        "test_extinction": 35
+      }
+    ],
+    "candidates": {
+      "majority_baseline": {
+        "decision_thresholds_per_fold": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "calibration": null,
+        "mean_predicted_probability": 0.871304,
+        "balanced_accuracy": 0.5,
+        "balanced_accuracy_95ci": [
+          0.5,
+          0.5
+        ],
+        "macro_f1": 0.465608,
+        "raw_accuracy": 0.871287,
+        "per_class": {
+          "Completion": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 26
+          },
+          "Extinction": {
+            "precision": 0.871287,
+            "recall": 1.0,
+            "f1": 0.931217,
+            "support": 176
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "Completion",
+            "Extinction"
+          ],
+          "rows_actual_cols_predicted": [
+            [
+              0,
+              26
+            ],
+            [
+              0,
+              176
+            ]
+          ]
+        },
+        "roc_auc": 0.5,
+        "brier_score": 0.112192,
+        "log_loss": 0.38414
+      },
+      "logistic_regression": {
+        "decision_thresholds_per_fold": [
+          0.85,
+          0.89,
+          0.77,
+          0.7,
+          0.75
+        ],
+        "calibration": [
+          {
+            "predicted_mean": 0.622139,
+            "observed_rate": 0.609756,
+            "n": 41
+          },
+          {
+            "predicted_mean": 0.840622,
+            "observed_rate": 0.875,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.940118,
+            "observed_rate": 1.0,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.974173,
+            "observed_rate": 0.925,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.990304,
+            "observed_rate": 0.95122,
+            "n": 41
+          }
+        ],
+        "mean_predicted_probability": 0.872805,
+        "balanced_accuracy": 0.802229,
+        "balanced_accuracy_95ci": [
+          0.712421,
+          0.886703
+        ],
+        "macro_f1": 0.713475,
+        "raw_accuracy": 0.826733,
+        "per_class": {
+          "Completion": {
+            "precision": 0.408163,
+            "recall": 0.769231,
+            "f1": 0.533333,
+            "support": 26
+          },
+          "Extinction": {
+            "precision": 0.960784,
+            "recall": 0.835227,
+            "f1": 0.893617,
+            "support": 176
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "Completion",
+            "Extinction"
+          ],
+          "rows_actual_cols_predicted": [
+            [
+              20,
+              6
+            ],
+            [
+              29,
+              147
+            ]
+          ]
+        },
+        "roc_auc": 0.807474,
+        "brier_score": 0.083449,
+        "log_loss": 0.301625
+      },
+      "logistic_regression_balanced": {
+        "decision_thresholds_per_fold": [
+          0.53,
+          0.78,
+          0.37,
+          0.42,
+          0.36
+        ],
+        "calibration": [
+          {
+            "predicted_mean": 0.238908,
+            "observed_rate": 0.634146,
+            "n": 41
+          },
+          {
+            "predicted_mean": 0.455643,
+            "observed_rate": 0.875,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.706282,
+            "observed_rate": 0.9,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.835114,
+            "observed_rate": 0.975,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.938578,
+            "observed_rate": 0.97561,
+            "n": 41
+          }
+        ],
+        "mean_predicted_probability": 0.634448,
+        "balanced_accuracy": 0.737544,
+        "balanced_accuracy_95ci": [
+          0.643556,
+          0.832655
+        ],
+        "macro_f1": 0.628309,
+        "raw_accuracy": 0.742574,
+        "per_class": {
+          "Completion": {
+            "precision": 0.296875,
+            "recall": 0.730769,
+            "f1": 0.422222,
+            "support": 26
+          },
+          "Extinction": {
+            "precision": 0.949275,
+            "recall": 0.744318,
+            "f1": 0.834395,
+            "support": 176
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "Completion",
+            "Extinction"
+          ],
+          "rows_actual_cols_predicted": [
+            [
+              19,
+              7
+            ],
+            [
+              45,
+              131
+            ]
+          ]
+        },
+        "roc_auc": 0.806381,
+        "brier_score": 0.169166,
+        "log_loss": 0.500546
+      },
+      "random_forest": {
+        "decision_thresholds_per_fold": [
+          0.89,
+          0.86,
+          0.73,
+          0.89,
+          0.87
+        ],
+        "calibration": [
+          {
+            "predicted_mean": 0.671825,
+            "observed_rate": 0.634146,
+            "n": 41
+          },
+          {
+            "predicted_mean": 0.852041,
+            "observed_rate": 0.825,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.921039,
+            "observed_rate": 0.95,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.959502,
+            "observed_rate": 0.95,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.979322,
+            "observed_rate": 1.0,
+            "n": 41
+          }
+        ],
+        "mean_predicted_probability": 0.876239,
+        "balanced_accuracy": 0.692745,
+        "balanced_accuracy_95ci": [
+          0.598056,
+          0.784894
+        ],
+        "macro_f1": 0.582366,
+        "raw_accuracy": 0.693069,
+        "per_class": {
+          "Completion": {
+            "precision": 0.25,
+            "recall": 0.692308,
+            "f1": 0.367347,
+            "support": 26
+          },
+          "Extinction": {
+            "precision": 0.938462,
+            "recall": 0.693182,
+            "f1": 0.797386,
+            "support": 176
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "Completion",
+            "Extinction"
+          ],
+          "rows_actual_cols_predicted": [
+            [
+              18,
+              8
+            ],
+            [
+              54,
+              122
+            ]
+          ]
+        },
+        "roc_auc": 0.824738,
+        "brier_score": 0.092526,
+        "log_loss": 0.30423
+      }
+    },
+    "selected_model": "logistic_regression",
+    "selection_rule": "lowest Brier score among models whose balanced-accuracy 95% CI is above 0.5",
+    "decision_threshold": 0.79,
+    "base_rate_extinction": 0.871287,
+    "prediction_enabled": true,
+    "promotion_gate": "passed: balanced accuracy (95% CI above 0.5, at least 0.10 above guessing) and Brier score better than the base rate",
+    "uncertainty_method": "spread of 25 models refit on group bootstrap resamples (10th-90th percentile)",
+    "notes": [
+      "Displayed probabilities are unweighted, so they track observed extinction rates (see calibration).",
+      "Extinction is the usual ending (87%). The decision threshold marks conditions that lean toward completion compared with typical tests.",
+      "Always predicting Extinction gives about 87% raw accuracy; use balanced accuracy and Brier score."
+    ]
+  },
+  "burn_time": {
+    "task": "regression",
+    "target": "burn_time_s",
+    "target_meaning": "Recorded FLEX burn time among screened Extinction/Completion rows; no inferred physical definition of Completion",
+    "rows": 200,
+    "groups": 199,
+    "partitions": {
+      "fit": {
+        "rows": 119,
+        "groups": [
+          "PSI-69:identifier:176R001",
+          "PSI-69:identifier:177F001",
+          "PSI-69:identifier:177R002",
+          "PSI-69:identifier:178F001",
+          "PSI-69:identifier:178R001",
+          "PSI-69:identifier:181F001",
+          "PSI-69:identifier:189F001",
+          "PSI-69:identifier:189R003",
+          "PSI-69:identifier:191R001",
+          "PSI-69:identifier:193R001",
+          "PSI-69:identifier:204F001",
+          "PSI-69:identifier:206R001",
+          "PSI-69:identifier:209F001",
+          "PSI-69:identifier:209F003",
+          "PSI-69:identifier:209F004",
+          "PSI-69:identifier:209F005",
+          "PSI-69:identifier:20CAL10",
+          "PSI-69:identifier:221F001",
+          "PSI-69:identifier:248F001",
+          "PSI-69:identifier:256F002",
+          "PSI-69:identifier:256F007",
+          "PSI-69:identifier:256F009",
+          "PSI-69:identifier:256R001",
+          "PSI-69:identifier:256R002",
+          "PSI-69:identifier:301F001",
+          "PSI-69:identifier:301F002",
+          "PSI-69:identifier:302F001",
+          "PSI-69:identifier:305F002",
+          "PSI-69:identifier:305F003",
+          "PSI-69:identifier:30CAL02",
+          "PSI-69:identifier:30CAL03",
+          "PSI-69:identifier:40CAL01",
+          "PSI-69:identifier:C01H501",
+          "PSI-69:identifier:C01H601",
+          "PSI-69:identifier:C01M101",
+          "PSI-69:identifier:C01M301",
+          "PSI-69:identifier:C01M602",
+          "PSI-69:identifier:C01M603",
+          "PSI-69:identifier:C02H201",
+          "PSI-69:identifier:C02M101",
+          "PSI-69:identifier:C02M201",
+          "PSI-69:identifier:C03H101",
+          "PSI-69:identifier:C03M201",
+          "PSI-69:identifier:C03M301",
+          "PSI-69:identifier:C03M501",
+          "PSI-69:identifier:C03M601",
+          "PSI-69:identifier:C04M201",
+          "PSI-69:identifier:C05M101",
+          "PSI-69:identifier:C05M401",
+          "PSI-69:identifier:C06M401",
+          "PSI-69:identifier:C07M101",
+          "PSI-69:identifier:C07M201",
+          "PSI-69:identifier:C08H201",
+          "PSI-69:identifier:C08M101",
+          "PSI-69:identifier:C08M201",
+          "PSI-69:identifier:C08M501",
+          "PSI-69:identifier:C08M601",
+          "PSI-69:identifier:C09M101",
+          "PSI-69:identifier:C09M601",
+          "PSI-69:identifier:C09M701",
+          "PSI-69:identifier:C10H101",
+          "PSI-69:identifier:C10H201",
+          "PSI-69:identifier:C10M303",
+          "PSI-69:identifier:C10M401",
+          "PSI-69:identifier:C11H201",
+          "PSI-69:identifier:C11M101",
+          "PSI-69:identifier:C11M301",
+          "PSI-69:identifier:C11M401",
+          "PSI-69:identifier:C12H103",
+          "PSI-69:identifier:C12H201",
+          "PSI-69:identifier:C12M101",
+          "PSI-69:identifier:C12M201",
+          "PSI-69:identifier:C12M401",
+          "PSI-69:identifier:C13M103",
+          "PSI-69:identifier:C14M101",
+          "PSI-69:identifier:C14M201",
+          "PSI-69:identifier:C14M302",
+          "PSI-69:identifier:C21H302",
+          "PSI-69:identifier:C21H401",
+          "PSI-69:identifier:H01M102",
+          "PSI-69:identifier:H02M101",
+          "PSI-69:identifier:H03H101",
+          "PSI-69:identifier:H03H202",
+          "PSI-69:identifier:H03M201",
+          "PSI-69:identifier:H04H101",
+          "PSI-69:identifier:H04M202",
+          "PSI-69:identifier:H05H103",
+          "PSI-69:identifier:H06M102",
+          "PSI-69:identifier:H06M201",
+          "PSI-69:identifier:H07M202",
+          "PSI-69:identifier:H08M101",
+          "PSI-69:identifier:H10H101",
+          "PSI-69:identifier:H11M101",
+          "PSI-69:identifier:H12H101",
+          "PSI-69:identifier:H12M201",
+          "PSI-69:identifier:H13H101",
+          "PSI-69:identifier:H13H201",
+          "PSI-69:identifier:H13M102",
+          "PSI-69:identifier:H13M201",
+          "PSI-69:identifier:H14H101",
+          "PSI-69:identifier:H14H201",
+          "PSI-69:identifier:H14M202",
+          "PSI-69:identifier:H15H101",
+          "PSI-69:identifier:H15M201",
+          "PSI-69:identifier:H19H101",
+          "PSI-69:identifier:H19H201",
+          "PSI-69:identifier:N01H202",
+          "PSI-69:identifier:N01H301",
+          "PSI-69:identifier:N01H601",
+          "PSI-69:identifier:N01M101",
+          "PSI-69:identifier:N01M201",
+          "PSI-69:identifier:N02H101",
+          "PSI-69:identifier:N02H203",
+          "PSI-69:identifier:N04H201",
+          "PSI-69:identifier:N04M201",
+          "PSI-69:identifier:N05M101",
+          "PSI-69:identifier:N05M201",
+          "PSI-69:identifier:N06M101",
+          "PSI-69:identifier:N06M201"
+        ],
+        "experiment_ids": [
+          "PSI-69:2:20CAL10",
+          "PSI-69:4:30CAL02",
+          "PSI-69:5:30CAL03",
+          "PSI-69:6:40CAL01",
+          "PSI-69:10:256F002",
+          "PSI-69:11:256R001",
+          "PSI-69:13:256R002",
+          "PSI-69:14:256F007",
+          "PSI-69:16:256F009",
+          "PSI-69:18:248F001",
+          "PSI-69:25:191R001",
+          "PSI-69:29:178R001",
+          "PSI-69:30:178F001",
+          "PSI-69:33:177R002",
+          "PSI-69:34:177F001",
+          "PSI-69:35:181F001",
+          "PSI-69:45:206R001",
+          "PSI-69:47:209F001",
+          "PSI-69:49:209F003",
+          "PSI-69:50:209F004",
+          "PSI-69:51:209F005",
+          "PSI-69:59:176R001",
+          "PSI-69:60:204F001",
+          "PSI-69:62:301F001",
+          "PSI-69:63:301F002",
+          "PSI-69:64:302F001",
+          "PSI-69:66:189F001",
+          "PSI-69:68:189R003",
+          "PSI-69:72:193R001",
+          "PSI-69:74:221F001",
+          "PSI-69:86:305F002",
+          "PSI-69:87:305F003",
+          "PSI-69:95:C08H201",
+          "PSI-69:97:C08M101",
+          "PSI-69:99:C09M101",
+          "PSI-69:102:C10H101",
+          "PSI-69:103:C10H201",
+          "PSI-69:104:C08M201",
+          "PSI-69:111:C10M303",
+          "PSI-69:112:C10M401",
+          "PSI-69:113:C11M101",
+          "PSI-69:115:C11M301",
+          "PSI-69:116:C11M401",
+          "PSI-69:118:C11H201",
+          "PSI-69:119:C12H103",
+          "PSI-69:120:C12H201",
+          "PSI-69:121:C12M101",
+          "PSI-69:122:C12M201",
+          "PSI-69:124:C12M401",
+          "PSI-69:125:C13M103",
+          "PSI-69:134:C21H401",
+          "PSI-69:136:C21H302",
+          "PSI-69:140:C14M101",
+          "PSI-69:141:C14M201",
+          "PSI-69:143:C14M302",
+          "PSI-69:144:C01M101",
+          "PSI-69:146:C01M301",
+          "PSI-69:152:C03M201",
+          "PSI-69:153:C03M301",
+          "PSI-69:154:C03H101",
+          "PSI-69:157:C05M101",
+          "PSI-69:160:C05M401",
+          "PSI-69:164:C06M401",
+          "PSI-69:166:C07M101",
+          "PSI-69:167:C07M201",
+          "PSI-69:176:C08M501",
+          "PSI-69:177:C08M601",
+          "PSI-69:181:C02H201",
+          "PSI-69:185:C09M601",
+          "PSI-69:186:C09M701",
+          "PSI-69:187:C02M101",
+          "PSI-69:188:C02M201",
+          "PSI-69:189:C03M501",
+          "PSI-69:190:C03M601",
+          "PSI-69:193:C04M201",
+          "PSI-69:196:C01H501",
+          "PSI-69:197:C01H601",
+          "PSI-69:200:C01M602",
+          "PSI-69:201:C01M603",
+          "PSI-69:202:N01M101",
+          "PSI-69:203:N01M201",
+          "PSI-69:207:N01H202",
+          "PSI-69:208:N01H301",
+          "PSI-69:209:N02H101",
+          "PSI-69:211:N02H203",
+          "PSI-69:214:N04H201",
+          "PSI-69:216:N04M201",
+          "PSI-69:217:N05M101",
+          "PSI-69:218:N05M201",
+          "PSI-69:219:N06M101",
+          "PSI-69:220:N06M201",
+          "PSI-69:222:H01M102",
+          "PSI-69:225:H02M101",
+          "PSI-69:227:H03M201",
+          "PSI-69:230:N01H601",
+          "PSI-69:232:H03H101",
+          "PSI-69:234:H03H202",
+          "PSI-69:235:H04H101",
+          "PSI-69:240:H04M202",
+          "PSI-69:243:H05H103",
+          "PSI-69:244:H06M102",
+          "PSI-69:245:H06M201",
+          "PSI-69:247:H07M202",
+          "PSI-69:248:H08M101",
+          "PSI-69:249:H10H101",
+          "PSI-69:253:H11M101",
+          "PSI-69:257:H12M201",
+          "PSI-69:258:H12H101",
+          "PSI-69:260:H13H101",
+          "PSI-69:261:H13H201",
+          "PSI-69:262:H13M102",
+          "PSI-69:263:H13M201",
+          "PSI-69:266:H14M202",
+          "PSI-69:267:H14H101",
+          "PSI-69:268:H14H201",
+          "PSI-69:269:H15H101",
+          "PSI-69:272:H15M201",
+          "PSI-69:273:H19H101",
+          "PSI-69:274:H19H201"
+        ]
+      },
+      "calibration": {
+        "rows": 41,
+        "groups": [
+          "PSI-69:identifier:175F001",
+          "PSI-69:identifier:175R001",
+          "PSI-69:identifier:176F001",
+          "PSI-69:identifier:189F002",
+          "PSI-69:identifier:189R001",
+          "PSI-69:identifier:189R002",
+          "PSI-69:identifier:193F001",
+          "PSI-69:identifier:194F001",
+          "PSI-69:identifier:204R001",
+          "PSI-69:identifier:256F008",
+          "PSI-69:identifier:303F001",
+          "PSI-69:identifier:304F001",
+          "PSI-69:identifier:304R001",
+          "PSI-69:identifier:C01H302",
+          "PSI-69:identifier:C01M501",
+          "PSI-69:identifier:C03M101",
+          "PSI-69:identifier:C04H201",
+          "PSI-69:identifier:C05M201",
+          "PSI-69:identifier:C06M101",
+          "PSI-69:identifier:C09H201",
+          "PSI-69:identifier:C09H501",
+          "PSI-69:identifier:C09M201",
+          "PSI-69:identifier:C09M501",
+          "PSI-69:identifier:C09M502",
+          "PSI-69:identifier:C10M201",
+          "PSI-69:identifier:C13H102",
+          "PSI-69:identifier:C13M301",
+          "PSI-69:identifier:C14M301",
+          "PSI-69:identifier:C15M201",
+          "PSI-69:identifier:C15M301",
+          "PSI-69:identifier:C21H501",
+          "PSI-69:identifier:H03H201",
+          "PSI-69:identifier:H03M101",
+          "PSI-69:identifier:H04H201",
+          "PSI-69:identifier:H05M102",
+          "PSI-69:identifier:H07M101",
+          "PSI-69:identifier:H10M101",
+          "PSI-69:identifier:H12H201",
+          "PSI-69:identifier:N01H401",
+          "PSI-69:identifier:N06M202"
+        ],
+        "experiment_ids": [
+          "PSI-69:15:256F008",
+          "PSI-69:56:194F001",
+          "PSI-69:57:303F001",
+          "PSI-69:58:176F001",
+          "PSI-69:61:204R001",
+          "PSI-69:65:189R001",
+          "PSI-69:67:189F002",
+          "PSI-69:70:193F001",
+          "PSI-69:71:189R002",
+          "PSI-69:73:193F001",
+          "PSI-69:77:175R001",
+          "PSI-69:78:175F001",
+          "PSI-69:82:304F001",
+          "PSI-69:84:304R001",
+          "PSI-69:98:C09M201",
+          "PSI-69:101:C09H201",
+          "PSI-69:110:C10M201",
+          "PSI-69:127:C13M301",
+          "PSI-69:129:C13H102",
+          "PSI-69:135:C21H501",
+          "PSI-69:142:C14M301",
+          "PSI-69:150:C01H302",
+          "PSI-69:151:C03M101",
+          "PSI-69:158:C05M201",
+          "PSI-69:161:C06M101",
+          "PSI-69:169:C15M201",
+          "PSI-69:170:C15M301",
+          "PSI-69:178:C09H501",
+          "PSI-69:183:C09M501",
+          "PSI-69:184:C09M502",
+          "PSI-69:195:C04H201",
+          "PSI-69:199:C01M501",
+          "PSI-69:221:N06M202",
+          "PSI-69:226:H03M101",
+          "PSI-69:228:N01H401",
+          "PSI-69:233:H03H201",
+          "PSI-69:236:H04H201",
+          "PSI-69:241:H05M102",
+          "PSI-69:246:H07M101",
+          "PSI-69:251:H10M101",
+          "PSI-69:259:H12H201"
+        ]
+      },
+      "audit": {
+        "rows": 40,
+        "groups": [
+          "PSI-69:identifier:182F002",
+          "PSI-69:identifier:190F003",
+          "PSI-69:identifier:190R002",
+          "PSI-69:identifier:192F001",
+          "PSI-69:identifier:20CAL12",
+          "PSI-69:identifier:304R002",
+          "PSI-69:identifier:C01M201",
+          "PSI-69:identifier:C02H101",
+          "PSI-69:identifier:C03H201",
+          "PSI-69:identifier:C03H302",
+          "PSI-69:identifier:C03H401",
+          "PSI-69:identifier:C03H501",
+          "PSI-69:identifier:C03H601",
+          "PSI-69:identifier:C03M701",
+          "PSI-69:identifier:C04H101",
+          "PSI-69:identifier:C04M101",
+          "PSI-69:identifier:C05M301",
+          "PSI-69:identifier:C06M201",
+          "PSI-69:identifier:C06M301",
+          "PSI-69:identifier:C08H101",
+          "PSI-69:identifier:C09H101",
+          "PSI-69:identifier:C09M301",
+          "PSI-69:identifier:C11H101",
+          "PSI-69:identifier:C12M301",
+          "PSI-69:identifier:C13H201",
+          "PSI-69:identifier:C13M102",
+          "PSI-69:identifier:C13M201",
+          "PSI-69:identifier:C13M401",
+          "PSI-69:identifier:H04H303",
+          "PSI-69:identifier:H04M101",
+          "PSI-69:identifier:H11H101",
+          "PSI-69:identifier:H12M101",
+          "PSI-69:identifier:H12M102",
+          "PSI-69:identifier:H14M101",
+          "PSI-69:identifier:H14M201",
+          "PSI-69:identifier:H15H201",
+          "PSI-69:identifier:H15M102",
+          "PSI-69:identifier:N03H101",
+          "PSI-69:identifier:N04H101",
+          "PSI-69:identifier:N04M101"
+        ],
+        "experiment_ids": [
+          "PSI-69:3:20CAL12",
+          "PSI-69:20:192F001",
+          "PSI-69:32:182F002",
+          "PSI-69:36:190R002",
+          "PSI-69:54:190F003",
+          "PSI-69:85:304R002",
+          "PSI-69:94:C08H101",
+          "PSI-69:100:C09H101",
+          "PSI-69:108:C09M301",
+          "PSI-69:117:C11H101",
+          "PSI-69:123:C12M301",
+          "PSI-69:126:C13M201",
+          "PSI-69:128:C13M401",
+          "PSI-69:130:C13H201",
+          "PSI-69:145:C01M201",
+          "PSI-69:147:C13M102",
+          "PSI-69:155:C03H201",
+          "PSI-69:156:C03H401",
+          "PSI-69:159:C05M301",
+          "PSI-69:162:C06M201",
+          "PSI-69:163:C06M301",
+          "PSI-69:165:C03H302",
+          "PSI-69:171:C03H501",
+          "PSI-69:172:C03H601",
+          "PSI-69:180:C02H101",
+          "PSI-69:191:C03M701",
+          "PSI-69:192:C04M101",
+          "PSI-69:194:C04H101",
+          "PSI-69:212:N03H101",
+          "PSI-69:213:N04H101",
+          "PSI-69:215:N04M101",
+          "PSI-69:238:H04H303",
+          "PSI-69:239:H04M101",
+          "PSI-69:250:H11H101",
+          "PSI-69:255:H12M101",
+          "PSI-69:256:H12M102",
+          "PSI-69:264:H14M101",
+          "PSI-69:265:H14M201",
+          "PSI-69:270:H15H201",
+          "PSI-69:271:H15M102"
+        ]
+      }
+    },
+    "validation": "Fixed group-disjoint 60/20/20 fit, calibration and audit split, seeds 42/43. Candidate selection by 5-fold grouped CV on fitting rows only. Deployed pipeline never refit on calibration/audit rows.",
+    "candidates": {
+      "mean_baseline": {
+        "mae_s": 5.69496,
+        "r2": -0.095096,
+        "r2_log_space": -0.009931,
+        "evaluation": "grouped CV within fitting partition only"
+      },
+      "ridge": {
+        "mae_s": 4.284837,
+        "r2": 0.430695,
+        "r2_log_space": 0.500907,
+        "evaluation": "grouped CV within fitting partition only"
+      },
+      "random_forest": {
+        "mae_s": 3.403057,
+        "r2": 0.608014,
+        "r2_log_space": 0.577052,
+        "evaluation": "grouped CV within fitting partition only"
+      }
+    },
+    "selected_model": "random_forest",
+    "audit": {
+      "rows": 40,
+      "groups": 40,
+      "r2": 0.611952,
+      "r2_95ci": [
+        0.359792,
+        0.807943
+      ],
+      "mae_s": 2.895207,
+      "interval_coverage": 0.9,
+      "group_interval_coverage": 0.9,
+      "median_interval_width_s": 10.825811
+    },
+    "prediction_enabled": true,
+    "promotion_gate": "passed: independent audit R\u00b2 lower 95% bound > 0.2 and group interval coverage >= 85%",
+    "uncertainty_method": "Nominal 90% group split-conformal interval using independent calibration group-maximum absolute log residuals and finite-sample order statistic",
+    "interval_level": 0.9,
+    "conformal_q_log": 0.690458,
+    "method_reference": "https://arxiv.org/abs/2107.07511",
+    "notes": [
+      "Audit was held out from fitting, candidate choice and interval calibration.",
+      "Nominal coverage assumes exchangeable sample groups. It is marginal, not guaranteed at each condition or under distribution shift.",
+      "Historical stress tests describe full-data CV candidates, not this frozen deployed pipeline."
+    ],
+    "trained_with": {
+      "scikit_learn": "1.9.1",
+      "python": "3.14.2"
+    }
+  }
+}

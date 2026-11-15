@@ -13,5 +13,12 @@ __pycache__/
 data/firesafe.sqlite
 data/.firesafe-*.sqlite
 
-# Local secrets (DEEPSEEK_API_KEY)
+# Local credentials (e.g. DEEPSEEK_API_KEY); only key-free templates belong in Git.
 .env
+.env.*
+!.env.example
+!.env.*.example
+
+# Web app
+web/node_modules/
+web/dist/

@@ -4,7 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-NASA Space Apps 2026 (team AstraBuilders). FireSafe: a Streamlit app (Material Advisor, DeepSeek research assistant, combustion predictor + model card, data explorer) built on a curated, verified package of NASA PSI (Physical Sciences Informatics) microgravity combustion data and its reproducible build pipeline.
+NASA Space Apps 2026 (team AstraBuilders). A curated, verified package of NASA PSI (Physical Sciences Informatics) microgravity combustion data and its build pipeline (`data/`), with two front ends that share it:
+
+- **Streamlit app** (`app/`, backend `firesafe/`, models `model/train.py` → `model/*.joblib` + `model/metrics.json`): Material Advisor, DeepSeek research assistant, combustion predictor + model card, data explorer.
+- **React web UI + FastAPI** (`web/`, `api/`, models `model/train_flex.py` → `model/artifacts/`): two trained FLEX droplet models and a chat agent. See `docs/API.md`. There are no safety rankings: the advisor ranks evidence.
+
+## Backend and models (React/FastAPI)
+
+- `model/train_flex.py` trains the extinction classifier with grouped CV and the burn-time regressor with disjoint fitting, calibration and audit groups and writes `model/artifacts/` (joblib files with sklearn built-ins only, `metrics.json`, `oof_predictions.json`). See `docs/PREDICTION_LIMITS.md` for conditional controls, same-family support checks and the interval audit. Each model has a promotion gate; a failed gate disables that prediction in the API. The extinction model is unweighted on purpose so its probabilities stay calibrated (balanced weights gave a Brier score worse than the base rate). `model/evaluate_models.py` runs the stress tests into `evaluation.json`; rerun it after retraining.
+- `api/core.py` holds every function (options, explorer, similarity, advisor, predictions, what-if, search). Numbers go through `val()` with a trust label. `api/main.py` exposes them over HTTP; `api/agent.py` gives the same functions to a language model as tools: DeepSeek (`deepseek-flash`, OpenAI-compatible SDK, `DEEPSEEK_API_KEY`) by default, or Claude (`ANTHROPIC_API_KEY`); both loops share `TOOLS`, `run_tool` and the system prompt.
+- Run: `.venv/Scripts/python -m uvicorn api.main:app --reload --port 8000`. Test: `.venv/Scripts/python -m pytest api/tests -q`.
 
 `data/DATA_HANDOFF.md` is the authoritative description of the data: what was corrected, what each teammate should use, and what must not be claimed. Read it before you change data semantics.
 
@@ -34,6 +43,7 @@ Data package (needs the extra build deps):
 .venv/bin/python -m unittest discover -s data/tests -p 'test_labels.py' -v      # label checks only; no openpyxl needed
 ```
 
+- `python data/scripts/build_sqlite.py` builds `data/flame.sqlite` from `data/clean/` (one table per CSV, `src_*` for NASA source tables, `_tables`/`_columns` catalogue). Rerun it after `build_data.py` or `label_data.py`; `data/tests/test_sqlite.py` checks every cell.
 - `data/clean/cleaning_pipeline.py` is a legacy shim that forwards to `build_data.py`.
 - `data/tests/test_data.py` imports `build_data`, so it needs `data/requirements.txt` installed (otherwise it errors with `No module named 'openpyxl'`); `tests/` needs only `requirements.txt`. They do not need `data/raw/`. The raw-vs-clean comparisons are skipped when the cache is missing.
 - To read the committed `data/clean/` files you need only the standard library (`data/access.py`).
@@ -59,6 +69,7 @@ App layers (all numbers come from the backend, never the LLM):
 - `firesafe/reliability.py` turns `model/metrics.json` out-of-fold data into a review for each prediction: model statistics against the constant baseline and the simpler (material-only/fuel-only) model, plus five checks (inputs in range, beats baseline by 10% log loss, conditions add skill, at least 10 training rows, local calibration). Those give a `low`/`moderate`/`higher` rating; the solid model is capped at `moderate`.
 - `firesafe/tools.py` is the agent's read-only tool set (`TOOLS` schemas + `run_tool`, which rejects unknown arguments). It includes curated lookups, `query_database`/`describe_database` (SQL via `db.run_select`) and predictions (`predict_*`, `prediction_sweep`). Each prediction carries a `reliability` review. `run_tool` puts a `provenance` block (datasets, investigations, model files, documents, SQL) first in every result; when you add a tool, add it to `TOOL_DATASETS`. `firesafe/agent.py` builds the system prompt (`SYSTEM_RULES` + `db.schema_text()`), which requires **Prediction reliability** and **Sources** sections, and runs a manual tool loop on DeepSeek `deepseek-v4-pro` through the `anthropic` SDK pointed at DeepSeek's Anthropic-compatible endpoint (`https://api.deepseek.com/anthropic`; override with `FIRESAFE_MODEL` / `FIRESAFE_BASE_URL`) via `client.messages.create`; assistant content (including DeepSeek `thinking` blocks) is appended back unchanged. `offline_answer` is the no-key fallback.
 - `app/main.py` uses `st.navigation`; pages are in `app/pages/`, shared charts in `app/ui.py`. The advisor stores its result in `st.session_state.advisor_result`, which the assistant reads through `get_current_advisor_results`.
+- `data/annotations/` holds AI-reviewed labels without human sign-off. Rebuilds overwrite `data/clean/`, so copy `label_review_queue.csv` here before you edit it.
 
 ## Data invariants (enforced by tests or required by the handoff)
 
@@ -72,6 +83,7 @@ App layers (all numbers come from the backend, never the LLM):
 - Uniqueness: BASS needs date + as-run number + test number + sample number. FLEX's experiment key includes the test number, because `193F001` repeats. Use `split_group` to keep repeat burns of one sample together in validation.
 - Evidence chunks of kind `experiment_plan_text` describe proposed tests and must not be cited as observed outcomes. Ground thresholds are Earth-gravity, external to PSI, and are not training outcomes.
 - Never present a ranking as a safety certification, or claim one material is safer unless the advisor's comparison is `supported`. Partial gravity, pressures away from ~1 atm, mass, cost and mechanical properties are always "cannot assess".
+- Don't present safety rankings or extrapolations in the app or agent. Model numbers appear only when the model passed its gate and the input is inside the tested range; the FLEX models describe droplets, never solid materials.
 
 ## Git
 

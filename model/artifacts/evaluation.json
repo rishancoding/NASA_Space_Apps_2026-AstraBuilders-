@@ -1,0 +1,286 @@
+{
+  "extinction_stability_20_shuffles": {
+    "balanced_accuracy_mean": 0.769515,
+    "min": 0.730988,
+    "max": 0.810752,
+    "roc_auc_mean": 0.813549,
+    "roc_auc_min": 0.788243
+  },
+  "extinction_permutation_test": {
+    "real_auc": 0.807474,
+    "shuffled_auc_mean": 0.480063,
+    "shuffled_auc_95th": 0.606174,
+    "p_value": 0.004975
+  },
+  "extinction_vs_fuel_only": {
+    "full_model_bacc": 0.782998,
+    "full_model_auc": 0.807474,
+    "fuel_only_bacc": 0.687063,
+    "fuel_only_auc": 0.634725
+  },
+  "extinction_per_fuel": {
+    "Methanol": {
+      "rows": 128,
+      "completions": 8,
+      "bacc": 0.6625,
+      "auc": 0.6
+    },
+    "Heptane": {
+      "rows": 74,
+      "completions": 18,
+      "bacc": 0.739087,
+      "auc": 0.848214
+    }
+  },
+  "extinction_calibration": {
+    "observed_extinction_rate": 0.871287,
+    "balanced_weights_old_model": {
+      "brier": 0.169166,
+      "mean_prob": 0.634448,
+      "table": [
+        {
+          "predicted_mean": 0.238908,
+          "observed_rate": 0.634146,
+          "n": 41
+        },
+        {
+          "predicted_mean": 0.455643,
+          "observed_rate": 0.875,
+          "n": 40
+        },
+        {
+          "predicted_mean": 0.706282,
+          "observed_rate": 0.9,
+          "n": 40
+        },
+        {
+          "predicted_mean": 0.835114,
+          "observed_rate": 0.975,
+          "n": 40
+        },
+        {
+          "predicted_mean": 0.938578,
+          "observed_rate": 0.97561,
+          "n": 41
+        }
+      ]
+    },
+    "unweighted": {
+      "brier": 0.083449,
+      "mean_prob": 0.872805,
+      "auc": 0.807474,
+      "table": [
+        {
+          "predicted_mean": 0.622139,
+          "observed_rate": 0.609756,
+          "n": 41
+        },
+        {
+          "predicted_mean": 0.840622,
+          "observed_rate": 0.875,
+          "n": 40
+        },
+        {
+          "predicted_mean": 0.940118,
+          "observed_rate": 1.0,
+          "n": 40
+        },
+        {
+          "predicted_mean": 0.974173,
+          "observed_rate": 0.925,
+          "n": 40
+        },
+        {
+          "predicted_mean": 0.990304,
+          "observed_rate": 0.95122,
+          "n": 41
+        }
+      ]
+    },
+    "sigmoid_calibrated": {
+      "brier": 0.092555,
+      "mean_prob": 0.881562,
+      "auc": 0.770323,
+      "table": [
+        {
+          "predicted_mean": 0.729715,
+          "observed_rate": 0.658537,
+          "n": 41
+        },
+        {
+          "predicted_mean": 0.85628,
+          "observed_rate": 0.825,
+          "n": 40
+        },
+        {
+          "predicted_mean": 0.91259,
+          "observed_rate": 1.0,
+          "n": 40
+        },
+        {
+          "predicted_mean": 0.942065,
+          "observed_rate": 0.925,
+          "n": 40
+        },
+        {
+          "predicted_mean": 0.968775,
+          "observed_rate": 0.95122,
+          "n": 41
+        }
+      ]
+    },
+    "prior_only_brier": 0.112146,
+    "note": "Threshold-tuning on out-of-fold scores is optimistic; reported for reference only.",
+    "unweighted_best_threshold": {
+      "threshold": 0.79,
+      "bacc": 0.782998
+    }
+  },
+  "extinction_learning_curve": [
+    {
+      "fraction_of_training_rows": 0.3,
+      "roc_auc_mean": 0.76226,
+      "roc_auc_sd": 0.033855
+    },
+    {
+      "fraction_of_training_rows": 0.5,
+      "roc_auc_mean": 0.780157,
+      "roc_auc_sd": 0.019051
+    },
+    {
+      "fraction_of_training_rows": 0.7,
+      "roc_auc_mean": 0.814073,
+      "roc_auc_sd": 0.014257
+    },
+    {
+      "fraction_of_training_rows": 0.85,
+      "roc_auc_mean": 0.807714,
+      "roc_auc_sd": 0.016893
+    },
+    {
+      "fraction_of_training_rows": 1.0,
+      "roc_auc_mean": 0.813046,
+      "roc_auc_sd": 0.013107
+    }
+  ],
+  "extinction_new_atmosphere": {
+    "all_co2_tests": {
+      "held_out_rows": 95,
+      "completions": 8,
+      "bacc": 0.578305,
+      "auc": 0.590517,
+      "accuracy": 0.747368
+    },
+    "all_helium_tests": {
+      "held_out_rows": 44,
+      "completions": 6,
+      "bacc": 0.815789,
+      "auc": 0.850877,
+      "accuracy": 0.681818
+    }
+  },
+  "extinction_with_screened_rows": {
+    "added_rows": 4,
+    "rows": 206,
+    "bacc": 0.746741,
+    "auc": 0.818953
+  },
+  "extinction_directions": {
+    "pressure_kpa|Methanol": {
+      "low_value": 70.980829,
+      "high_value": 102.551566,
+      "p_low": 0.944869,
+      "p_high": 0.95951
+    },
+    "pressure_kpa|Heptane": {
+      "low_value": 70.966163,
+      "high_value": 102.404911,
+      "p_low": 0.690576,
+      "p_high": 0.755005
+    },
+    "oxygen_pct|Methanol": {
+      "low_value": 14.0,
+      "high_value": 23.0,
+      "p_low": 0.985164,
+      "p_high": 0.863814
+    },
+    "oxygen_pct|Heptane": {
+      "low_value": 16.0,
+      "high_value": 23.0,
+      "p_low": 0.883645,
+      "p_high": 0.550044
+    },
+    "co2_fraction|Methanol": {
+      "low_value": 0.0,
+      "high_value": 0.45,
+      "p_low": 0.954453,
+      "p_high": 0.98252
+    },
+    "co2_fraction|Heptane": {
+      "low_value": 0.0,
+      "high_value": 0.3,
+      "p_low": 0.752898,
+      "p_high": 0.854693
+    },
+    "helium_fraction|Methanol": {
+      "low_value": 0.0,
+      "high_value": 0.3,
+      "p_low": 0.958988,
+      "p_high": 0.983431
+    },
+    "helium_fraction|Heptane": {
+      "low_value": 0.0,
+      "high_value": 0.285,
+      "p_low": 0.752898,
+      "p_high": 0.880695
+    },
+    "droplet_diameter_mm|Methanol": {
+      "low_value": 2.299,
+      "high_value": 3.914,
+      "p_low": 0.915193,
+      "p_high": 0.985795
+    },
+    "droplet_diameter_mm|Heptane": {
+      "low_value": 1.89,
+      "high_value": 3.822,
+      "p_low": 0.444567,
+      "p_high": 0.881193
+    }
+  },
+  "burn_time_stability_20_shuffles": {
+    "r2_mean": 0.748326,
+    "r2_min": 0.70291,
+    "r2_max": 0.780223,
+    "mae_mean_s": 2.710012
+  },
+  "burn_time_vs_d2_law": {
+    "rf_r2": 0.734694,
+    "rf_mae_s": 2.757929,
+    "d2_law_r2": 0.312924,
+    "d2_law_mae_s": 4.689378
+  },
+  "burn_time_per_fuel": {
+    "Methanol": {
+      "rows": 127,
+      "r2": 0.674477,
+      "mae_s": 3.297554
+    },
+    "Heptane": {
+      "rows": 73,
+      "r2": 0.637477,
+      "mae_s": 1.819129
+    }
+  },
+  "burn_time_new_atmosphere": {
+    "all_co2_tests": {
+      "held_out_rows": 94,
+      "r2": 0.403812,
+      "mae_s": 4.697333
+    },
+    "all_helium_tests": {
+      "held_out_rows": 43,
+      "r2": -0.147008,
+      "mae_s": 3.131569
+    }
+  }
+}

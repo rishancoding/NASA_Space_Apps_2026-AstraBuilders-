@@ -17,7 +17,7 @@
   ],
   "solid_labeled_rows": 232,
   "training_eligible_rows": 0,
-  "model_readiness": "exploratory_stage_candidates_available; use stage table, not whole-test labels",
+  "model_readiness": "Step 2 selected FLEX terminal-category scope; no model fitted; see model_readiness.json",
   "flex_observations": 274,
   "evidence_chunks": 757,
   "publications": 325,
@@ -69,5 +69,5 @@
   ],
   "solid_tests_reviewed": 250,
   "solid_training_stage_rows": 47,
-  "flex_training_rows": 207
+  "flex_training_rows": 202
 }
