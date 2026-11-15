@@ -29,7 +29,6 @@ export default function Predictor({ options, openExperiment, askChat }) {
   const [model, setModel] = useState("extinction");
   const [submitted, setSubmitted] = useState(null);
   const rawKey = JSON.stringify(vals);
-  const body = submitted;
   const pending = !submitted || rawKey !== JSON.stringify(submitted);
   const controls = useAsync(() => api.predictionControls(vals), [rawKey]);
   const ext = useAsync(() => submitted ? api.predictExtinction(submitted) : Promise.resolve(null), [submitted]);
@@ -92,7 +91,7 @@ export default function Predictor({ options, openExperiment, askChat }) {
             {!pending && ext.data?.available && <Factors f={ext.data.factors} title="How inputs affect the estimate" />}
             {!pending && ext.data && <Nearest n={ext.data.nearest_tests} openExperiment={openExperiment} />}
           </div></details>
-          <button disabled={pending || ext.loading} onClick={() => askChat({ page: "atmosphere_predictor", inputs: body, extinction: ext.data, burn_time: burn.data })} className="secondary-button">Explain these results ↗</button>
+          <button disabled={pending || ext.loading} onClick={askChat} className="secondary-button">Explain these results ↗</button>
         </>}
         </div>
       </div>

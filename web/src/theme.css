@@ -177,6 +177,33 @@ table tbody tr:hover { background:#f8faff; }
 @media(max-width:760px) { .home-tool-grid { grid-template-columns:1fr; } .assistant-launcher { right:16px; bottom:max(16px,env(safe-area-inset-bottom)); padding:13px 17px; } .assistant-panel { left:10px; right:10px !important; top:10px !important; bottom:84px !important; width:calc(100% - 20px) !important; max-width:none !important; } }
 .assistant-panel { z-index:80; }
 .assistant-launcher { z-index:90; }
+@media(min-width:761px) { .assistant-panel { top:96px !important; } }
+@media(min-width:1280px) { .assistant-open { margin-right:440px; } .assistant-open .candidate-grid { grid-template-columns:1fr; } }
+
+.assistant-context input { accent-color:#2763c7; }
+.chat-markdown { min-width:0; overflow-wrap:anywhere; line-height:1.65; }
+.chat-markdown > :first-child { margin-top:0; }
+.chat-markdown > :last-child { margin-bottom:0; }
+.chat-markdown p, .chat-markdown ul, .chat-markdown ol, .chat-markdown pre,
+.chat-markdown blockquote, .chat-markdown .chat-table-scroll { margin:0.65rem 0; }
+.chat-markdown h1, .chat-markdown h2, .chat-markdown h3,
+.chat-markdown h4, .chat-markdown h5, .chat-markdown h6 { margin:0.9rem 0 0.4rem; font-size:1em; font-weight:650; line-height:1.4; }
+.chat-markdown strong { font-weight:650; }
+.chat-markdown ul { list-style:disc; padding-left:1.3rem; }
+.chat-markdown ol { list-style:decimal; padding-left:1.3rem; }
+.chat-markdown li { margin:0.25rem 0; }
+.chat-markdown li > p { margin:0.25rem 0; }
+.chat-markdown a { color:#245fbd; text-decoration:underline; text-underline-offset:2px; }
+.chat-markdown a:focus-visible, .chat-table-scroll:focus-visible { outline:2px solid #468df0; outline-offset:3px; }
+.chat-markdown code { font-size:0.88em; border-radius:4px; background:#e8edf5; padding:0.1em 0.3em; }
+.chat-markdown pre { max-width:100%; overflow-x:auto; padding:0.7rem; border-radius:8px; background:#e8edf5; }
+.chat-markdown pre code { padding:0; background:none; white-space:pre; }
+.chat-markdown blockquote { padding-left:0.75rem; border-left:3px solid #b7cbed; color:#53637b; }
+.chat-markdown hr { margin:0.9rem 0; border-color:#dce6f3; }
+.chat-table-scroll { max-width:100%; overflow-x:auto; }
+.chat-markdown table { width:100%; border-collapse:collapse; font-size:0.85em; }
+.chat-markdown th, .chat-markdown td { padding:0.4rem 0.5rem; border:1px solid #dce6f3; text-align:left; }
+.chat-markdown th { background:#edf2f9; font-weight:600; }
 .ranking-hint { padding:12px 14px; border-left:2px solid #a4c5ee; background:#f2f7fe; border-radius:0 9px 9px 0; font-size:12px; line-height:1.7; color:#5d7793; }
 .ranking-explanation { padding:20px 24px; border:1px solid #dce7f4; border-radius:14px; background:#f1f6fd; }
 .ranking-explanation h2 { font-size:16px; font-weight:500; color:#365a82; margin-top:6px; }

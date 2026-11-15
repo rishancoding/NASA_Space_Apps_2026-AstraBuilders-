@@ -22,7 +22,7 @@ export default function Home({ navigate, askChat }) {
           <div className="home-tool-top"><Icon name={tool.id} /><span>{tool.tag}</span></div>
           <h3>{tool.title}</h3><p>{tool.text}</p><span className="home-tool-action">{tool.action} ↗</span>
         </button>)}
-        <button className="home-tool" onClick={() => askChat({ page: "home" })}><div className="home-tool-top"><Icon name="chat" /><span>Optional AI assistance</span></div><h3>Research Assistant</h3><p>Ask questions about NASA findings and your selected conditions. Generated answers use data tools and citations; a provider connection is required.</p><span className="home-tool-action">Open the assistant ↗</span></button>
+        <button className="home-tool" onClick={askChat}><div className="home-tool-top"><Icon name="chat" /><span>Optional AI assistance</span></div><h3>Research Assistant</h3><p>Ask about your current settings and results. The assistant can use the page you’re viewing, alongside NASA data tools and citations.</p><span className="home-tool-action">Open the assistant ↗</span></button>
       </div>
     </section>
     <section className="home-reading" aria-labelledby="reading-heading"><div><span className="eyebrow">How to read your results</span><h2 id="reading-heading">Outcomes before totals.</h2><p>Material results highlight sustained and not-sustained flame events for the trial type you select. Test counts provide context, not a safety score.</p></div><div className="home-reading-notes"><p><b>Observed</b> — NASA notes and team-verified interpretations.</p><p><b>Estimated</b> — exploratory FLEX predictions, with uncertainty.</p><p><b>Unknown</b> — missing evidence stays unresolved. Moon/Mars behaviour is not established here.</p></div></section>

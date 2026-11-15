@@ -71,8 +71,7 @@ export default function Advisor({ options, openExperiment, askChat }) {
               <div className="ranking-explanation"><h2>How materials are ordered</h2><p>{res.data.rank_basis}</p><details><summary>See the calculation</summary><p>{res.data.ranking.method}</p></details><p className="ranking-limit">Flame outcomes are shown for context but do not determine this order. A material appearing first is not necessarily safer.</p></div>
               <div className="results-toolbar">
                 <h2 title={res.data.rank_basis}>Material matches <span className="ml-1 text-gray-400">{res.data.candidates.length}</span></h2>
-                <button onClick={() => askChat({ page: "material_advisor", inputs: res.data.inputs,
-                  ranking: res.data.candidates.map((c) => ({ rank: c.rank, material: c.material, evidence: c.evidence, events: c.condition_linked_events_nearby })) })}
+                <button onClick={askChat}
                   className="text-xs text-indigo-600 hover:underline">
                   Explain this evidence order ↗
                 </button>

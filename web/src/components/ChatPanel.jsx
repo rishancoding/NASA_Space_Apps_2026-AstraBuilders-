@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
 import { ErrorBox, Spinner, useAsync } from "./ui.jsx";
+import ChatMarkdown from "./ChatMarkdown.jsx";
+import { buildChatPayload, captureScreenContext } from "../chatContext.js";
 
 const STARTERS = [
   "What happens when oxygen increases?",
@@ -8,7 +10,7 @@ const STARTERS = [
 ];
 
 /** Docked research-assistant chat. Sends the whole conversation each time (the API is stateless). */
-export default function ChatPanel({ open, onClose, context }) {
+export default function ChatPanel({ open, onClose, page, pageLabel }) {
   const health = useAsync(() => open ? api.health() : Promise.resolve(null), [open]);
   const enabled = health.data?.chat_configured === true;
   const [messages, setMessages] = useState([]);
@@ -16,6 +18,7 @@ export default function ChatPanel({ open, onClose, context }) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [usePage, setUsePage] = useState(true);
   const end = useRef(null);
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: "smooth" }); // braces: newer browsers return a Promise here
@@ -27,8 +30,9 @@ export default function ChatPanel({ open, onClose, context }) {
     const next = [...messages, { role: "user", content: q }];
     setMessages(next); setText(""); setBusy(true); setError(null);
     try {
-      const history = next.slice(-7).map((m) => ({ ...m, content: m.content.slice(0, 4000) }));
-      const r = await api.chat(history, context);
+      const context = usePage ? captureScreenContext(page, pageLabel) : null;
+      const payload = buildChatPayload(next, context);
+      const r = await api.chat(payload.messages, payload.context);
       setMessages([...next, { role: "assistant", content: r.answer || "(no answer)" }]);
       setMeta((m) => [...m, { citations: r.citations, tool_calls: r.tool_calls, model: r.model }]);
     } catch (e) {
@@ -50,6 +54,10 @@ export default function ChatPanel({ open, onClose, context }) {
         <button aria-label="Close research assistant" onClick={onClose} className="panel-close">✕</button>
       </div>
 
+      <div className="assistant-context border-b border-line px-4 py-3 text-xs">
+        <label className="flex items-center gap-2"><input type="checkbox" checked={usePage} onChange={(e) => setUsePage(e.target.checked)} />Use current page</label>
+        <p className="mt-1 text-gray-500" role="status">{usePage ? `Reading ${pageLabel}: settings, visible results and open test details when you send.` : "Page context is off. Only your conversation is shared."}</p>
+      </div>
       <div className="scroll-region flex-1 space-y-3 overflow-y-auto p-4 text-sm">
         {health.loading && <Spinner label="Checking assistant availability…" />}
         <ErrorBox error={health.error} />
@@ -57,7 +65,6 @@ export default function ChatPanel({ open, onClose, context }) {
           <p className="font-medium">AI chat is currently unavailable.</p>
           <p className="mt-1 text-xs">NASA data and model estimates still work. Generated answers will be available once the site’s chat service is enabled.</p>
         </div>}
-        {context && <div className="rounded-md bg-ink px-2 py-1 text-[11px] text-gray-500">Using context from: {context.page?.replaceAll("_", " ")}</div>}
         {enabled && messages.length === 0 && (
           <div className="space-y-2">
             <div className="text-xs text-gray-500">Try asking:</div>
@@ -71,7 +78,7 @@ export default function ChatPanel({ open, onClose, context }) {
           const info = m.role === "assistant" ? meta[a] : null;
           return (
             <div key={i} className={m.role === "user" ? "ml-8 rounded-lg bg-flame/15 p-3 text-gray-900" : "mr-4 rounded-lg bg-ink p-3 text-gray-800"}>
-              <div className="whitespace-pre-wrap">{m.content}</div>
+              {m.role === "assistant" ? <ChatMarkdown>{m.content}</ChatMarkdown> : <div className="whitespace-pre-wrap">{m.content}</div>}
               {info?.citations?.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5 border-t border-line pt-2">
                   {info.citations.slice(0, 8).map((c, j) => (

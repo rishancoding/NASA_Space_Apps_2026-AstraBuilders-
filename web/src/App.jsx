@@ -45,13 +45,12 @@ function usePage() {
 export default function App() {
   const [page, setPage] = usePage();
   const [chatOpen, setChatOpen] = useState(false);
-  const [chatContext, setChatContext] = useState(null);
   const [experimentId, setExperimentId] = useState(null);
   const options = useAsync(() => api.options(), []);
   if (options.data) TrustContext.labels = options.data.trust_labels;
 
-  const shared = { options: options.data, openExperiment: setExperimentId, setChatContext,
-    askChat: (ctx) => { setChatContext(ctx); setChatOpen(true); } };
+  const shared = { options: options.data, openExperiment: setExperimentId,
+    askChat: () => setChatOpen(true) };
 
   return (
     <div className="app-shell">
@@ -86,7 +85,7 @@ export default function App() {
       </div>
 
       <button className="assistant-launcher" aria-label={chatOpen ? "Close AI assistant" : "Open AI assistant"} aria-expanded={chatOpen} aria-controls="research-assistant" onClick={() => setChatOpen((o) => !o)}><Icon name="chat" /><span>{chatOpen ? "Close assistant" : "AI assistant"}</span></button>
-      <PageBoundary><ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} context={chatContext} /></PageBoundary>
+      <PageBoundary><ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} page={page} pageLabel={PAGES.find((p) => p.id === page)?.label || "Home"} /></PageBoundary>
       <PageBoundary><ExperimentDrawer id={experimentId} onClose={() => setExperimentId(null)} openExperiment={setExperimentId} /></PageBoundary>
     </div>
   );
