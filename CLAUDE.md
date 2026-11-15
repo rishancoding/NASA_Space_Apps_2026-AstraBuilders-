@@ -4,10 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-NASA Space Apps 2026 (team AstraBuilders). A curated, verified package of NASA PSI (Physical Sciences Informatics) microgravity combustion data and its build pipeline (`data/`), with two front ends that share it:
+NASA Space Apps 2026 (team AstraBuilders). A curated, verified package of NASA PSI (Physical Sciences Informatics) microgravity combustion data and its build pipeline (`data/`), with an official React/FastAPI app and a separate experimental Streamlit reference:
 
-- **Streamlit app** (`app/`, backend `firesafe/`, models `model/train.py` → `model/*.joblib` + `model/metrics.json`): Material Advisor, DeepSeek research assistant, combustion predictor + model card, data explorer.
-- **React web UI + FastAPI** (`web/`, `api/`, models `model/train_flex.py` → `model/artifacts/`): two trained FLEX droplet models and a chat agent. See `docs/API.md`. There are no safety rankings: the advisor ranks evidence.
+- **Experimental reference only: Streamlit app** (`app/`, backend `firesafe/`, models `model/train.py` → `model/*.joblib` + `model/metrics.json`): Material Advisor, DeepSeek research assistant, combustion predictor + model card, data explorer.
+- **Official submission: React web UI + FastAPI** (`web/`, `api/`, models `model/train_flex.py` → `model/artifacts/`): two trained FLEX droplet models and a chat agent. See `docs/API.md`. There are no safety rankings: the advisor ranks evidence.
 
 ## Backend and models (React/FastAPI)
 
@@ -18,6 +18,8 @@ NASA Space Apps 2026 (team AstraBuilders). A curated, verified package of NASA P
 `data/DATA_HANDOFF.md` is the authoritative description of the data: what was corrected, what each teammate should use, and what must not be claimed. Read it before you change data semantics.
 
 ## Commands
+
+For the official app use `api/requirements.txt`, `uvicorn api.main:app` and `npm ci && npm run dev` inside `web/`. The Streamlit commands below maintain the experimental reference only.
 
 Run everything from the repository root.
 
@@ -63,7 +65,7 @@ The pipeline runs in one direction: **fetch → build → label → clean packag
 App layers (all numbers come from the backend, never the LLM):
 
 - `firesafe/data.py` loads `data/clean/` CSVs into cached DataFrames (the "database"), plus a hand-transcribed `SAFFIRE` list (blank-material rows stay unattributed). `firesafe/evidence.py` is BM25 search over `evidence_chunks.jsonl`.
-- `firesafe/predictor.py` trains/serves two models: solid sustained burning (logistic regression on material + scenario/`protocol` + oxygen + log-airflow terms, leave-one-group-out CV) and FLEX droplet extinction (best of LR/RF by grouped-CV log loss). Feature helpers live in this module so the joblib files load anywhere. `predict_solid` returns warnings for every out-of-range input (oxygen, airflow, untested scenario, pressure, gravity).
+- `firesafe/predictor.py` trains/serves two models: solid sustained burning (logistic regression on material + scenario/`protocol` + oxygen + log-airflow terms, leave-one-group-out CV) and FLEX droplet extinction (best of LR/RF by grouped-CV log loss). Feature helpers live in this module so the joblib files load anywhere. `predict_solid` withholds probabilities for every out-of-range input (oxygen, airflow, untested scenario, pressure, gravity).
 - `firesafe/advisor.py` matches a `Scenario` to tests (±1.5 pp O2, ±50% airflow), computes evidence strength, constraint checks (`meets`/`fails`/`cannot assess`/`outside data`), ranks by priority with evidence tier first, and marks pairwise comparisons `supported` only when the evidence allows. The selected material in analyze mode is kept out of the ranking.
 - `firesafe/db.py` builds `data/firesafe.sqlite` (gitignored) from `data/clean/`: the curated CSVs under their file stems, `saffire_samples` from the `SAFFIRE` list, and every original NASA table as `src_*` (all TEXT, verbatim, `_source_row` = CSV line, which joins to curated `source_row`). Blank cells become NULL. `_tables`/`_columns` hold source file, grain, caveats, investigations and units. `ensure()` rebuilds when the fingerprint (input files + `db.py` source) changes. `run_select` is the only query path: read-only URI, `query_only`, an authorizer that permits SELECT/READ/FUNCTION only, a VM-step limit and a 200-row cap. Investigations come from `source_record`, or the `experiment_id` prefix (`PSI-25:...`).
 - `firesafe/reliability.py` turns `model/metrics.json` out-of-fold data into a review for each prediction: model statistics against the constant baseline and the simpler (material-only/fuel-only) model, plus five checks (inputs in range, beats baseline by 10% log loss, conditions add skill, at least 10 training rows, local calibration). Those give a `low`/`moderate`/`higher` rating; the solid model is capped at `moderate`.

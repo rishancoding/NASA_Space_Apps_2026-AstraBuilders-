@@ -27,27 +27,27 @@ def solid_run(n: dict, est: dict) -> None:
     exp = EXPERIMENT.get(n["source_record"], n["source_record"])
     with st.expander(f"{exp} test {n['test_id']}: {went}"):
         same = n["scenario"] == est["scenario"]
-        agrees = (est["probability"] >= 0.5) == bool(n["sustained_flame"])
+        agrees = (est["probability"] is not None and est["probability"] >= 0.5) == bool(n["sustained_flame"])
         st.markdown(
             f"NASA burned {' '.join(n['material_raw'].split())} at {n['oxygen_pct']:.1f}% oxygen and "
             f"{n['airflow_cm_s']:g} cm/s, and the flame {went}. Crew note: \"{n['evidence_quote']}\"")
         ui.note(f"Oxygen {_diff(est['oxygen_pct'], n['oxygen_pct'], 'points')}, airflow "
                 f"{_diff(est['airflow_cm_s'], n['airflow_cm_s'], 'cm/s')}, "
                 f"{'same' if same else 'different'} scenario. "
-                f"{'Agrees with' if agrees else 'Differs from'} the estimate. <a href='{n['source_url']}' target='_blank'>NASA record</a>")
+                f"{'No supported estimate' if est['probability'] is None else 'Agrees with the estimate' if agrees else 'Differs from the estimate'}. <a href='{n['source_url']}' target='_blank'>NASA record</a>")
 
 
 def droplet_run(n: dict, est: dict) -> None:
-    went = "went out early" if n["extinguished"] else "burned to the end"
+    went = "was recorded as Extinction" if n["extinguished"] else "was recorded as Completion"
     with st.expander(f"FLEX test {n['test_id']}: {went}"):
         extra = [f"{n[k] * 100:.0f}% {g}" for k, g in (("co2_fraction", "CO₂"), ("helium_fraction", "helium"))
                  if n[k] and n[k] > 0]
         st.markdown(f"A {n['droplet_diameter_mm']:.1f} mm {n['fuel'].lower()} drop at {n['oxygen_pct']:.0f}% oxygen"
                     f"{' with ' + ' and '.join(extra) if extra else ''}, {n['pressure_kpa']:.0f} kPa: it {went}.")
-        agrees = (est["probability"] >= 0.5) == bool(n["extinguished"])
+        agrees = (est["probability"] is not None and est["probability"] >= 0.5) == bool(n["extinguished"])
         ui.note(f"Oxygen {_diff(est['oxygen_pct'], n['oxygen_pct'], 'points')}, droplet "
                 f"{_diff(est['droplet_diameter_mm'], n['droplet_diameter_mm'], 'mm')}. "
-                f"{'Agrees with' if agrees else 'Differs from'} the estimate. <a href='{n['source_url']}' target='_blank'>NASA record</a>")
+                f"{'No supported estimate' if est['probability'] is None else 'Agrees with the estimate' if agrees else 'Differs from the estimate'}. <a href='{n['source_url']}' target='_blank'>NASA record</a>")
 
 
 solid_tab, flex_tab = st.tabs(["Solid materials", "Fuel droplets"])
@@ -76,7 +76,7 @@ with solid_tab:
     r = predictor.predict_solid(mat, oxy, air, proto, gravity=MISSIONS[mission])
     with b:
         c1, c2 = st.columns(2)
-        c1.metric("Chance it keeps burning", f"{r['probability']:.0%}")
+        c1.metric("Chance it keeps burning", f"{r['probability']:.0%}" if r['probability'] is not None else 'Unavailable')
         c2.metric("Inside what NASA tested", "Yes" if r["supported"] else "No")
         for w in r["warnings"]:
             st.warning(w, icon=":material/warning:")
@@ -137,7 +137,7 @@ with flex_tab:
             ui.note("Sea level is ~101 kPa. Small effect.")
     fres = predictor.predict_flex(fuel, fp, fo, fc, fh, fd)
     with b:
-        st.metric("Chance the flame goes out before the fuel runs out", f"{fres['probability']:.0%}")
+        st.metric("Probability of recorded Extinction", f"{fres['probability']:.0%}" if fres['probability'] is not None else 'Unavailable')
         for w in fres["warnings"]:
             st.warning(w, icon=":material/warning:")
         ui.label("Closest real NASA tests")

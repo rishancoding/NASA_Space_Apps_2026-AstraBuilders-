@@ -65,6 +65,12 @@ TRUST = {
     "earth_reference": "Earth-gravity ground test (NTRS 20110008636); comparison only",
     "no_data": "No NASA data supports a value here",
 }
+RANKING_PRIORITIES = [
+    {"value": "evidence_strength", "label": "NASA evidence match",
+     "description": "Materials with more NASA tests close to your oxygen and airflow settings appear first. Closer tests contribute more. This is an evidence ranking, not a safety ranking.",
+     "method": "For tests within a distance of 2.5, add exp(−distance) and sort highest first. One distance unit corresponds to 1.5 initial oxygen percentage points or 4 cm/s from an exact recorded airflow. Geometry and thickness filters are applied first."},
+]
+
 MISSIONS = {
     "space_station": {"label": "Space station (microgravity)", "gravity_g": 0.0},
     "moon_base": {"label": "Moon base (0.17 g)", "gravity_g": 0.166},
@@ -229,6 +235,20 @@ def oof():
 
 
 @lru_cache(maxsize=1)
+def per_fuel_validation():
+    """Current selected-classifier OOF scores, not the historical stress-test run."""
+    from sklearn.metrics import roc_auc_score
+    rows = oof()["extinction"]
+    out = {}
+    for fuel in SPEC["fuel_categories"]:
+        subset = [r for r in rows if r["fuel"] == fuel]
+        y = [r["actual"] for r in subset]
+        out[fuel] = {"rows": len(y), "completions": y.count(0),
+                     "roc_auc": float(roc_auc_score(y, [r["predicted_probability"] for r in subset])) if len(set(y)) == 2 else None}
+    return out
+
+
+@lru_cache(maxsize=1)
 def extinction_model():
     return joblib.load(ARTIFACTS / "extinction_model.joblib")
 
@@ -312,7 +332,7 @@ def get_options():
             {"id": "low_flow", "label": "Stagnant corner (low airflow)", "oxygen_pct": 21.0, "pressure_kpa": 101.3, "airflow_cm_s": 1.0,
              "note": "Low ventilation, where microgravity flames can behave differently from Earth."},
         ],
-        "priorities": [{"value": "evidence_strength", "label": "Most NASA evidence near my conditions"}],
+        "priorities": RANKING_PRIORITIES,
         "protocols": [{"value": "ignition_trial", "label": "Ignition trials"},
                       {"value": "ongoing_burn_trial", "label": "Already-burning trials"}],
         "trust_labels": TRUST,
@@ -715,19 +735,29 @@ def _public(inputs):
     return {k: v for k, v in inputs.items() if not k.startswith("_")}
 
 
+def check_flex_domain(inputs):
+    """Shared physical/range/joint-coverage check for both app entry points.
+
+    Invalid physical inputs raise InputError. Otherwise return cleaned inputs,
+    screened neighbours, and a withholding reason (None when supported).
+    Model-specific promotion gates still apply at the prediction layer.
+    """
+    clean = _validate_flex(inputs)
+    neighbours = _flex_neighbours(clean)
+    reason = ("Inputs are outside the tested range, so no model number is shown." if clean["_outside"] else
+              None if neighbours["support"]["supported"] else neighbours["support"]["reason"])
+    return clean, neighbours, reason
+
+
 def predict_extinction(fuel, oxygen_pct, pressure_kpa, co2_fraction=0.0, helium_fraction=0.0, droplet_diameter_mm=None):
     """Estimate the chance a FLEX-like droplet flame ends in Extinction rather than Completion."""
-    inputs = _validate_flex(dict(fuel=fuel, oxygen_pct=oxygen_pct, pressure_kpa=pressure_kpa, co2_fraction=co2_fraction,
+    inputs, neighbours, domain_reason = check_flex_domain(dict(fuel=fuel, oxygen_pct=oxygen_pct, pressure_kpa=pressure_kpa, co2_fraction=co2_fraction,
                                  helium_fraction=helium_fraction, droplet_diameter_mm=droplet_diameter_mm))
-    neighbours = _flex_neighbours(inputs)
     art, m = extinction_model(), metrics()["extinction"]
     if not art["enabled"]:
         return _unavailable(m["promotion_gate"], inputs, neighbours)
-    if inputs["_outside"]:
-        return _unavailable("Inputs are outside the tested range, so no model number is shown.", inputs, neighbours,
-                            {"out_of_range": inputs["_outside"]})
-    if not neighbours["support"]["supported"]:
-        return _unavailable(neighbours["support"]["reason"], inputs, neighbours)
+    if domain_reason:
+        return _unavailable(domain_reason, inputs, neighbours, {"out_of_range": inputs["_outside"]} if inputs["_outside"] else None)
     X = _frame(inputs)
     p = float(art["model"].predict_proba(X)[0, 1])
     spread = np.array([e.predict_proba(X)[0, 1] for e in art["ensemble"]])
@@ -751,7 +781,7 @@ def predict_extinction(fuel, oxygen_pct, pressure_kpa, co2_fraction=0.0, helium_
         "nearest_tests": neighbours,
         "warnings": inputs["_warnings"] + ([{"field": None, "message": "Nearest NASA tests are not very close; treat this estimate with extra caution."}]
                                            if neighbours["coverage"]["level"] != "close" else [])
-                    + ([{"field": "fuel", "message": "Only 8 methanol tests were recorded as Completion. Within methanol the model separates the two categories weakly (held-out AUC ≈ 0.6); small differences are uncertain."}]
+                    + ([{"field": "fuel", "message": f"Only {per_fuel_validation()[fuel]['completions']} methanol tests were recorded as Completion (current selected-model OOF AUC {per_fuel_validation()[fuel]['roc_auc']:.2f}). Small differences remain uncertain with so few Completion examples."}]
                        if inputs["fuel"] == "Methanol" else []),
         "model": {"name": m["selected_model"], "balanced_accuracy": m["candidates"][m["selected_model"]]["balanced_accuracy"],
                   "roc_auc": m["candidates"][m["selected_model"]]["roc_auc"], "brier_score": m["candidates"][m["selected_model"]]["brier_score"],
@@ -762,17 +792,13 @@ def predict_extinction(fuel, oxygen_pct, pressure_kpa, co2_fraction=0.0, helium_
 
 def predict_burn_time(fuel, oxygen_pct, pressure_kpa, co2_fraction=0.0, helium_fraction=0.0, droplet_diameter_mm=None):
     """Estimate how long a FLEX-like droplet flame burns, with a 90% range."""
-    inputs = _validate_flex(dict(fuel=fuel, oxygen_pct=oxygen_pct, pressure_kpa=pressure_kpa, co2_fraction=co2_fraction,
+    inputs, neighbours, domain_reason = check_flex_domain(dict(fuel=fuel, oxygen_pct=oxygen_pct, pressure_kpa=pressure_kpa, co2_fraction=co2_fraction,
                                  helium_fraction=helium_fraction, droplet_diameter_mm=droplet_diameter_mm))
-    neighbours = _flex_neighbours(inputs)
     art, m = burn_time_model(), metrics()["burn_time"]
     if not art["enabled"]:
         return _unavailable(m["promotion_gate"], inputs, neighbours)
-    if inputs["_outside"]:
-        return _unavailable("Inputs are outside the tested range, so no model number is shown.", inputs, neighbours,
-                            {"out_of_range": inputs["_outside"]})
-    if not neighbours["support"]["supported"]:
-        return _unavailable(neighbours["support"]["reason"], inputs, neighbours)
+    if domain_reason:
+        return _unavailable(domain_reason, inputs, neighbours, {"out_of_range": inputs["_outside"]} if inputs["_outside"] else None)
     X = _frame(inputs)
     pred = float(art["model"].predict(X)[0])
     q = art["conformal_q_log"]
@@ -916,8 +942,8 @@ def advisor(oxygen_pct, airflow_cm_s=None, mode="discover", material=None, missi
     _check_range("oxygen_pct", oxygen_pct, 0, 100)
     if protocol not in ("ignition_trial", "ongoing_burn_trial"):
         raise InputError({"field": "protocol", "message": "Choose ignition_trial or ongoing_burn_trial"})
-    if priority != "evidence_strength":
-        raise InputError({"field": "priority", "message": "Materials can only be ranked by evidence; protocols are not comparable safety trials."})
+    if priority not in {p["value"] for p in RANKING_PRIORITIES}:
+        raise InputError({"field": "priority", "message": "Choose a supported evidence-ranking priority. Safety-rate rankings are not supported."})
     if max_thickness_mm is not None:
         _check_range("max_thickness_mm", max_thickness_mm, 0, 1000)
     known = {r["material"] for r in solids() if r["material"] != "Unresolved material"}
@@ -976,6 +1002,7 @@ def advisor(oxygen_pct, airflow_cm_s=None, mode="discover", material=None, missi
             "is_selected": mat == material,
             "evidence": {
                 "score": _round(evidence_score, 3),
+                "reviewed_groups": len({s["validation_group"] for s in st}),
                 "close_tests": len(close), "nearby_tests": len(near), "total_tests": sum(r["material"] == mat for r in solids()),
                 "coverage": sim["coverage"],
             },
@@ -999,20 +1026,22 @@ def advisor(oxygen_pct, airflow_cm_s=None, mode="discover", material=None, missi
             "concerns": _concerns(mat, near, st, thick),
         })
 
-    key = lambda c: -c["evidence"]["score"]
-    rank_basis = "Amount and closeness of NASA tests near your conditions (most evidence first)."
-    candidates.sort(key=key)
-    if mode == "analyze":
-        sel = next(c for c in candidates if c["is_selected"])
-        others = [c for c in candidates if not c["is_selected"]]
-        candidates = [sel] + others
+    ranking = next(p for p in RANKING_PRIORITIES if p["value"] == priority)
+    candidates.sort(key=lambda c: -c["evidence"]["score"])
     for i, c in enumerate(candidates, 1):
         c["rank"] = i
+        ev = c["evidence"]
+        c["rank_reason"] = (f"{ev['nearby_tests']} nearby NASA tests, weighted by how closely their conditions match yours."
+                            if ev["nearby_tests"] else "No nearby NASA tests; this position is not a material recommendation.")
+        c["pinned_selected"] = mode == "analyze" and c["is_selected"]
+    if mode == "analyze":
+        candidates = [c for c in candidates if c["is_selected"]] + [c for c in candidates if not c["is_selected"]]
+    rank_basis = ranking["description"]
 
     return {
         "mode": mode, "inputs": {"oxygen_pct": oxygen_pct, "airflow_cm_s": airflow_cm_s, "material": material, "mission": mission,
                                  "pressure_kpa": pressure_kpa, "geometry": geometry, "max_thickness_mm": max_thickness_mm, "priority": priority, "protocol": protocol},
-        "rank_basis": rank_basis,
+        "rank_basis": rank_basis, "ranking": ranking,
         "not_a_safety_rating": "This ranks NASA evidence, not material safety. Materials were tested in different shapes, sizes and airflow sequences, so no material is shown as definitively safer.",
         "warnings": warnings,
         "candidates": candidates,
@@ -1103,7 +1132,7 @@ def evaluation():
 
 def model_info():
     m = metrics()
-    return {**m, "out_of_fold": oof(), "stress_tests": evaluation(),
+    return {**m, "out_of_fold": oof(), "per_fuel_validation": per_fuel_validation(), "stress_tests": evaluation(),
             "how_to_read": {
                 "balanced_accuracy": "Average of the hit rate on each outcome. 0.5 = guessing; 1.0 = perfect.",
                 "r2": "Share of burn-time variation explained. 0 = no better than the average; 1 = perfect.",

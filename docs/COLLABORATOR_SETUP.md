@@ -64,3 +64,13 @@ Never put a provider key in frontend code, browser storage, `VITE_` variables,
 `.env.example`, or `.gitignore` itself. Files already tracked stay tracked even
 after an ignore rule is added. If a real key was committed or publicly shared,
 revoke it at the provider and replace it.
+
+## Official app and local checks
+
+React/FastAPI (`web/` + `api/`) is the official submission entry point. The Streamlit app is an experimental reference, with separate historical model scores. Use the repository README's commands to launch the official app.
+
+The running API exposes `/api/health` (configuration only), `/api/tools` (the assistant's tool catalogue), and `/docs` (interactive, runnable endpoint documentation). Data tools and both model endpoints work without a provider key. The chat panel shows an explicit unconfigured state and links to API tools when no key is present. Setting only `CHAT_PROVIDER` does not make chat configured.
+
+The current local check deliberately makes no live provider calls at the project owner's request. Tests exercise real local NASA lookups and model boundaries, fake provider tool loops, citations, malformed arguments, and authentication/rate-limit/service failures. They do not prove that an external key, model name or credit balance works.
+
+The interactive `/docs` page uses bundled Swagger UI 5.35.0 assets, with Apache-2.0 and third-party license notices in `api/static/swagger-ui/`. It needs no external CDN or online schema validator. The Vite development proxy forwards `/docs`, `/openapi.json`, and `/api` to the local backend.

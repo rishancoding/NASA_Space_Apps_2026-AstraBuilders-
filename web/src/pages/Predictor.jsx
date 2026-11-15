@@ -1,11 +1,23 @@
 import { useMemo, useState } from "react";
 import { Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceArea, ReferenceLine, ResponsiveContainer, Scatter, Tooltip, XAxis, YAxis } from "recharts";
 import { api } from "../api.js";
-import { Card, CoverageBadge, ErrorBox, Select, Slider, Spinner, Toggle, Value, Warning, fmt, useAsync, useDebounced } from "../components/ui.jsx";
+import { Card, CoverageBadge, ErrorBox, Select, Slider, Spinner, Toggle, Value, Warning, fmt, useAsync } from "../components/ui.jsx";
 
-function initialScenario(flex, fuel, family = "Oxygen + nitrogen") {
-  return flex.scenarios.find((s) => s.inputs.fuel === fuel && s.gas_family === family)
-    || flex.scenarios.find((s) => s.inputs.fuel === fuel);
+function initialScenario(flex, fuel, family = "Oxygen + nitrogen", previous = {}) {
+  const pool = flex.scenarios.filter((s) => s.inputs.fuel === fuel && s.gas_family === family);
+  if (!pool.length) return flex.scenarios.find((s) => s.inputs.fuel === fuel);
+  const target = { oxygen_pct: 21, pressure_kpa: 101.3, droplet_diameter_mm: 3, co2_fraction: 0, helium_fraction: 0, ...previous };
+  // Match requested conditions, never a desired outcome or model probability.
+  for (const f of ["co2_fraction", "helium_fraction"]) {
+    const values = pool.map((s) => s.inputs[f]).sort((a, b) => a - b);
+    if (values.at(-1) === 0) target[f] = 0;
+    else if (!target[f]) target[f] = values[Math.floor(values.length / 2)];
+  }
+  const distance = (s) => flex.fields.reduce((sum, f) => {
+    const [lo, hi] = f.tested_range_by_fuel[fuel];
+    return sum + ((s.inputs[f.name] - target[f.name]) / (hi - lo || 1)) ** 2;
+  }, 0);
+  return [...pool].sort((a, b) => distance(a) - distance(b) || a.experiment_id.localeCompare(b.experiment_id))[0];
 }
 
 export default function Predictor({ options, openExperiment, askChat }) {
@@ -15,17 +27,16 @@ export default function Predictor({ options, openExperiment, askChat }) {
   const [vals, setVals] = useState(first.inputs);
   const [vary, setVary] = useState("oxygen_pct");
   const [model, setModel] = useState("extinction");
+  const [submitted, setSubmitted] = useState(null);
   const rawKey = JSON.stringify(vals);
-  const body = useDebounced(vals, 180);
-  const key = JSON.stringify(body);
-  const pending = rawKey !== key;
+  const body = submitted;
+  const pending = !submitted || rawKey !== JSON.stringify(submitted);
   const controls = useAsync(() => api.predictionControls(vals), [rawKey]);
-  const ext = useAsync(() => api.predictExtinction(body), [key]);
-  const burn = useAsync(() => api.predictBurnTime(body), [key]);
-  const curve = useAsync(() => api.whatIf({ ...body, model, vary, points: 40 }), [key, model, vary]);
+  const ext = useAsync(() => submitted ? api.predictExtinction(submitted) : Promise.resolve(null), [submitted]);
+  const burn = useAsync(() => submitted ? api.predictBurnTime(submitted) : Promise.resolve(null), [submitted]);
+  const curve = useAsync(() => submitted && !pending ? api.whatIf({ ...submitted, model, vary, points: 40 }) : Promise.resolve(null), [submitted, pending, model, vary]);
   const families = [...new Set(flex.scenarios.filter((s) => s.inputs.fuel === vals.fuel).map((s) => s.gas_family))];
-  const scenarios = flex.scenarios.filter((s) => s.inputs.fuel === vals.fuel && s.gas_family === anchor.gas_family);
-  const choose = (s) => { setAnchor(s); setVals({ ...s.inputs }); };
+  const choose = (s) => { setAnchor(s); setVals({ ...s.inputs }); setSubmitted(null); };
   const nitrogen = 1 - vals.oxygen_pct / 100 - vals.co2_fraction - vals.helium_fraction;
   const support = controls.data?.support;
 
@@ -37,15 +48,14 @@ export default function Predictor({ options, openExperiment, askChat }) {
       </div>
       <div className="grid items-start gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
         <Card title="Your conditions" className="space-y-5">
-          <Toggle value={vals.fuel} onChange={(fuel) => choose(initialScenario(flex, fuel))} options={flex.fuels.map((f) => ({ value: f, label: f }))} />
-          <Select label="Gas mixture" value={anchor.gas_family} onChange={(family) => choose(initialScenario(flex, vals.fuel, family))} options={families} />
-          <Select label="Starting NASA test" value={anchor.experiment_id} onChange={(id) => choose(scenarios.find((s) => s.experiment_id === id))}
-            options={scenarios.map((s) => ({ value: s.experiment_id, label: `Test ${s.test_id} · ${fmt(s.inputs.oxygen_pct)}% O₂ · ${fmt(s.inputs.pressure_kpa)} kPa` }))} />
+          <Toggle value={vals.fuel} onChange={(fuel) => choose(initialScenario(flex, fuel, anchor.gas_family, vals))} options={flex.fuels.map((f) => ({ value: f, label: f }))} />
+          <Select label="Gas mixture" value={anchor.gas_family} onChange={(family) => choose(initialScenario(flex, vals.fuel, family, vals))} options={families} />
+          <p className="text-xs leading-relaxed text-gray-500">Supported starting conditions are selected automatically. Adjust the settings below; matching NASA observations will appear with your results.</p>
           <div className="border-t border-line pt-4">
-            <div className="mb-3 flex items-center justify-between"><span className="eyebrow">Fine-tune nearby</span><button className="text-xs text-indigo-700 hover:underline" onClick={() => setVals({ ...anchor.inputs })}>Reset to test</button></div>
+            <div className="mb-3 flex items-center justify-between"><span className="eyebrow">Fine-tune nearby</span><button className="text-xs text-indigo-700 hover:underline" onClick={() => setVals({ ...anchor.inputs })}>Reset conditions</button></div>
             <div className="space-y-4" aria-busy={controls.loading}>
               {flex.fields.filter((f) => (f.unit !== "mole fraction" || vals[f.name] > 0) && (controls.loading || (controls.data?.fields.find((c) => c.name === f.name)?.values || []).length > 1)).map((f) => <SupportedControl key={f.name} field={f} value={vals[f.name]} settings={controls.data?.fields.find((c) => c.name === f.name)?.values || []}
-                disabled={controls.loading || pending} onChange={(v) => setVals((s) => ({ ...s, [f.name]: v }))} />)}
+                disabled={controls.loading} onChange={(v) => setVals((s) => ({ ...s, [f.name]: v }))} />)}
             </div>
           </div>
           <ErrorBox error={controls.error} />
@@ -54,9 +64,10 @@ export default function Predictor({ options, openExperiment, askChat }) {
             {!controls.loading && flex.fields.filter((f) => (f.unit !== "mole fraction" || vals[f.name] > 0) && (controls.data?.fields.find((c) => c.name === f.name)?.values || []).length <= 1).map((f) => <div key={f.name} className="flex justify-between gap-2"><span>{f.label.replace(" fraction", "")}</span><span>{fmt(f.unit === "mole fraction" ? vals[f.name] * 100 : vals[f.name])} {f.unit === "mole fraction" ? "%" : f.unit}</span></div>)}
             <p>Only settings with at least three nearby screened sample groups are selectable. Nearby tests do not guarantee accuracy.</p>
           </div></details>
-          <button className="primary-button w-full" onClick={() => openExperiment(anchor.experiment_id)}>Inspect starting NASA test ↗</button>
+          <button className="primary-button w-full" disabled={controls.loading || !support?.supported || (!pending && (ext.loading || burn.loading))} onClick={() => setSubmitted({ ...vals })}>Generate estimates ↗</button>
         </Card>
-        <div className="min-w-0 space-y-4">
+        <div className="min-w-0 space-y-4" aria-live="polite">
+          {pending ? <div className="results-empty"><span className="home-kicker">Your scenario → Model estimates</span><h2>Explore a flame on your terms.</h2><p>Choose a fuel, gas mixture and nearby settings. Then select <b>Generate estimates</b> to see an extinction probability, estimated burn time and uncertainty.</p><span>No model results are shown until you submit your settings.</span></div> : <>
           <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-panel/60 px-4 py-3 text-xs">
             <span className="flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${support?.supported ? "bg-indigo-500" : "bg-amber-300"}`} />{controls.loading ? "Checking nearby evidence…" : support?.supported ? `${support.nearby_groups} nearby NASA sample groups` : "Coverage check unavailable"}</span>
             <span className="text-gray-500">Same fuel · same gas family</span>
@@ -70,9 +81,7 @@ export default function Predictor({ options, openExperiment, askChat }) {
           <Card title="Change one condition" subtitle="Model estimates and recorded NASA tests."
             right={<div className="flex flex-wrap gap-2">
               <Toggle value={model} onChange={setModel} options={[{ value: "extinction", label: "Extinction" }, { value: "burn_time", label: "Burn time" }]} />
-              <select aria-label="Condition to vary" value={vary} onChange={(e) => setVary(e.target.value)} className="rounded-md border border-line bg-ink px-2 text-sm text-gray-900">
-                {flex.fields.map((f) => <option key={f.name} value={f.name}>{f.label}</option>)}
-              </select>
+              <Select label="Condition to vary" value={vary} onChange={setVary} options={flex.fields.map((f) => ({ value: f.name, label: f.label }))} />
             </div>}>
             {(curve.loading || pending) && <Spinner label="Checking supported curve…" />}
             <ErrorBox error={curve.error} />
@@ -84,6 +93,7 @@ export default function Predictor({ options, openExperiment, askChat }) {
             {!pending && ext.data && <Nearest n={ext.data.nearest_tests} openExperiment={openExperiment} />}
           </div></details>
           <button disabled={pending || ext.loading} onClick={() => askChat({ page: "atmosphere_predictor", inputs: body, extinction: ext.data, burn_time: burn.data })} className="secondary-button">Explain these results ↗</button>
+        </>}
         </div>
       </div>
     </div>

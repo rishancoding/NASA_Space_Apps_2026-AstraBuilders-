@@ -40,3 +40,15 @@ The independent audit does not influence fitting, candidate choice or calibratio
 The current artifact has 119 fitting rows, 41 calibration rows and 40 audit rows. Audit R² is 0.612 (group-bootstrap interval approximately 0.36–0.81), mean absolute error 2.90 seconds, and 36/40 audit groups covered by the nominal 90% interval. Model/interval metrics are retained in `metrics.json`, partition membership in both metrics and the joblib artifact, and audit-only burn-time predictions in `oof_predictions.json` under its legacy `burn_time` key.
 
 Historical `evaluation.json` stress tests describe full-dataset CV candidates from the earlier run. They do not evaluate the frozen pipeline or calibrate its intervals; the UI labels them accordingly. The primary burn-time metrics are now the separate audit results.
+
+## Official and experimental entry points
+
+React/FastAPI is the official submission app. The Streamlit reference retains different historical classifiers and scores; it is not the submission launcher. Both use `api.core.check_flex_domain` for physical validity, per-fuel ranges, gas family and nearby-group support. The archived solid predictor also withholds unsupported numbers at its backend boundary. UI cards show “Unavailable” and sweeps leave gaps, so callers cannot bypass a warning to display an out-of-domain percentage. These changes do not promote the experimental solid classifier into the official Material Advisor.
+
+`/api/model` also reports `per_fuel_validation` computed from the current selected classifier's saved out-of-fold predictions. Current warnings use these figures; historical full-dataset stress-test scores remain explicitly separate.
+
+## Fixed material-ranking disclosure
+
+The advisor has one fixed method (`evidence_strength`), with no ranking selector. It restores the original order: sum `exp(-distance)` across nearby whole tests and sort highest first. More comparable tests and closer conditions both increase the evidence score. Geometry/thickness filtering applies before ranking. Flame-outcome proportions do not affect the order.
+
+The UI explains this above the results and provides the calculation in a disclosure. Every material has a short rank explanation; analyze mode may pin the selected material while preserving its computed rank. This is an evidence ranking, not a safety ranking. The former user-selectable and safety-screening modes are removed.

@@ -28,6 +28,17 @@ class SqliteTests(unittest.TestCase):
         cls.con.close()
         cls.tmp.cleanup()
 
+    def test_packaged_database_matches_current_rebuild(self):
+        """Catch stale committed label/provenance metadata, not just builder bugs."""
+        packaged = ROOT / "data" / "flame.sqlite"
+        self.assertTrue(packaged.exists(), "Run data/scripts/build_sqlite.py")
+        with sqlite3.connect(f"file:{packaged}?mode=ro", uri=True) as con:
+            names = [r[0] for r in self.con.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")]
+            self.assertEqual(names, [r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")])
+            for name in names:
+                query = 'SELECT * FROM "' + name.replace('"', '""') + '" ORDER BY rowid'
+                self.assertEqual(self.con.execute(query).fetchall(), con.execute(query).fetchall(), name)
+
     def tables(self):
         return self.con.execute("SELECT table_name, source_file, kind FROM _tables").fetchall()
 

@@ -33,7 +33,7 @@ How to answer:
 - Cite sources inline as [PSI-25] style record IDs, and include the NASA URL or report locator when a tool gives one.
 - Every value carries a trust label: nasa_measured, ai_label (outcome interpreted from notes and verified by the project team), model_estimate, earth_reference (Earth-gravity comparison only) or no_data. Mention it when it matters.
 - The two models (extinction probability and burn time) cover FLEX liquid-droplet flames only. Never present them as predictions for solid materials, ignition resistance, Moon/Mars gravity or spacecraft certification.
-- The material advisor ranks evidence, not safety. Never say a material is definitively safer unless the returned evidence directly supports that comparison.
+- The material advisor uses a fixed evidence ranking: more comparable tests and closer conditions contribute more. It does not establish overall material safety. Never say a material is definitively safer unless the returned evidence directly supports that comparison.
 - This dataset has no partial-gravity tests. Moon/Mars behaviour is unknown here; never claim Earth and microgravity measurements bound it.
 - Completion is a recorded NASA category. Do not expand it into complete fuel consumption, full burn-out or a physical endpoint without a cited source definition.
 - Solid matches use initial test oxygen, not oxygen measured at an event. Keep ignition and already-burning protocols separate; their counts are not safety rates.
@@ -192,6 +192,12 @@ def provider():
 
 def model_name(p):
     return os.environ.get("CHAT_MODEL") or DEFAULT_MODELS[p]
+
+
+def chat_configured():
+    p = provider()
+    return bool((p == "deepseek" and os.environ.get("DEEPSEEK_API_KEY")) or
+                (p == "anthropic" and (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"))))
 
 
 def _prepare(messages, context):

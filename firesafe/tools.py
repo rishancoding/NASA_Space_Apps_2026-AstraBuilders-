@@ -128,9 +128,9 @@ def predict_sustained_burning(material: str, oxygen_pct: float, airflow_cm_s: fl
 def predict_droplet_extinction(fuel: str, pressure_kpa: float, oxygen_pct: float, co2_fraction: float = 0.0,
                                helium_fraction: float = 0.0, droplet_diameter_mm: float = 3.0) -> dict:
     res = predictor.predict_flex(fuel, pressure_kpa, oxygen_pct, co2_fraction, helium_fraction, droplet_diameter_mm)
-    res["meaning"] = "Probability the droplet flame extinguishes before the fuel is consumed (FLEX, PSI-69)."
+    res["meaning"] = "Recorded Extinction rather than Completion category (FLEX, PSI-69); no inferred physical definition of Completion."
     if res["probability"] is not None:
-        res["predicted_outcome"] = "extinguishes early" if res["probability"] >= 0.5 else "burns to completion"
+        res["predicted_outcome"] = "Extinction" if res["probability"] >= 0.5 else "Completion"
     res["reliability"] = reliability.review("flex", res, fuel)
     _withhold_unsupported_prediction(res)
     return res
@@ -176,8 +176,6 @@ def prediction_sweep(model: str, vary: str, start: float, stop: float, steps: in
         else:
             r = predictor.predict_flex(fuel, a["pressure_kpa"], a["oxygen_pct"], a["co2_fraction"],
                                        a["helium_fraction"], a["droplet_diameter_mm"])
-        if r["probability"] is None:
-            return {"error": "; ".join(r["warnings"])}
         rev = reliability.review(model, r, group)
         points.append({vary: round(x, 4), "probability": r["probability"] if r["supported"] else None, "rating": rev["rating"],
                        "in_tested_range": not r["warnings"], "warnings": r["warnings"]})

@@ -71,3 +71,5 @@ presentation; unsupported scientific claims would weaken validity.
 
 See [AI_USE.md](AI_USE.md) for a factual disclosure of the work already done.
 No registration declarations were made and nothing was submitted to the competition.
+
+Implementation status, November 15: the React/FastAPI dashboard, models, explorer and assistant tool wiring now exist; the earlier implementation notes above record the Step 1 review. The official launch path and current limitations are in the root README. Live AI-provider testing was omitted in the current local check at the project owner's request. No public deployment or competition submission was performed in this work.

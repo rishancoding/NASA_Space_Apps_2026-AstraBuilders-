@@ -16,7 +16,7 @@ import sqlite3  # noqa: E402
 import tempfile  # noqa: E402
 
 from firesafe import CLEAN, advisor, agent, db, evidence, predictor, reliability, tools  # noqa: E402
-from firesafe.data import materials, saffire, solids  # noqa: E402
+from firesafe.data import materials, saffire, solids, solid_training  # noqa: E402
 
 
 class AdvisorTests(unittest.TestCase):
@@ -69,8 +69,11 @@ class PredictorTests(unittest.TestCase):
 
     def test_probabilities_are_valid(self):
         for mat in predictor.solid_materials():
-            p = predictor.predict_solid(mat, 21, 10)["probability"]
-            self.assertTrue(0 <= p <= 1)
+            row = solid_training().query("material == @mat").iloc[0]
+            result = predictor.predict_solid(mat, float(row["oxygen_initial_pct"]), float(row["airflow_cm_s"]), row["protocol"])
+            self.assertTrue(result["supported"])
+            self.assertTrue(0 <= result["probability"] <= 1)
+        self.assertIsNone(predictor.predict_solid("PMMA", 35, 80)["probability"])
         self.assertTrue(0 <= predictor.predict_flex("Heptane", 101, 21, 0, 0, 3)["probability"] <= 1)
 
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
-import { ErrorBox, Spinner } from "./ui.jsx";
+import { ErrorBox, Spinner, useAsync } from "./ui.jsx";
 
 const STARTERS = [
   "What happens when oxygen increases?",
@@ -9,6 +9,8 @@ const STARTERS = [
 
 /** Docked research-assistant chat. Sends the whole conversation each time (the API is stateless). */
 export default function ChatPanel({ open, onClose, context }) {
+  const health = useAsync(() => open ? api.health() : Promise.resolve(null), [open]);
+  const enabled = health.data?.chat_configured === true;
   const [messages, setMessages] = useState([]);
   const [meta, setMeta] = useState([]); // per assistant message: {citations, tool_calls}
   const [text, setText] = useState("");
@@ -21,7 +23,7 @@ export default function ChatPanel({ open, onClose, context }) {
 
   async function send(content) {
     const q = (content ?? text).trim();
-    if (!q || busy) return;
+    if (!q || busy || !enabled) return;
     const next = [...messages, { role: "user", content: q }];
     setMessages(next); setText(""); setBusy(true); setError(null);
     try {
@@ -39,7 +41,7 @@ export default function ChatPanel({ open, onClose, context }) {
   if (!open) return null;
   let a = -1;
   return (
-    <aside aria-label="Research assistant" className="assistant-panel fixed inset-y-0 right-0 z-30 flex w-full max-w-[420px] flex-col border-l border-line">
+    <aside id="research-assistant" aria-label="Research assistant" className="assistant-panel fixed inset-y-0 right-0 z-30 flex w-full max-w-[420px] flex-col border-l border-line">
       <div className="flex items-center justify-between border-b border-line px-4 py-3">
         <div>
           <div className="font-medium text-gray-900">Ask the assistant</div>
@@ -48,8 +50,14 @@ export default function ChatPanel({ open, onClose, context }) {
       </div>
 
       <div className="scroll-region flex-1 space-y-3 overflow-y-auto p-4 text-sm">
+        {health.loading && <Spinner label="Checking assistant availability…" />}
+        <ErrorBox error={health.error} />
+        {health.data && !enabled && <div role="status" className="rounded-xl border border-line bg-ink p-3 text-gray-700">
+          <p className="font-medium">AI chat is off on this computer.</p>
+          <p className="mt-1 text-xs">NASA data and model estimates still work. A provider key is needed to enable generated answers.</p>
+        </div>}
         {context && <div className="rounded-md bg-ink px-2 py-1 text-[11px] text-gray-500">Using context from: {context.page?.replaceAll("_", " ")}</div>}
-        {messages.length === 0 && (
+        {enabled && messages.length === 0 && (
           <div className="space-y-2">
             <div className="text-xs text-gray-500">Try asking:</div>
             {STARTERS.map((s) => (
@@ -85,9 +93,9 @@ export default function ChatPanel({ open, onClose, context }) {
       </div>
 
       <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex gap-2 border-t border-line p-3">
-        <input aria-label="Message the assistant" value={text} onChange={(e) => setText(e.target.value)} placeholder="What's on your mind?"
+        <input disabled={!enabled || busy} aria-label="Message the assistant" value={text} onChange={(e) => setText(e.target.value)} placeholder={enabled ? "What's on your mind?" : "AI chat is not configured"}
           className="flex-1 rounded-md border border-line bg-ink px-3 py-2 text-sm text-gray-900" />
-        <button disabled={busy || !text.trim()} className="primary-button">Send</button>
+        <button disabled={!enabled || busy || !text.trim()} className="primary-button">Send</button>
       </form>
     </aside>
   );

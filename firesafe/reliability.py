@@ -86,7 +86,11 @@ def review(kind: str, pred: dict, group: str) -> dict:
     stats = model_statistics(kind)
     p = pred.get("probability")
     if p is None:
-        return {"rating": "not applicable", "reasons": pred.get("warnings", []), "model_statistics": stats}
+        known = group in predictor.metrics()[kind]["ranges"]
+        return {"rating": "low" if known else "not applicable", "reasons": pred.get("warnings", []),
+                "checks": [{"check": "Inputs inside the tested conditions", "passed": False,
+                            "detail": "; ".join(pred.get("warnings", [])) or "No supported estimate."}],
+                "model_statistics": stats}
     m = predictor.metrics()[kind]
     n_group = m["ranges"].get(group, {}).get("n", 0)
     dep, base, simple = stats["deployed_out_of_fold"], stats["constant_baseline_out_of_fold"], stats["simpler_model"]

@@ -15,6 +15,7 @@ class PageBoundary extends Component {
 }
 import { api } from "./api.js";
 import { ErrorBox, Icon, Spinner, TrustContext, useAsync } from "./components/ui.jsx";
+const Home = lazy(() => import("./pages/Home.jsx"));
 const Advisor = lazy(() => import("./pages/Advisor.jsx"));
 const Predictor = lazy(() => import("./pages/Predictor.jsx"));
 const Explorer = lazy(() => import("./pages/Explorer.jsx"));
@@ -23,6 +24,7 @@ import ChatPanel from "./components/ChatPanel.jsx";
 import ExperimentDrawer from "./components/ExperimentDrawer.jsx";
 
 const PAGES = [
+  { id: "home", label: "Home", description: "Choose a tool" },
   { id: "advisor", label: "Material Advisor", description: "Compare materials" },
   { id: "predictor", label: "Atmosphere Predictor", description: "Explore a flame" },
   { id: "explorer", label: "NASA Data Explorer", description: "Browse experiments" },
@@ -30,7 +32,7 @@ const PAGES = [
 ];
 
 function usePage() {
-  const read = () => (PAGES.some((p) => p.id === location.hash.slice(1)) ? location.hash.slice(1) : "advisor");
+  const read = () => (PAGES.some((p) => p.id === location.hash.slice(1)) ? location.hash.slice(1) : "home");
   const [page, setPage] = useState(read);
   useEffect(() => {
     const on = () => setPage(read());
@@ -55,19 +57,20 @@ export default function App() {
     <div className="app-shell">
       <a className="skip-link" href="#workspace" onClick={(e) => { e.preventDefault(); document.getElementById("workspace").focus(); }}>Skip to workspace</a>
       <header className="app-topbar">
-        <a href="#advisor" className="app-brand" aria-label="Flame in Freefall home">flame in freefall<span>by AstraBuilders</span></a>
+        <a href="#home" className="app-brand" aria-label="ThermaGuard home">ThermaGuard<span>by AstraBuilders</span></a>
         <nav aria-label="Main navigation" className="app-navigation">
-          {PAGES.map((p) => <button key={p.id} aria-current={page === p.id ? "page" : undefined} onClick={() => setPage(p.id)} className="nav-tab">{{advisor:"Materials",predictor:"Predictor",explorer:"NASA data",model:"Model accuracy"}[p.id]}</button>)}
+          {PAGES.map((p) => <button key={p.id} aria-current={page === p.id ? "page" : undefined} onClick={() => setPage(p.id)} className="nav-tab">{{home:"Home",advisor:"Materials",predictor:"Predictor",explorer:"NASA data",model:"Model accuracy"}[p.id]}</button>)}
         </nav>
-        <button aria-expanded={chatOpen} onClick={() => setChatOpen((o) => !o)} className="primary-button"><Icon name="chat" className="h-4 w-4" /><span>{chatOpen ? "Close chat" : "Ask a question"}</span></button>
+
       </header>
       <div className={`app-content ${chatOpen ? "assistant-open" : ""}`}>
       <main id="workspace" tabIndex={-1}>
         {options.loading && <Spinner label="Connecting to the API…" />}
         <ErrorBox error={options.error} />
-        {options.data && (
+        {(page === "home" || options.data) && (
           <PageBoundary key={page}>
             <Suspense fallback={<Spinner label="Opening workspace…" />}>
+            {page === "home" && <Home navigate={setPage} {...shared} />}
             {page === "advisor" && <Advisor {...shared} />}
             {page === "predictor" && <Predictor {...shared} />}
             {page === "explorer" && <Explorer {...shared} />}
@@ -82,6 +85,7 @@ export default function App() {
       </main>
       </div>
 
+      <button className="assistant-launcher" aria-label={chatOpen ? "Close AI assistant" : "Open AI assistant"} aria-expanded={chatOpen} aria-controls="research-assistant" onClick={() => setChatOpen((o) => !o)}><Icon name="chat" /><span>{chatOpen ? "Close assistant" : "AI assistant"}</span></button>
       <PageBoundary><ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} context={chatContext} /></PageBoundary>
       <PageBoundary><ExperimentDrawer id={experimentId} onClose={() => setExperimentId(null)} openExperiment={setExperimentId} /></PageBoundary>
     </div>

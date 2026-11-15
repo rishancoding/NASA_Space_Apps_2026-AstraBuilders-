@@ -1,4 +1,4 @@
-# FireSafe theme: warm paper background, near-black ink, amber accent, Geist type.
+# ThermaGuard reference theme: warm paper background, near-black ink, amber accent, Geist type.
 # Revert to the pre-redesign version: `git checkout ui-v1 -- app firesafe` and delete this file.
 
 [theme]

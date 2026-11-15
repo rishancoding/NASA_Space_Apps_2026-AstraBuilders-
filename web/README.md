@@ -1,17 +1,17 @@
-# Flame in Freefall — web UI
+# ThermaGuard — web UI
 
-React + Vite + Tailwind + Recharts. It talks only to the FastAPI backend in `../api`
+**Official submission frontend.** React + Vite + Tailwind + Recharts. It talks only to the FastAPI backend in `../api`
 (see `../docs/API.md`).
 
 ## Run
 
 ```sh
 # terminal 1, from the repo root: the API
-.venv/Scripts/python -m uvicorn api.main:app --reload --port 8000
+.venv/bin/python -m uvicorn api.main:app --reload --port 8000
 
 # terminal 2: the UI
 cd web
-npm install
+npm ci
 npm run dev          # http://localhost:5173 (calls to /api are proxied to port 8000)
 ```
 
@@ -40,8 +40,18 @@ Every form is built from `GET /api/options`, so slider ranges and dropdowns upda
 
 ## Supported controls and validation
 
-The predictor starts from a screened NASA test. Fuel and gas-mixture switches reset all inputs, and sliders use conditional settings returned by `/api/predict/controls`. Fixed zero gas components are shown in the composition summary. The backend also rejects unsupported combinations, including what-if curve points. See [prediction limits](../docs/PREDICTION_LIMITS.md).
+The predictor automatically chooses supported starting conditions near the requested fuel/mixture settings, without a NASA-test selector. Fuel and gas-mixture switches reset all inputs to a supported scenario, and sliders use conditional settings returned by `/api/predict/controls`. Fixed zero gas components are shown in the composition summary. The backend also rejects unsupported combinations, including what-if curve points. See [prediction limits](../docs/PREDICTION_LIMITS.md).
 
 The Material Advisor separates ignition and already-burning events and labels initial oxygen as a proxy. The Model Accuracy page shows independent burn-time audit results separately from historical CV stress tests. The UI has responsive navigation, visible focus indicators, reduced-motion support, loading/error states and lazy-loaded pages.
 
 Checks: `npm ci && npm run build`; from the repository root, `python3 -m pytest api/tests model/tests -q` (with API requirements installed). Data/SQLite checks remain `python3 -m unittest discover -s data/tests` (with build requirements installed).
+
+## Guided home and result requests
+
+The default route is Home (`#home`), with explanations and links to all four workspaces, and the assistant. Material and atmosphere workspaces start without results. Set conditions and select **View observations** or **Generate estimates**. Editing conditions hides the old results until another submission. Conditional predictor-control checks still run to keep settings within supported coverage; they do not generate forecasts.
+
+Material cards lead with sustained/not-sustained event counts for the selected trial protocol, with the reviewed-event denominator and initial-oxygen limitations. Whole-test totals and outcomes remain supporting context rather than being combined into a safety rate. Dropdowns use styled listboxes with pointer/touch selection, arrow keys, Home/End, Enter, Escape, Tab and first-letter navigation. The assistant launcher stays fixed at the bottom right on every page; API documentation is not linked in the product UI.
+
+Automatic starting-scenario matching compares input conditions only, using per-fuel feature ranges to normalize differences. It never selects for an outcome or prediction score. Matching NASA evidence for the submitted inputs is retrieved by the backend after the user requests results.
+
+The Material Advisor uses the original fixed closeness-weighted evidence order. No ranking selector is shown. The explanation above results describes how test count and matching conditions determine order, and each card explains its rank. Flame outcomes remain prominent but do not drive the ranking.

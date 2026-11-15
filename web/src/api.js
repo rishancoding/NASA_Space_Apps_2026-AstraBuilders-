@@ -1,6 +1,7 @@
 // Thin client for the FastAPI backend. Every call returns parsed JSON or throws
 // an ApiError whose `errors` is [{field, message}] (the backend's error shape).
 const BASE = import.meta.env.VITE_API_URL || "";
+export const API_DOCS_URL = `${BASE.replace(/\/$/, "")}/docs`;
 
 export class ApiError extends Error {
   constructor(status, errors) {

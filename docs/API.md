@@ -144,4 +144,6 @@ it uses the same features, groups and leakage rules.
 predict solid materials, ignition resistance, Moon or Mars behaviour, or
 certification. The advisor ranks **evidence**, never safety.
 
-Material comparisons accept `protocol` (`ignition_trial` or `ongoing_burn_trial`) and apply geometry/thickness consistently to tests and stages. `priority` only accepts `evidence_strength`. Event oxygen is unknown; initial oxygen is used as a proxy. Completion remains a literal NASA category. Partial-gravity behaviour is unknown in this dataset.
+Material comparisons accept `protocol` (`ignition_trial` or `ongoing_burn_trial`) and apply geometry/thickness consistently to tests and stages. `priority` only accepts `evidence_strength`: the original fixed closeness-weighted evidence score. Ranking metadata explains the order; safety-screening and other custom ranking modes are removed. Event oxygen is unknown; initial oxygen is used as a proxy. Completion remains a literal NASA category. Partial-gravity behaviour is unknown in this dataset.
+
+The official submission runs this React/FastAPI backend. `GET /api/tools` exposes the research-assistant tool catalogue without credentials; `/docs` provides runnable endpoint controls. `/api/health` reports `chat_configured: false` if a provider is selected without its required credentials. Live provider testing has not been performed in the current local check (project-owner choice); the test suite uses simulated provider responses and real local tools.

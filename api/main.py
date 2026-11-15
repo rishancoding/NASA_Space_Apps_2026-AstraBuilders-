@@ -14,16 +14,19 @@ from __future__ import annotations
 import os
 import threading
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Literal, Optional
 
 from fastapi import FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import core
-from .agent import ChatUnavailable, chat, model_name, provider
+from .agent import TOOLS, ChatUnavailable, chat, chat_configured, model_name, provider
 
 def _warm_up():
     """Load data, models and the search index in the background so the first user request is fast."""
@@ -42,9 +45,24 @@ async def lifespan(_app):
 
 app = FastAPI(
     lifespan=lifespan,
-    title="AstraBuilders Flame API",
+    title="ThermaGuard API",
     version="1.0.0",
+    docs_url=None, redoc_url=None,
 )
+app.mount("/api/docs-assets", StaticFiles(directory=Path(__file__).parent / "static" / "swagger-ui"), name="docs-assets")
+
+
+@app.get("/docs", include_in_schema=False)
+def api_docs():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url, title=app.title + " - API tools",
+        swagger_js_url="/api/docs-assets/swagger-ui-bundle.js",
+        swagger_css_url="/api/docs-assets/swagger-ui.css",
+        swagger_favicon_url="/api/docs-assets/favicon-32x32.png",
+        swagger_ui_parameters={"validatorUrl": None},
+    )
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
@@ -134,8 +152,14 @@ def root():
 def health():
     m = core.metrics()
     return {"ok": True, "models": {"extinction": m["extinction"]["prediction_enabled"], "burn_time": m["burn_time"]["prediction_enabled"]},
-            "chat_configured": provider() is not None, "chat_provider": provider(),
+            "chat_configured": chat_configured(), "chat_provider": provider(),
             "chat_model": model_name(provider()) if provider() else None}
+
+
+@app.get("/api/tools", tags=["meta"], summary="Research-assistant tool catalogue (no provider key needed)")
+def tool_catalogue():
+    return {"tools": TOOLS, "chat_configured": chat_configured(),
+            "note": "The data functions run locally without AI credentials. Try their matching endpoints in /docs."}
 
 
 @app.get("/api/options", tags=["meta"], summary="Everything needed to build the forms")

@@ -2,8 +2,8 @@
 
 * Solid model: does a flame stay lit at one oxygen/airflow stage? Trained on the
   47 stages in solid_stage_training.csv (`sustained_flame_binary`).
-* FLEX model: does a fuel droplet's flame extinguish before the fuel is used up?
-  Trained on the 207 tests in flex_training.csv (`extinction_binary`).
+* FLEX model: recorded Extinction versus Completion for a fuel droplet.
+  Trained on the 202 screened tests in flex_training.csv (`extinction_binary`).
 
 Both are cross-validated with groups (repeat burns of one sample stay in the same
 fold) and compared against a constant baseline and simpler models, so the app
@@ -12,6 +12,7 @@ can show honestly how much the conditions add.
 from __future__ import annotations
 
 import json
+import math
 import warnings
 from functools import lru_cache
 
@@ -196,7 +197,7 @@ def train_all() -> dict:
     joblib.dump(_flex_pipeline(kinds[best]).fit(FX, fy), FLEX_PATH)
     valid_p = f[f["pressure_kpa"] > 0]
     metrics["flex"] = {
-        "target": "extinction_binary: 1 = flame extinguished before the droplet was consumed, 0 = burned to completion",
+        "target": "extinction_binary: recorded Extinction (1) vs Completion (0)",
         "model_type": best.replace(" [deployed]", ""),
         "n_observations": int(len(fy)),
         "class_counts": {"0": int((fy == 0).sum()), "1": int((fy == 1).sum())},
@@ -235,6 +236,12 @@ def predict_solid(material: str, oxygen_pct: float, airflow_cm_s: float,
                   protocol: str = "ongoing_burn_trial", pressure_kpa: float | None = None,
                   gravity: str = "microgravity") -> dict:
     """Sustained-flame probability plus every reason the input is outside the training data."""
+    bad = [name for name, value in {"oxygen_pct": oxygen_pct, "airflow_cm_s": airflow_cm_s,
+                                   **({"pressure_kpa": pressure_kpa} if pressure_kpa is not None else {})}.items()
+           if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)]
+    if bad or airflow_cm_s < 0:
+        return {"supported": False, "probability": None, "material": material, "scenario": protocol,
+                "warnings": ["Conditions must be finite numbers with nonnegative airflow."], "nearest": []}
     model, _, m = load_models()
     sm = m["solid"]
     warnings_: list[str] = []
@@ -258,6 +265,10 @@ def predict_solid(material: str, oxygen_pct: float, airflow_cm_s: float,
     if gravity != "microgravity":
         warnings_.append("Only microgravity (ISS) data exists. Lunar/Martian gravity was never tested; "
                          "this estimate does not apply there.")
+    if warnings_:
+        return {"supported": False, "probability": None, "material": material,
+                "oxygen_pct": oxygen_pct, "airflow_cm_s": airflow_cm_s, "scenario": protocol,
+                "warnings": warnings_, "nearest": [], "n_training_stages_for_material": rng["n"]}
     X = pd.DataFrame([{"oxygen_pct": oxygen_pct, "airflow_cm_s": airflow_cm_s,
                        "material": material, "protocol": protocol}])
     p = float(model.predict_proba(X)[0, 1])
@@ -278,21 +289,25 @@ def predict_solid(material: str, oxygen_pct: float, airflow_cm_s: float,
 
 def predict_flex(fuel: str, pressure_kpa: float, oxygen_pct: float, co2_fraction: float,
                  helium_fraction: float, droplet_diameter_mm: float) -> dict:
-    _, model, m = load_models()
-    rng = m["flex"]["ranges"].get(fuel)
-    if rng is None:
-        return {"probability": None, "warnings": [f"{fuel} is not a FLEX training fuel."]}
-    vals = dict(pressure_kpa=pressure_kpa, oxygen_pct=oxygen_pct, co2_fraction=co2_fraction,
+    # The archived UI retains its historical classifier, but coverage and
+    # physical validity are exactly the official app's rules.
+    from api import core
+    vals = dict(fuel=fuel, pressure_kpa=pressure_kpa, oxygen_pct=oxygen_pct, co2_fraction=co2_fraction,
                 helium_fraction=helium_fraction, droplet_diameter_mm=droplet_diameter_mm)
-    w = [f"{k} = {v:g} is outside the {rng[k][0]:g}-{rng[k][1]:g} tested for {fuel}."
-         for k, v in vals.items() if k in rng and not rng[k][0] <= v <= rng[k][1]]
-    p = float(model.predict_proba(pd.DataFrame([{"fuel": fuel, **vals}]))[0, 1])
-    d = flex_training()
-    d = d[d["fuel"] == fuel]
-    dist = sum(((d[k] - v) / (d[k].std() or 1)) ** 2 for k, v in vals.items() if d[k].notna().any()).fillna(1e9)
-    nearest = [{"experiment_id": r.experiment_id, "source_record": r.source_record, "test_id": r.test_id,
-                "fuel": r.fuel, **{k: getattr(r, k) for k in FLEX_NUM}, "extinguished": int(r.extinction_binary),
-                "source_url": r.source_url, "locator": f"{r.source_file} row {r.source_row}"}
-               for r in d.assign(distance=dist).nsmallest(5, "distance").itertuples()]
-    return {"probability": round(p, 3), "warnings": w, "supported": not w, "fuel": fuel, **vals,
-            "nearest": nearest, "n_training_tests_for_fuel": rng["n"]}
+    try:
+        clean, neighbours, reason = core.check_flex_domain(vals)
+    except core.InputError as exc:
+        return {"supported": False, "probability": None, **vals, "nearest": [],
+                "warnings": [e["message"] for e in exc.errors]}
+    nearest = [{"experiment_id": r["experiment_id"], "source_record": r["source_record"], "test_id": r["test_id"],
+                "fuel": r["fuel"], **{k: r[k]["value"] for k in FLEX_NUM},
+                "extinguished": int(r["outcome"]["value"] == "Extinction"), "source_url": r["url"],
+                "locator": r["oxygen_pct"]["source"]["locator"]} for r in neighbours["matches"]]
+    result = {"supported": reason is None, "probability": None, **vals, "nearest": nearest,
+              "support": neighbours["support"], "warnings": [reason] if reason else []}
+    if reason:
+        return result
+    _, model, m = load_models()
+    result["probability"] = round(float(model.predict_proba(pd.DataFrame([{f: clean[f] for f in ["fuel"] + FLEX_NUM}]))[0, 1]), 3)
+    result["n_training_tests_for_fuel"] = m["flex"]["ranges"][clean["fuel"]]["n"]
+    return result

@@ -79,7 +79,7 @@ def solid_training() -> pd.DataFrame:
 
 @lru_cache(maxsize=None)
 def flex_training() -> pd.DataFrame:
-    """207 FLEX droplet tests labelled extinction (1) vs burned to completion (0)."""
+    """202 screened FLEX droplet tests: recorded Extinction (1) vs Completion (0)."""
     return _read("flex_training.csv")
 
 

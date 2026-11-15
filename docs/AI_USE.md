@@ -34,3 +34,5 @@ contribution, follow the official restrictions on AI-originated ideas and NASA
 branding, and disclose any later model, chatbot, writing, image or video assistance.
 
 OpenAI Codex also assisted with correcting joint input-coverage checks, separating solid-event protocols, revising unsupported scientific wording, implementing and testing independent grouped interval calibration, and redesigning the repository web UI. No generated imagery or audio was added in that work.
+
+Outcome-label verification was subsequently recorded by the project team in `data/annotations/team_verification.json`; this does not make the derived labels NASA certification. Codex assisted with choosing the official React/FastAPI entry point, synchronizing packaged database provenance, sharing input-domain checks with the experimental app, and adding assistant/tool failure tests. Live external AI-provider testing was omitted at the project owner's request; offline tests simulate provider responses and execute the local data tools.

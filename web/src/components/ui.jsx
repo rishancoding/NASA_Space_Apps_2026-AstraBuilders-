@@ -154,18 +154,56 @@ export function Slider({ label, unit, value, min, max, step, onChange, hint, err
 
 export function Select({ label, value, onChange, options, allowEmpty }) {
   const id = useId();
-  return (
-    <div className="block text-xs">
-      <label htmlFor={id} className="text-gray-700">{label}</label>
-      <select id={id} value={value ?? ""} onChange={(e) => onChange(e.target.value || null)}
-        className="mt-1 w-full rounded-md border border-line bg-ink px-2 py-1.5 text-sm text-gray-900">
-        {allowEmpty && <option value="">{allowEmpty}</option>}
-        {options.map((o) => (
-          <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>
-        ))}
-      </select>
-    </div>
-  );
+  const root = useRef(null);
+  const trigger = useRef(null);
+  const [open, setOpen] = useState(false);
+  const entries = [...(allowEmpty ? [{ value: "", label: allowEmpty }] : []), ...options.map((o) =>
+    typeof o === "object" ? o : { value: o, label: o })];
+  const selected = entries.findIndex((o) => String(o.value) === String(value ?? ""));
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => { if (!root.current?.contains(e.target)) setOpen(false); };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [open]);
+  useEffect(() => {
+    if (open) root.current?.querySelector(`[data-option-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
+  }, [active, open]);
+  const expand = () => { setActive(Math.max(0, selected)); setOpen(true); };
+  const commit = (index) => {
+    if (!entries[index]) return;
+    onChange(entries[index].value === "" ? null : entries[index].value);
+    setOpen(false); trigger.current?.focus();
+  };
+  const keyDown = (e) => {
+    if (e.key === "Escape" || e.key === "Tab") { setOpen(false); if (e.key === "Escape") e.preventDefault(); return; }
+    if (["ArrowDown", "ArrowUp", "Home", "End", "Enter", " "].includes(e.key)) {
+      e.preventDefault();
+      if (!open) { expand(); return; }
+      if (e.key === "Enter" || e.key === " ") { commit(active); return; }
+      setActive(e.key === "Home" ? 0 : e.key === "End" ? entries.length - 1 :
+        Math.max(0, Math.min(entries.length - 1, active + (e.key === "ArrowDown" ? 1 : -1))));
+    } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const index = entries.findIndex((o) => String(o.label).toLowerCase().startsWith(e.key.toLowerCase()));
+      if (index >= 0) { e.preventDefault(); setActive(index); setOpen(true); }
+    }
+  };
+  return <div ref={root} className="custom-select" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false); }}>
+    <label id={`${id}-label`} htmlFor={id}>{label}</label>
+    <button id={id} ref={trigger} type="button" role="combobox" aria-labelledby={`${id}-label`} aria-expanded={open}
+      aria-haspopup="listbox" aria-controls={`${id}-list`} aria-activedescendant={open ? `${id}-option-${active}` : undefined}
+      onClick={() => open ? setOpen(false) : expand()} onKeyDown={keyDown} className="select-trigger">
+      <span>{entries[selected]?.label ?? "Choose an option"}</span><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="m6 9 6 6 6-6" /></svg>
+    </button>
+    {open && <div id={`${id}-list`} role="listbox" aria-labelledby={`${id}-label`} className="select-menu">
+      {entries.map((o, i) => <div key={o.value} id={`${id}-option-${i}`} data-option-index={i} role="option"
+        aria-selected={selected === i} className={`select-option ${active === i ? "active" : ""}`}
+        onPointerMove={() => setActive(i)} onMouseDown={(e) => e.preventDefault()} onClick={() => commit(i)}>
+        <span>{o.label}</span><span aria-hidden="true" className="option-check">{selected === i ? "✓" : ""}</span>
+      </div>)}
+    </div>}
+  </div>;
 }
 
 export function Toggle({ value, onChange, options }) {

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { api } from "../api.js";
-import { Card, CoverageBadge, ErrorBox, Select, Slider, Spinner, Toggle, TrustBadge, Value, Warning, fmt, useAsync, useDebounced } from "../components/ui.jsx";
+import { Card, CoverageBadge, ErrorBox, Select, Slider, Spinner, Toggle, TrustBadge, Value, Warning, fmt, useAsync } from "../components/ui.jsx";
+
+const TRIAL_LABELS = { ignition_trial: "Starting a flame", ongoing_burn_trial: "Keeping a flame burning" };
 
 const STATUS = {
   met: ["✓ met", "text-emerald-700"],
@@ -15,8 +17,9 @@ export default function Advisor({ options, openExperiment, askChat }) {
     mission: "space_station", pressure_kpa: 101.3, max_thickness_mm: null, priority: "evidence_strength", geometry: null, protocol: "ignition_trial",
   });
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
-  const q = useDebounced(form, 250);
-  const res = useAsync(() => api.advisor({ ...q, material: q.mode === "analyze" ? q.material : null }), [JSON.stringify(q)]);
+  const [submitted, setSubmitted] = useState(null);
+  const current = submitted && JSON.stringify(form) === JSON.stringify(submitted);
+  const res = useAsync(() => submitted ? api.advisor({ ...submitted, material: submitted.mode === "analyze" ? submitted.material : null }) : Promise.resolve(null), [submitted]);
 
   return (
     <div className="space-y-5">
@@ -32,24 +35,16 @@ export default function Advisor({ options, openExperiment, askChat }) {
       <div className="advisor-layout">
         {/* ---------------- inputs */}
         <Card title="Your conditions" className="advisor-controls h-fit space-y-5">
-          <div className="presets">
-            {options.presets.filter((p) => p.oxygen_pct >= solids.oxygen_pct.min && p.oxygen_pct <= solids.oxygen_pct.max).map((p) => (
-              <button key={p.id} title={p.note} aria-pressed={form.oxygen_pct === p.oxygen_pct && form.airflow_cm_s === p.airflow_cm_s && form.pressure_kpa === p.pressure_kpa}
-                onClick={() => setForm((f) => ({ ...f, oxygen_pct: p.oxygen_pct, airflow_cm_s: p.airflow_cm_s, pressure_kpa: p.pressure_kpa }))}
-                >
-                {p.id === "iss_cabin" ? "Standard cabin" : p.label.replace("ISS-like cabin", "Standard cabin").replace("Stagnant corner (low airflow)", "Low airflow")}
-              </button>
-            ))}
-          </div>
           {form.mode === "analyze" && (
             <Select label="Material to analyze" value={form.material} onChange={set("material")}
               options={solids.materials.map((m) => ({ value: m.name, label: `${m.name} (${m.tests} tests)` }))} />
           )}
-          <Slider label="Oxygen" unit="%" value={form.oxygen_pct} min={solids.oxygen_pct.min} max={solids.oxygen_pct.max} step={0.1} onChange={set("oxygen_pct")} />
+          <Slider label="Initial oxygen" unit="%" value={form.oxygen_pct} min={solids.oxygen_pct.min} max={solids.oxygen_pct.max} step={0.1} onChange={set("oxygen_pct")} />
           <Slider label="Airflow" unit="cm/s" value={form.airflow_cm_s} min={0} max={solids.airflow_cm_s.max} step={0.5} onChange={set("airflow_cm_s")} />
+          <Select label="Trial type" value={form.protocol} onChange={set("protocol")} options={options.protocols.map((p) => ({ ...p, label: TRIAL_LABELS[p.value] || p.label }))} />
+          <p className="text-xs leading-relaxed text-gray-500">{form.protocol === "ignition_trial" ? "After an ignition attempt, did the flame sustain?" : "Once burning, did the flame continue under these conditions?"}</p>
           <details className="border-t border-line pt-4"><summary>More options</summary><div className="space-y-4">
           <Select label="Sample shape" value={form.geometry} onChange={set("geometry")} allowEmpty="All shapes" options={solids.geometries} />
-          <Select label="Trial type" value={form.protocol} onChange={set("protocol")} options={options.protocols} />
           <label className="block text-xs">
             <span className="text-gray-700">Maximum thickness (mm)</span>
             <input type="number" min={0} step={0.1} value={form.max_thickness_mm ?? ""} placeholder="mm"
@@ -59,21 +54,27 @@ export default function Advisor({ options, openExperiment, askChat }) {
           <Select label="Mission" value={form.mission} onChange={set("mission")} options={options.missions} />
           <p className="text-[11px] leading-relaxed text-gray-500">Pressure is fixed for solid tests. Partial-gravity behavior is unknown in this dataset.</p>
           </div></details>
+          <button className="primary-button w-full" onClick={() => setSubmitted({ ...form })} disabled={current && res.loading}>View observations ↗</button>
+          <p className="text-xs text-gray-500">Choose your settings, then view matching outcomes. Changing settings hides previous results.</p>
         </Card>
 
         {/* ---------------- results */}
         <div className="advisor-results space-y-4" aria-live="polite">
-          {res.loading && !res.data && <Spinner />}
-          <ErrorBox error={res.error} />
-          {res.data && (
+          {!current && <div className="results-empty"><span className="home-kicker">Your conditions → NASA observations</span><h2>What happened to the flame?</h2><p>Set oxygen, airflow and trial type, then choose <b>View observations</b>. You’ll see sustained and not-sustained flame events, with source notes and evidence gaps.</p><span>No outcomes have been calculated for these settings yet.</span></div>}
+          {current && res.loading && <Spinner />}
+          {current && <ErrorBox error={res.error} />}
+          {current && res.data && (
             <>
               {res.data.warnings.filter((w) => w.code !== "initial_oxygen").map((w) => <Warning key={w.code}>{w.message}</Warning>)}
+              <div className="submitted-context">Initial oxygen {submitted.oxygen_pct}% · airflow {submitted.airflow_cm_s} cm/s · {TRIAL_LABELS[submitted.protocol]}</div>
+              <p className="text-xs text-gray-500">Initial oxygen is a proxy; oxygen at the flame event is unknown. Observation durations vary.</p>
+              <div className="ranking-explanation"><h2>How materials are ordered</h2><p>{res.data.rank_basis}</p><details><summary>See the calculation</summary><p>{res.data.ranking.method}</p></details><p className="ranking-limit">Flame outcomes are shown for context but do not determine this order. A material appearing first is not necessarily safer.</p></div>
               <div className="results-toolbar">
                 <h2 title={res.data.rank_basis}>Material matches <span className="ml-1 text-gray-400">{res.data.candidates.length}</span></h2>
                 <button onClick={() => askChat({ page: "material_advisor", inputs: res.data.inputs,
                   ranking: res.data.candidates.map((c) => ({ rank: c.rank, material: c.material, evidence: c.evidence, events: c.condition_linked_events_nearby })) })}
                   className="text-xs text-indigo-600 hover:underline">
-                  Explain ranking ↗
+                  Explain this evidence order ↗
                 </button>
               </div>
               <div className="candidate-grid">
@@ -93,32 +94,20 @@ function CandidateCard({ c, openExperiment }) {
   const outcomes = Object.entries(c.observed_outcomes_nearby.counts);
   return (
     <Card className={`candidate-card ${c.is_selected ? "ring-2 ring-flame" : ""}`}
-      title={<span className="flex items-center gap-2"><span className="rank">#{c.rank}</span> {c.material}
+      title={<span className="flex items-center gap-2"><span className="rank">{c.rank === null ? "Unranked" : `#${c.rank}`}</span> {c.material}
         {c.is_selected && <span className="rounded bg-flame/20 px-1.5 text-[10px] text-flame">your material</span>}</span>}
       right={<CoverageBadge coverage={c.evidence.coverage} />}>
-      <div className="candidate-stats">
-        <Stat n={c.evidence.nearby_tests} label="nearby tests" />
-        <Stat n={c.evidence.total_tests} label="tests total" />
-      </div>
+      <p className="rank-explanation">{c.pinned_selected ? "Your selected material is pinned here; " : ""}<b>{c.rank === null ? "Not ranked:" : `Why #${c.rank}:`}</b> {c.rank_reason}</p>
+      <div className="outcome-heading">{TRIAL_LABELS[ev.protocol]}</div>
+      {ev.events > 0 ? <><div className="candidate-stats outcome-stats">
+        <Stat n={ev.sustained_flame} label="flame sustained" />
+        <Stat n={ev.not_sustained} label="did not sustain" />
+      </div><p className="outcome-context">Out of {ev.events} reviewed {ev.protocol === "ignition_trial" ? "ignition" : "already-burning"} events near your conditions. These are event counts, not a material safety rate.</p></> : <p className="outcome-unknown">No reviewed flame events match this trial type and these conditions. The outcome remains unknown here.</p>}
+      <p className="evidence-context">Context: {c.evidence.nearby_tests} nearby whole tests · {c.evidence.total_tests} recorded for this material</p>
 
       <div className="candidate-body mt-4 space-y-3 text-xs">
-        <div>
-          <div className="mb-2 text-gray-500">Recorded outcomes</div>
-          {outcomes.length ? (
-            <div className="flex flex-wrap gap-1.5">
-              {outcomes.slice(0, 2).map(([k, n]) => <span key={k} className="candidate-outcome">{n} {k.toLowerCase().replace('brief flame, not sustained', 'brief flames').replace('burned until fuel ran out', 'used up fuel').replace('did not ignite', 'did not light').replace('unclear from the notes', 'unclear')}</span>)}
-              {outcomes.length > 2 && <span className="candidate-outcome">+{outcomes.length - 2} outcomes</span>}
-            </div>
-          ) : <div className="text-gray-500">No NASA test near these conditions.</div>}
-          {outcomes.length > 0 && <div className="candidate-progress" aria-hidden="true">{outcomes.map(([k, n]) => <span key={k} style={{ flex: n }} />)}</div>}
-        </div>
-        {ev.events > 0 && (
-          <div className="text-gray-700">
-            <div className="mb-1 text-gray-500">{ev.protocol === "ignition_trial" ? "Starting a flame" : "Already-burning trials"}</div>
-            <b className="text-gray-900">{ev.sustained_flame}</b> kept burning · <b className="text-gray-900">{ev.not_sustained}</b> did not
-          </div>
-        )}
         <details className="border-t border-line pt-3"><summary>Test details</summary><div className="space-y-3 leading-relaxed text-gray-500">
+        <div className="mb-2 font-medium">Whole-test outcomes (may span several airflow stages)</div>
         <div>{outcomes.map(([k,n]) => <span key={k} className="mr-3">{k}: {n}</span>)}</div>
         <p>Whole-test outcomes may cover multiple airflow stages. Condition matching uses initial oxygen; oxygen at each event is unknown and observation durations vary.</p>
         {ev.events > 0 && <div><div className="mb-2 font-medium text-gray-700">Supporting events · {ev.events}</div><ul className="space-y-2">{ev.evidence.map((e) => <li key={e.stage_id} className="rounded-md bg-ink p-3"><p className="italic">“{e.quote}”</p><button className="mt-1 text-indigo-600 hover:underline" onClick={() => openExperiment(e.experiment_id)}>{e.geometry} · initial {fmt(e.oxygen_initial_pct)}% O₂ · {fmt(e.airflow_cm_s)} cm/s ↗</button></li>)}</ul></div>}
