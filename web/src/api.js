@@ -22,6 +22,9 @@ async function request(path, options = {}) {
     throw new ApiError(0, [{ field: null, message: "Can't reach the API. Is the backend running on port 8000?" }]);
   }
   const body = await res.json().catch(() => null);
+  if (res.status === 429 && path === "/api/chat") {
+    throw new ApiError(429, [{ field: null, message: "Chat limit reached: this connection allows 10 requests every 10 minutes. Wait up to 10 minutes before trying again. People on the same Wi-Fi share this limit. The NASA data and model tools are still available." }]);
+  }
   if (!res.ok) throw new ApiError(res.status, body?.errors || (typeof body?.detail === "string" ? [{ field: null, message: body.detail }] : undefined));
   return body;
 }
