@@ -6,7 +6,8 @@ from firesafe import evidence
 from firesafe.data import catalog, ground, publications, solids, source_table, table_index, test_airflow_values
 
 ui.init_page("NASA Data Explorer",
-             "The NASA Physical Sciences Informatics investigations behind this app, with their original tables.")
+             "Every NASA experiment behind this app, with its goals, tests and original data tables.",
+             eyebrow="19 NASA investigations")
 
 tabs = st.tabs(["Investigations", "Solid combustion tests", "Original NASA tables", "Document search",
                 "Earth ground tests"])
@@ -64,9 +65,10 @@ with tabs[1]:
     flows = test_airflow_values()
     fig = ui.tests_scatter([{**r, "airflow_readings_cm_s": flows.get(r["experiment_id"], []),
                              "investigation": r["investigation_name"]} for r in v.to_dict("records")],
-                           title="Tests by oxygen and first recorded airflow")
+                           height=420)
     if fig:
         st.plotly_chart(fig, width="stretch")
+        ui.note("Each mark is one test, placed by its oxygen level and airflow and colored by what the flame did.")
     st.dataframe(v[["investigation_name", "test_id", "test_date", "material", "material_raw", "sample_geometry",
                     "thickness_mm", "diameter_mm", "oxygen_pct", "airflow_raw", "pressure_kpa", "flow_direction",
                     "outcome", "notes", "quality_flags", "source_file", "source_row", "source_url"]],

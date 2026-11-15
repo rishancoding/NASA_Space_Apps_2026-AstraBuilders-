@@ -19,7 +19,8 @@ nav = st.navigation([
     st.Page(PAGES / "explorer.py", title="NASA Data Explorer", icon=":material/travel_explore:"),
 ])
 with st.sidebar:
-    st.markdown("**FireSafe** uses NASA PSI microgravity combustion data: BASS, BASS-II, Saffire and FLEX.")
-    st.caption("Every number shown comes from the NASA tables or the trained model; the AI only explains them. "
-               "Outcome labels were AI-reviewed without human sign-off.")
+    st.markdown("**FireSafe**")
+    st.caption("Built on NASA's fire experiments in orbit (BASS, BASS-II, Saffire, FLEX). Every number comes from "
+               "NASA's data or our trained model; the AI only explains them. Test outcomes were labeled by AI "
+               "and not yet checked by a person.")
 nav.run()

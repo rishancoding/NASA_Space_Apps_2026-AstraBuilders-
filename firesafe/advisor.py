@@ -359,21 +359,29 @@ def advise(sc: Scenario) -> dict:
 
 
 def summary_text(result: dict) -> str:
-    """Plain deterministic explanation, used when no LLM is configured."""
+    """Plain-language explanation computed without an LLM (shown when no API key is set)."""
     sc = result["scenario"]
-    lines = [f"Scenario: {sc['oxygen_pct']:g}% O2, {sc['airflow_cm_s']:g} cm/s airflow, {sc['pressure_kpa']:g} kPa, "
-             f"{sc['mission']}. Priority: {result['priority_label']}."]
+    words = {"strong": "strong", "moderate": "some", "weak": "thin", "none": "no nearby"}
+    lines = [f"For {sc['oxygen_pct']:g}% oxygen and {sc['airflow_cm_s']:g} cm/s airflow "
+             f"({sc['mission'].split(' (')[0].lower()}), ranked by: {result['priority_label'].lower()}."]
+    items = []
     for c in result["selected"] + result["candidates"]:
-        est = (f"model estimate {c['prediction']['probability']:.0%} chance of sustained burning"
-               if c.get("prediction") and c["prediction"].get("probability") is not None else "no model estimate")
+        p = c.get("prediction") or {}
+        est = (f"{p['probability']:.0%} chance of burning on" if p.get("probability") is not None
+               else "no estimate")
         n = len(c["comparable_tests"])
-        head = "Your material" if c["is_selected"] else f"{c['rank']}."
-        lines.append(f"{head} {c['material']}: {c['evidence_strength']} evidence ({n} comparable "
-                     f"test{'s' if n != 1 else ''}, match: {c['match']}); {est}. Ranked by: {c['sort_basis']}.")
+        head = "-" if c["is_selected"] else f"{c['rank']}."
+        mine = " (yours)" if c["is_selected"] else ""
+        items.append(f"{head} **{c['material']}**{mine}: {est}; {words[c['evidence_strength']]} evidence "
+                     f"({n} NASA test{'s' if n != 1 else ''} nearby).")
+        if c["is_selected"]:
+            items.append("")
+    lines.append("\n".join(items))
     sup = [x for x in result["comparisons"] if x["supported"]]
-    lines.append("Supported comparisons: " + ("; ".join(f"{x['higher']} ranked above {x['lower']}" for x in sup)
-                                              if sup else "none. The evidence does not establish that any one "
-                                                          "material is safer than the next."))
     if result["unassessable_constraints"]:
-        lines.append("Could not be checked with PSI data: " + ", ".join(result["unassessable_constraints"]) + ".")
+        lines.append("NASA's data can't check: " + ", ".join(result["unassessable_constraints"]).lower() + ".")
+    lines.append("**In short:** " + (
+        "the tests clearly support " + "; ".join(f"{x['higher']} over {x['lower']}" for x in sup) + "."
+        if sup else "no material is clearly safer than the next one here. Use the list to decide what to "
+                    "test, not as a safety rating."))
     return "\n\n".join(lines)

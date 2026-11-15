@@ -1,0 +1,25 @@
+# FireSafe theme: warm paper background, near-black ink, amber accent, Geist type.
+# Revert to the pre-redesign version: `git checkout ui-v1 -- app firesafe` and delete this file.
+
+[theme]
+base = "light"
+primaryColor = "#1e1d1a"
+backgroundColor = "#f1efea"
+secondaryBackgroundColor = "#e9e6df"
+textColor = "#1e1d1a"
+linkColor = "#1e1d1a"
+borderColor = "#ddd9cf"
+showWidgetBorder = true
+baseRadius = "10px"
+font = "Geist:https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap"
+codeFont = "'Geist Mono':https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap"
+headingFontWeights = [600, 600, 600, 600, 600, 600]
+codeBackgroundColor = "#e9e6df"
+orangeColor = "#c06a00"
+blueColor = "#2f6db5"
+greenColor = "#1d8a68"
+chartCategoricalColors = ["#c06a00", "#2f6db5", "#1d8a68"]
+
+[theme.sidebar]
+backgroundColor = "#e9e6df"
+secondaryBackgroundColor = "#f1efea"

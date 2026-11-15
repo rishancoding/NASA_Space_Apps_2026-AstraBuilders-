@@ -7,18 +7,26 @@ import ui
 from firesafe import predictor
 
 ui.init_page("Model Performance",
-             "How well each predictor does on data it never saw, compared with simpler models and a constant guess.")
+             "How often each model gets it right on NASA tests it never saw, compared with simpler guesses.",
+             eyebrow="How far to trust the predictor")
 
 m = predictor.metrics()
-for key, title in (("solid", "Solid materials: sustained burning"), ("flex", "FLEX droplets: early extinction")):
+PLAIN = {
+    "solid": "Rough guide only. It beats a blind guess, but knowing just the material does about as well, so oxygen "
+             "and airflow add little so far.",
+    "flex": "Useful. It clearly beats a blind guess, and oxygen, pressure and added gases really do change its answer.",
+}
+for key, title in (("solid", "Solid materials: does the flame keep burning?"),
+                   ("flex", "Fuel droplets: does the flame go out early?")):
     mm = m[key]
-    st.header(title)
+    st.subheader(title)
+    st.info(PLAIN[key], icon=":material/lightbulb:")
     dep = next(c for c in mm["comparison"] if "[deployed]" in c["model"])
     base = mm["comparison"][0]
     c = st.columns(5)
-    c[0].metric("Observations", mm["n_observations"])
-    c[1].metric("Independent groups", mm["n_groups"])
-    c[2].metric("Classes (0 / 1)", f"{mm['class_counts']['0']} / {mm['class_counts']['1']}")
+    c[0].metric("NASA runs", mm["n_observations"])
+    c[1].metric("Separate samples", mm["n_groups"])
+    c[2].metric("No / yes outcomes", f"{mm['class_counts']['0']} / {mm['class_counts']['1']}")
     c[3].metric("ROC AUC", dep["roc_auc"], f"{dep['roc_auc'] - 0.5:+.2f} vs chance")
     c[4].metric("Log loss", dep["log_loss"], f"{dep['log_loss'] - base['log_loss']:+.3f} vs baseline",
                 delta_color="inverse")
@@ -33,27 +41,28 @@ for key, title in (("solid", "Solid materials: sustained burning"), ("flex", "FL
                        "precision (class 0)", "recall (class 0)", "f1 (class 0)",
                        "precision (class 1)", "recall (class 1)", "f1 (class 1)"]],
                  hide_index=True, width="stretch")
-    st.caption("All rows are out-of-fold (grouped cross-validation). Lower log loss and Brier are better. "
-               "Classification metrics use a 0.5 threshold. Class 0 = "
-               + ("flame went out" if key == "solid" else "burned to completion") + ".")
+    ui.note("Each model is scored only on tests it didn't train on. Lower log loss is better; ROC AUC of 0.5 is "
+            "a coin flip and 1.0 is perfect. Class 0 = " + ("flame went out" if key == "solid" else
+                                                            "burned to completion") + ".")
 
     oof = pd.DataFrame(mm["oof"])
     l, r = st.columns(2)
     with l:
         fig = go.Figure()
         rng = np.random.default_rng(0)
-        for val, lab, col, sym in ((1, "Actually 1", ui.BLUE, "circle"), (0, "Actually 0", ui.ORANGE, "diamond")):
+        for val, lab, col, sym in ((1, "Actually yes", ui.BURN, "circle"), (0, "Actually no", ui.OUT, "diamond")):
             sub = oof[oof["actual"] == val]
             fig.add_trace(go.Scatter(
                 x=sub["predicted"], y=val + rng.uniform(-0.15, 0.15, len(sub)), mode="markers", name=lab,
-                marker=dict(color=col, symbol=sym, size=9, line=dict(width=2, color="white")),
+                marker=dict(color=col, symbol=sym, size=10, line=dict(width=2, color=ui.CARD)),
                 customdata=sub.iloc[:, 0:2].values,
                 hovertemplate="%{customdata[0]}<br>%{customdata[1]}<br>predicted %{x:.0%}<extra></extra>"))
         fig.add_vline(x=0.5, line_dash="dot", line_color=ui.MUTED)
-        ui.layout(fig, title="Actual vs predicted (out-of-fold)", xaxis=dict(tickformat=".0%", range=[0, 1],
-                  title="Predicted probability of class 1"),
-                  yaxis=dict(tickvals=[0, 1], ticktext=["Actual 0", "Actual 1"], title=None))
+        ui.layout(fig, title="Predicted vs what happened", xaxis=dict(tickformat=".0%", range=[0, 1],
+                  title="Predicted chance of yes"),
+                  yaxis=dict(tickvals=[0, 1], ticktext=["No", "Yes"], title=None))
         st.plotly_chart(fig, width="stretch", key=f"oof_{key}")
+        ui.note("Good models put the 'yes' row to the right and the 'no' row to the left.")
     with r:
         bins = pd.cut(oof["predicted"], [0, 0.2, 0.4, 0.6, 0.8, 1.0], include_lowest=True)
         cal = oof.groupby(bins, observed=True).agg(pred=("predicted", "mean"), obs=("actual", "mean"),
@@ -62,20 +71,21 @@ for key, title in (("solid", "Solid materials: sustained burning"), ("flex", "FL
         fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", name="Perfect calibration",
                                  line=dict(color=ui.MUTED, dash="dot", width=2), hoverinfo="skip"))
         fig.add_trace(go.Scatter(x=cal["pred"], y=cal["obs"], mode="lines+markers", name="Model",
-                                 line=dict(color=ui.BLUE, width=2), marker=dict(size=10),
+                                 line=dict(color=ui.INK, width=2), marker=dict(size=10),
                                  customdata=cal[["n"]].values,
                                  hovertemplate="predicted %{x:.0%}<br>observed %{y:.0%}<br>n=%{customdata[0]}"
                                                "<extra></extra>"))
-        ui.layout(fig, title="Calibration (out-of-fold)", xaxis=dict(tickformat=".0%", range=[0, 1],
-                  title="Mean predicted"), yaxis=dict(tickformat=".0%", range=[0, 1], title="Observed rate"))
+        ui.layout(fig, title="Do the percentages mean what they say?", xaxis=dict(tickformat=".0%", range=[0, 1],
+                  title="Predicted"), yaxis=dict(tickformat=".0%", range=[0, 1], title="Actually happened"))
         st.plotly_chart(fig, width="stretch", key=f"cal_{key}")
+        ui.note("Points on the dotted line mean a predicted 70% really happens about 70% of the time.")
     cm = dep["confusion_matrix"]
     st.markdown(f"**Confusion matrix (deployed, threshold 0.5):** actual 0 → predicted 0: {cm[0][0]}, "
                 f"predicted 1: {cm[0][1]}; actual 1 → predicted 0: {cm[1][0]}, predicted 1: {cm[1][1]}.")
 
-    st.subheader("Supported input range")
-    st.dataframe(pd.DataFrame(mm["ranges"]).T, width="stretch")
-    st.subheader("Limitations")
+    with st.expander("Conditions NASA tested (the model's safe range)"):
+        st.dataframe(pd.DataFrame(mm["ranges"]).T, width="stretch")
+    ui.label("Limitations")
     if key == "solid":
         mat_only = next(c for c in mm["comparison"] if c["model"].startswith("Material only"))
         st.markdown(f"""
