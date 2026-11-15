@@ -8,3 +8,10 @@ __pycache__/
 *.pyc
 .DS_Store
 .venv/
+
+# Generated from data/clean/ by firesafe/db.py (rebuilt automatically)
+data/firesafe.sqlite
+data/.firesafe-*.sqlite
+
+# Local secrets (DEEPSEEK_API_KEY)
+.env
