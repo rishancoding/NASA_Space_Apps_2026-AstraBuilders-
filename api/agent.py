@@ -23,8 +23,8 @@ load_environment()
 
 DEFAULT_MODELS = {"deepseek": "deepseek-flash", "anthropic": "claude-opus-5-5"}
 DEEPSEEK_BASE_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
-MAX_TOOL_ROUNDS = 8
-MAX_RESULT_CHARS = 12000
+MAX_TOOL_ROUNDS = 3
+MAX_RESULT_CHARS = 6000
 
 SYSTEM = """You are the research assistant inside a dashboard about NASA microgravity combustion experiments (NASA PSI database). Users are engineers and students asking about fire safety in spacecraft and habitats.
 
@@ -240,7 +240,7 @@ def _deepseek_client():
     key = os.environ.get("DEEPSEEK_API_KEY")
     if not key:
         raise ChatUnavailable("Chat is not configured: set DEEPSEEK_API_KEY and restart the API.")
-    return openai.OpenAI(api_key=key, base_url=DEEPSEEK_BASE_URL)
+    return openai.OpenAI(api_key=key, base_url=DEEPSEEK_BASE_URL, timeout=30, max_retries=0)
 
 
 def _chat_deepseek(convo, client=None):
@@ -253,7 +253,7 @@ def _chat_deepseek(convo, client=None):
         try:
             # Non-thinking mode: cheaper and faster, and tool loops need no reasoning_content round-trips.
             response = client.chat.completions.create(
-                model=model_name("deepseek"), messages=msgs, tools=tools, max_tokens=8000,
+                model=model_name("deepseek"), messages=msgs, tools=tools, max_tokens=1200,
                 extra_body={"thinking": {"type": "disabled"}},
             )
         except openai.AuthenticationError as e:
@@ -268,6 +268,8 @@ def _chat_deepseek(convo, client=None):
         choice = response.choices[0]
         msg = choice.message
         calls = msg.tool_calls or []
+        if len(calls) > 4:
+            raise ChatUnavailable("Too many research steps requested. Try a narrower question.")
         if not calls:
             return {"answer": (msg.content or "").strip(), "tool_calls": tool_calls, "citations": citations,
                     "stop_reason": choice.finish_reason}
@@ -292,12 +294,12 @@ def _chat_deepseek(convo, client=None):
 # ------------------------------------------------------------------ Anthropic (Claude)
 
 def _chat_anthropic(convo):
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(timeout=30, max_retries=0)
     tool_calls, citations = [], []
     for _ in range(MAX_TOOL_ROUNDS):
         try:
             response = client.beta.messages.create(
-                model=model_name("anthropic"), max_tokens=16000, system=SYSTEM, tools=TOOLS, messages=convo,
+                model=model_name("anthropic"), max_tokens=1200, system=SYSTEM, tools=TOOLS, messages=convo,
                 thinking={"type": "adaptive"}, output_config={"effort": "medium"},
                 betas=["server-side-fallback-2026-07-01"], fallbacks="default",
             )

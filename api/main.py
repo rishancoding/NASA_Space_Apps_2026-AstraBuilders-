@@ -26,6 +26,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import core
+from .chat_limits import MAX_CHAT_BYTES, configured as limits_configured, reserve_chat
 from .agent import TOOLS, ChatUnavailable, chat, chat_configured, model_name, provider
 
 def _warm_up():
@@ -68,6 +69,18 @@ app.add_middleware(
     allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
     allow_methods=["*"], allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def limit_chat_body(request: Request, call_next):
+    if request.url.path.rstrip("/") == "/api/chat" and request.method == "POST":
+        body = bytearray()
+        async for chunk in request.stream():
+            body.extend(chunk)
+            if len(body) > MAX_CHAT_BYTES:
+                return JSONResponse(status_code=413, content={"detail": "Chat request is too large. Start a shorter conversation."})
+        request._body = bytes(body)
+    return await call_next(request)
 
 
 @app.exception_handler(core.InputError)
@@ -132,33 +145,34 @@ class CompareInput(BaseModel):
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
-    content: str
+    content: str = Field(min_length=1, max_length=4000)
 
 
 class ChatInput(BaseModel):
-    messages: list[ChatMessage]
+    messages: list[ChatMessage] = Field(min_length=1, max_length=12)
     context: Optional[dict] = Field(None, description="Optional dashboard state, e.g. the current advisor inputs or a selected experiment")
 
 
 # ------------------------------------------------------------------ routes
 
-@app.get("/", include_in_schema=False)
-def root():
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse("/docs")
+if not os.getenv("VERCEL"):
+    @app.get("/", include_in_schema=False)
+    def root():
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse("/docs")
 
 
 @app.get("/api/health", tags=["meta"])
 def health():
     m = core.metrics()
     return {"ok": True, "models": {"extinction": m["extinction"]["prediction_enabled"], "burn_time": m["burn_time"]["prediction_enabled"]},
-            "chat_configured": chat_configured(), "chat_provider": provider(),
+            "chat_configured": chat_configured() and limits_configured(), "chat_provider": provider(),
             "chat_model": model_name(provider()) if provider() else None}
 
 
 @app.get("/api/tools", tags=["meta"], summary="Research-assistant tool catalogue (no provider key needed)")
 def tool_catalogue():
-    return {"tools": TOOLS, "chat_configured": chat_configured(),
+    return {"tools": TOOLS, "chat_configured": chat_configured() and limits_configured(),
             "note": "The data functions run locally without AI credentials. Try their matching endpoints in /docs."}
 
 
@@ -254,5 +268,12 @@ def model():
 
 
 @app.post("/api/chat", tags=["chat"], summary="Research assistant (needs DEEPSEEK_API_KEY or ANTHROPIC_API_KEY)")
-def chat_endpoint(body: ChatInput):
+def chat_endpoint(body: ChatInput, request: Request):
+    reserve_chat(request)
     return chat([m.model_dump() for m in body.messages], body.context)
+
+
+# Register the built UI explicitly so Vercel promotes it to its CDN. API routes
+# retain priority. check_dir=False permits dependency inspection before npm builds.
+if os.getenv("VERCEL"):
+    app.frontend("/", directory=Path(__file__).resolve().parents[1] / "public", check_dir=False)

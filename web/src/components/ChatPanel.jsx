@@ -27,7 +27,8 @@ export default function ChatPanel({ open, onClose, context }) {
     const next = [...messages, { role: "user", content: q }];
     setMessages(next); setText(""); setBusy(true); setError(null);
     try {
-      const r = await api.chat(next, context);
+      const history = next.slice(-7).map((m) => ({ ...m, content: m.content.slice(0, 4000) }));
+      const r = await api.chat(history, context);
       setMessages([...next, { role: "assistant", content: r.answer || "(no answer)" }]);
       setMeta((m) => [...m, { citations: r.citations, tool_calls: r.tool_calls, model: r.model }]);
     } catch (e) {
@@ -53,8 +54,8 @@ export default function ChatPanel({ open, onClose, context }) {
         {health.loading && <Spinner label="Checking assistant availability…" />}
         <ErrorBox error={health.error} />
         {health.data && !enabled && <div role="status" className="rounded-xl border border-line bg-ink p-3 text-gray-700">
-          <p className="font-medium">AI chat is off on this computer.</p>
-          <p className="mt-1 text-xs">NASA data and model estimates still work. A provider key is needed to enable generated answers.</p>
+          <p className="font-medium">AI chat is currently unavailable.</p>
+          <p className="mt-1 text-xs">NASA data and model estimates still work. Generated answers will be available once the site’s chat service is enabled.</p>
         </div>}
         {context && <div className="rounded-md bg-ink px-2 py-1 text-[11px] text-gray-500">Using context from: {context.page?.replaceAll("_", " ")}</div>}
         {enabled && messages.length === 0 && (
@@ -93,7 +94,7 @@ export default function ChatPanel({ open, onClose, context }) {
       </div>
 
       <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex gap-2 border-t border-line p-3">
-        <input disabled={!enabled || busy} aria-label="Message the assistant" value={text} onChange={(e) => setText(e.target.value)} placeholder={enabled ? "What's on your mind?" : "AI chat is not configured"}
+        <input maxLength={4000} disabled={!enabled || busy} aria-label="Message the assistant" value={text} onChange={(e) => setText(e.target.value)} placeholder={enabled ? "What's on your mind?" : "AI chat is currently unavailable"}
           className="flex-1 rounded-md border border-line bg-ink px-3 py-2 text-sm text-gray-900" />
         <button disabled={!enabled || busy || !text.trim()} className="primary-button">Send</button>
       </form>

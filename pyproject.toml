@@ -1,0 +1,19 @@
+[project]
+name = "thermaguard"
+version = "1.0.0"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+  "scikit-learn==1.9.1", "pandas==3.1.1", "numpy", "joblib",
+  "fastapi==0.163.0", "anthropic==2.8.0", "openai==3.51.0",
+  "httpx", "python-dotenv==1.2.4",
+]
+
+[tool.vercel]
+entrypoint = "api.main:app"
+
+[tool.vercel.scripts]
+build = "npm ci --prefix web && npm run build --prefix web -- --outDir ../public --emptyOutDir"
+
+[tool.vercel.fastapi.static]
+cdn = true
+exclude = true

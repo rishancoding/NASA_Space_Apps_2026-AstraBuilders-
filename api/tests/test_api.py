@@ -178,6 +178,7 @@ def test_deepseek_tool_loop_with_fake_client():
 
 
 def test_chat_without_key_is_clear_503(monkeypatch):
+    monkeypatch.setattr('api.main.reserve_chat', lambda request: None)
     def boom(*a, **k):
         raise agent.ChatUnavailable("Chat is not configured")
     monkeypatch.setattr("api.main.chat", boom)

@@ -22,3 +22,5 @@ data/.firesafe-*.sqlite
 # Web app
 web/node_modules/
 web/dist/
+/public/
+.vercel/

@@ -57,6 +57,7 @@ def test_multi_tool_loop_preserves_citations_and_recovers_from_invalid_json():
 
 @pytest.mark.parametrize("code,exception", [(401, openai.AuthenticationError), (429, openai.RateLimitError), (503, openai.APIStatusError)])
 def test_provider_failures_are_clear_503_responses_without_private_diagnostics(monkeypatch, code, exception):
+    monkeypatch.setattr('api.main.reserve_chat', lambda request: None)
     fake = MagicMock()
     response = httpx.Response(code, request=httpx.Request("POST", "https://example.com"))
     fake.chat.completions.create.side_effect = exception("private diagnostic", response=response, body=None)

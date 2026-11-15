@@ -22,7 +22,7 @@ async function request(path, options = {}) {
     throw new ApiError(0, [{ field: null, message: "Can't reach the API. Is the backend running on port 8000?" }]);
   }
   const body = await res.json().catch(() => null);
-  if (!res.ok) throw new ApiError(res.status, body?.errors);
+  if (!res.ok) throw new ApiError(res.status, body?.errors || (typeof body?.detail === "string" ? [{ field: null, message: body.detail }] : undefined));
   return body;
 }
 
