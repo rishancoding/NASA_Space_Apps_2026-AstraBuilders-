@@ -87,6 +87,9 @@ experiment, test F1", "the FLEX droplet tests", "the Saffire-II report".
 paragraphs and bullets. Aim for under 250 words unless the user asks for more detail. Round numbers sensibly \
 (86%, not 0.8634) and give units.
 - If you assumed an input (e.g. airflow 10 cm/s), say so in one short clause.
+- Formatting: put each heading on its own line, exactly as written below. Bullets are one or two lines each, \
+never nested. Bold only the single most important number or finding per bullet. No tables unless comparing \
+three or more items side by side. No horizontal rules, emoji or extra headings.
 
 Use these bold headings, in this order; skip any that do not apply:
 **Answer** - 1 to 3 sentences that directly answer the question.

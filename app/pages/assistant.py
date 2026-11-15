@@ -1,3 +1,6 @@
+import html
+import re
+
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -40,6 +43,15 @@ STEP = {"find_tests": "Finding matching NASA tests", "material_summary": "Summar
         "prediction_sweep": "Running the model across a range", "get_current_advisor_results": "Reading your advisor results"}
 
 
+def bin_label(b) -> str:
+    """'(16.0, 18.0]' -> '16-18%'; a bin starting at 0 -> 'under 16%'."""
+    m = re.match(r"[\[(]\s*([\d.]+)\s*,\s*([\d.]+)\s*[\])]", str(b))
+    if not m:
+        return str(b)
+    lo, hi = float(m.group(1)), float(m.group(2))
+    return f"under {hi:g}%" if lo == 0 else f"{lo:g}-{hi:g}%"
+
+
 def charts_for(calls) -> None:
     for i, (name, args, out) in enumerate(calls):
         if name == "find_tests" and out.get("tests"):
@@ -49,6 +61,7 @@ def charts_for(calls) -> None:
         elif name == "condition_trends" and out.get("stages_by_oxygen_bin"):
             df = pd.DataFrame(out["stages_by_oxygen_bin"])
             df["share"] = df["sustained"] / df["stages"]
+            df["bin"] = [bin_label(b) for b in df["bin"]]
             fig = go.Figure(go.Bar(x=df["bin"], y=df["share"], marker=dict(color=ui.BURN, cornerradius=4),
                                    text=[f"{s}/{n}" for s, n in zip(df["sustained"], df["stages"])],
                                    textposition="outside", cliponaxis=False,
@@ -57,6 +70,8 @@ def charts_for(calls) -> None:
                       yaxis=dict(tickformat=".0%", range=[0, 1.15], title=None),
                       xaxis_title="Oxygen (%)", showlegend=False)
             st.plotly_chart(fig, width="stretch", key=f"t{id(calls)}{i}")
+            ui.note("Bar height is how often the flame stayed lit in NASA's carefully measured runs; "
+                    "the label shows how many runs.")
         elif name == "predict_sustained_burning" and out.get("probability") is not None:
             st.metric(f"{out['material']} at {out['oxygen_pct']:g}% oxygen, {out['airflow_cm_s']:g} cm/s",
                       f"{out['probability']:.0%} chance it keeps burning")
@@ -112,15 +127,70 @@ def sources_for(calls) -> list[dict]:
     return out[:12]
 
 
+SECTIONS = ("Answer", "Evidence", "What it means", "Prediction reliability", "Sources", "In short")
+HEADING = re.compile(r"^(?:#{1,4}[ \t]+)?\*\*(" + "|".join(SECTIONS) + r")\*\*[ \t]*[:\-–—]?[ \t]*|"
+                     r"^#{1,4}[ \t]+(" + "|".join(SECTIONS) + r")[ \t]*:?[ \t]*$", re.M | re.I)
+
+
+def split_sections(text: str) -> dict[str, str]:
+    """{'Answer': ..., 'Evidence': ...} from the model's bold headings; {} if it didn't use them."""
+    marks = list(HEADING.finditer(text))
+    if not marks:
+        return {}
+    out = {}
+    lead = text[:marks[0].start()].strip()
+    for i, m in enumerate(marks):
+        name = next(x for x in SECTIONS if x.lower() == (m.group(1) or m.group(2)).lower())
+        end = marks[i + 1].start() if i + 1 < len(marks) else len(text)
+        out[name] = (out.get(name, "") + "\n\n" + text[m.end():end]).strip()
+    if lead:
+        out["Answer"] = (lead + "\n\n" + out.get("Answer", "")).strip()
+    return out
+
+
+def render_answer(text: str, calls) -> None:
+    parts = split_sections(text)
+    if not parts:
+        st.markdown(text)
+        if calls:
+            charts_for(calls)
+        return
+    if parts.get("Answer"):
+        st.markdown(parts["Answer"])
+    for name in ("Evidence", "What it means"):
+        if parts.get(name):
+            ui.label(name)
+            st.markdown(parts[name])
+        if name == "Evidence" and calls:
+            charts_for(calls)
+    if parts.get("Prediction reliability"):
+        with st.container(border=True):
+            ui.label("How much to trust the estimate")
+            st.markdown(parts["Prediction reliability"])
+    if parts.get("In short"):
+        st.html(f'<div class="fs-tldr"><div class="fs-label">In short</div>{md_inline(parts["In short"])}</div>')
+    srcs = sources_for(calls) if calls else []
+    if parts.get("Sources") or srcs:
+        with st.expander("Sources"):
+            if parts.get("Sources"):
+                st.markdown(parts["Sources"])
+            else:
+                ui.citations(srcs, header="")
+
+
+def md_inline(t: str) -> str:
+    """Tiny, safe Markdown-to-HTML for the one- or two-line summary (bold and links only)."""
+    t = html.escape(" ".join(t.split()))
+    t = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", t)
+    return re.sub(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", r'<a href="\2" target="_blank">\1</a>', t)
+
+
 def render(msg) -> None:
     with st.chat_message(msg["role"]):
-        st.markdown(msg["text"])
-        if msg.get("calls"):
-            charts_for(msg["calls"])
-            srcs = sources_for(msg["calls"])
-            if srcs:
-                with st.expander(f"NASA sources ({len(srcs)})"):
-                    ui.citations(srcs, header="")
+        if msg["role"] == "assistant":
+            render_answer(msg["text"], msg.get("calls"))
+        else:
+            st.markdown(msg["text"])
 
 
 for m in ss.chat_view:

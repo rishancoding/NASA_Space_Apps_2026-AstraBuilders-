@@ -45,6 +45,9 @@ h2, h3, h4 {{ letter-spacing: -0.02em; }}
   letter-spacing: 0.1em; text-transform: uppercase; color: {MUTED}; }}
 [data-testid="stMetricValue"] {{ font-weight: 600; letter-spacing: -0.02em; }}
 [data-testid="stSidebar"] {{ border-right: 1px solid {LINE}; }}
+.fs-tldr {{ background: {CARD}; border: 1px solid {LINE}; border-left: 4px solid {ACCENT}; border-radius: 10px;
+  padding: 0.7rem 1rem 0.8rem 1rem; font-size: 1.02rem; line-height: 1.5; margin: 0.4rem 0 0.2rem 0; }}
+.fs-tldr .fs-label {{ margin-top: 0; }}
 </style>
 """
 
