@@ -1,0 +1,500 @@
+{
+  "trained_with": {
+    "scikit_learn": "1.9.1",
+    "python": "3.12.10"
+  },
+  "dataset": "data/clean/flex_training.csv",
+  "source_record": "PSI-69",
+  "source_url": "https://psi.nasa.gov/physci/repo/data/investigations/PSI-69",
+  "features": [
+    "fuel",
+    "pressure_kpa",
+    "oxygen_pct",
+    "co2_fraction",
+    "helium_fraction",
+    "droplet_diameter_mm"
+  ],
+  "units": {
+    "pressure_kpa": "kPa",
+    "oxygen_pct": "oxygen mole percent",
+    "co2_fraction": "mole fraction",
+    "helium_fraction": "mole fraction",
+    "droplet_diameter_mm": "mm"
+  },
+  "domains_by_fuel": {
+    "Heptane": {
+      "rows": 74,
+      "classes": {
+        "1": 56,
+        "0": 18
+      },
+      "groups": 73,
+      "fields": {
+        "pressure_kpa": {
+          "missing": 0,
+          "min": 70.394211,
+          "max": 207.156296
+        },
+        "oxygen_pct": {
+          "missing": 0,
+          "min": 14.0,
+          "max": 30.0
+        },
+        "co2_fraction": {
+          "missing": 0,
+          "min": 0.0,
+          "max": 0.7
+        },
+        "helium_fraction": {
+          "missing": 0,
+          "min": 0.0,
+          "max": 0.45
+        },
+        "droplet_diameter_mm": {
+          "missing": 0,
+          "min": 1.13,
+          "max": 4.67
+        }
+      }
+    },
+    "Methanol": {
+      "rows": 128,
+      "classes": {
+        "1": 120,
+        "0": 8
+      },
+      "groups": 128,
+      "fields": {
+        "pressure_kpa": {
+          "missing": 0,
+          "min": 70.167563,
+          "max": 309.267898
+        },
+        "oxygen_pct": {
+          "missing": 0,
+          "min": 12.0,
+          "max": 34.0
+        },
+        "co2_fraction": {
+          "missing": 0,
+          "min": 0.0,
+          "max": 0.7
+        },
+        "helium_fraction": {
+          "missing": 0,
+          "min": 0.0,
+          "max": 0.45
+        },
+        "droplet_diameter_mm": {
+          "missing": 0,
+          "min": 1.61,
+          "max": 4.53
+        }
+      }
+    }
+  },
+  "unsupported_claims": [
+    "solid-material burn probability or safety ranking",
+    "ignition resistance",
+    "causal suppressant effectiveness",
+    "fire-extinguisher success",
+    "flame spread rate",
+    "Moon/Mars or partial-gravity prediction",
+    "spacecraft certification"
+  ],
+  "extinction": {
+    "task": "binary_classification",
+    "target": "extinction_binary",
+    "target_meaning": "Recorded Test end category Extinction versus Completion among non-disrupted, valid-feature FLEX observations",
+    "classes": {
+      "0": "Completion",
+      "1": "Extinction"
+    },
+    "rows": 202,
+    "groups": 201,
+    "class_counts": {
+      "Extinction": 176,
+      "Completion": 26
+    },
+    "validation": "5-fold StratifiedGroupKFold by split_group, seed 42, out-of-fold predictions; decision threshold tuned by inner grouped CV on each training fold only",
+    "folds": [
+      {
+        "fold": 0,
+        "test_rows": 41,
+        "test_completion": 5,
+        "test_extinction": 36
+      },
+      {
+        "fold": 1,
+        "test_rows": 40,
+        "test_completion": 5,
+        "test_extinction": 35
+      },
+      {
+        "fold": 2,
+        "test_rows": 40,
+        "test_completion": 5,
+        "test_extinction": 35
+      },
+      {
+        "fold": 3,
+        "test_rows": 40,
+        "test_completion": 5,
+        "test_extinction": 35
+      },
+      {
+        "fold": 4,
+        "test_rows": 41,
+        "test_completion": 6,
+        "test_extinction": 35
+      }
+    ],
+    "candidates": {
+      "majority_baseline": {
+        "decision_thresholds_per_fold": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "calibration": null,
+        "mean_predicted_probability": 0.871304,
+        "balanced_accuracy": 0.5,
+        "balanced_accuracy_95ci": [
+          0.5,
+          0.5
+        ],
+        "macro_f1": 0.465608,
+        "raw_accuracy": 0.871287,
+        "per_class": {
+          "Completion": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 26
+          },
+          "Extinction": {
+            "precision": 0.871287,
+            "recall": 1.0,
+            "f1": 0.931217,
+            "support": 176
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "Completion",
+            "Extinction"
+          ],
+          "rows_actual_cols_predicted": [
+            [
+              0,
+              26
+            ],
+            [
+              0,
+              176
+            ]
+          ]
+        },
+        "roc_auc": 0.5,
+        "brier_score": 0.112192,
+        "log_loss": 0.38414
+      },
+      "logistic_regression": {
+        "decision_thresholds_per_fold": [
+          0.85,
+          0.89,
+          0.77,
+          0.7,
+          0.75
+        ],
+        "calibration": [
+          {
+            "predicted_mean": 0.622139,
+            "observed_rate": 0.609756,
+            "n": 41
+          },
+          {
+            "predicted_mean": 0.840622,
+            "observed_rate": 0.875,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.940118,
+            "observed_rate": 1.0,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.974173,
+            "observed_rate": 0.925,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.990304,
+            "observed_rate": 0.95122,
+            "n": 41
+          }
+        ],
+        "mean_predicted_probability": 0.872805,
+        "balanced_accuracy": 0.802229,
+        "balanced_accuracy_95ci": [
+          0.712421,
+          0.886703
+        ],
+        "macro_f1": 0.713475,
+        "raw_accuracy": 0.826733,
+        "per_class": {
+          "Completion": {
+            "precision": 0.408163,
+            "recall": 0.769231,
+            "f1": 0.533333,
+            "support": 26
+          },
+          "Extinction": {
+            "precision": 0.960784,
+            "recall": 0.835227,
+            "f1": 0.893617,
+            "support": 176
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "Completion",
+            "Extinction"
+          ],
+          "rows_actual_cols_predicted": [
+            [
+              20,
+              6
+            ],
+            [
+              29,
+              147
+            ]
+          ]
+        },
+        "roc_auc": 0.807474,
+        "brier_score": 0.083449,
+        "log_loss": 0.301625
+      },
+      "logistic_regression_balanced": {
+        "decision_thresholds_per_fold": [
+          0.53,
+          0.78,
+          0.37,
+          0.42,
+          0.36
+        ],
+        "calibration": [
+          {
+            "predicted_mean": 0.238908,
+            "observed_rate": 0.634146,
+            "n": 41
+          },
+          {
+            "predicted_mean": 0.455643,
+            "observed_rate": 0.875,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.706282,
+            "observed_rate": 0.9,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.835114,
+            "observed_rate": 0.975,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.938578,
+            "observed_rate": 0.97561,
+            "n": 41
+          }
+        ],
+        "mean_predicted_probability": 0.634448,
+        "balanced_accuracy": 0.737544,
+        "balanced_accuracy_95ci": [
+          0.643556,
+          0.832655
+        ],
+        "macro_f1": 0.628309,
+        "raw_accuracy": 0.742574,
+        "per_class": {
+          "Completion": {
+            "precision": 0.296875,
+            "recall": 0.730769,
+            "f1": 0.422222,
+            "support": 26
+          },
+          "Extinction": {
+            "precision": 0.949275,
+            "recall": 0.744318,
+            "f1": 0.834395,
+            "support": 176
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "Completion",
+            "Extinction"
+          ],
+          "rows_actual_cols_predicted": [
+            [
+              19,
+              7
+            ],
+            [
+              45,
+              131
+            ]
+          ]
+        },
+        "roc_auc": 0.806381,
+        "brier_score": 0.169166,
+        "log_loss": 0.500546
+      },
+      "random_forest": {
+        "decision_thresholds_per_fold": [
+          0.89,
+          0.86,
+          0.73,
+          0.89,
+          0.87
+        ],
+        "calibration": [
+          {
+            "predicted_mean": 0.671825,
+            "observed_rate": 0.634146,
+            "n": 41
+          },
+          {
+            "predicted_mean": 0.852041,
+            "observed_rate": 0.825,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.921039,
+            "observed_rate": 0.95,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.959502,
+            "observed_rate": 0.95,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.979322,
+            "observed_rate": 1.0,
+            "n": 41
+          }
+        ],
+        "mean_predicted_probability": 0.876239,
+        "balanced_accuracy": 0.692745,
+        "balanced_accuracy_95ci": [
+          0.598056,
+          0.784894
+        ],
+        "macro_f1": 0.582366,
+        "raw_accuracy": 0.693069,
+        "per_class": {
+          "Completion": {
+            "precision": 0.25,
+            "recall": 0.692308,
+            "f1": 0.367347,
+            "support": 26
+          },
+          "Extinction": {
+            "precision": 0.938462,
+            "recall": 0.693182,
+            "f1": 0.797386,
+            "support": 176
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "Completion",
+            "Extinction"
+          ],
+          "rows_actual_cols_predicted": [
+            [
+              18,
+              8
+            ],
+            [
+              54,
+              122
+            ]
+          ]
+        },
+        "roc_auc": 0.824738,
+        "brier_score": 0.092526,
+        "log_loss": 0.30423
+      }
+    },
+    "selected_model": "logistic_regression",
+    "selection_rule": "lowest Brier score among models whose balanced-accuracy 95% CI is above 0.5",
+    "decision_threshold": 0.79,
+    "base_rate_extinction": 0.871287,
+    "prediction_enabled": true,
+    "promotion_gate": "passed: balanced accuracy (95% CI above 0.5, at least 0.10 above guessing) and Brier score better than the base rate",
+    "uncertainty_method": "spread of 25 models refit on group bootstrap resamples (10th-90th percentile)",
+    "notes": [
+      "Displayed probabilities are unweighted, so they track observed extinction rates (see calibration).",
+      "Extinction is the usual ending (87%). The decision threshold marks conditions that lean toward completion compared with typical tests.",
+      "Always predicting Extinction gives about 87% raw accuracy; use balanced accuracy and Brier score."
+    ]
+  },
+  "burn_time": {
+    "task": "regression",
+    "target": "burn_time_s",
+    "target_meaning": "Recorded FLEX burn time in seconds, among the same screened Extinction/Completion rows",
+    "rows": 200,
+    "groups": 199,
+    "validation": "5-fold GroupKFold by split_group, out-of-fold predictions; model fit on log1p(seconds)",
+    "candidates": {
+      "mean_baseline": {
+        "mae_s": 5.854173,
+        "r2": -0.109623,
+        "r2_log_space": -0.021869,
+        "r2_95ci": [
+          -0.197853,
+          -0.050813
+        ],
+        "interval_coverage": 0.9,
+        "median_interval_width_s": 27.320097
+      },
+      "ridge": {
+        "mae_s": 4.239048,
+        "r2": 0.313251,
+        "r2_log_space": 0.504688,
+        "r2_95ci": [
+          -0.014669,
+          0.515853
+        ],
+        "interval_coverage": 0.9,
+        "median_interval_width_s": 16.416545
+      },
+      "random_forest": {
+        "mae_s": 2.715414,
+        "r2": 0.753055,
+        "r2_log_space": 0.748979,
+        "r2_95ci": [
+          0.688633,
+          0.80137
+        ],
+        "interval_coverage": 0.89,
+        "median_interval_width_s": 11.679988
+      }
+    },
+    "selected_model": "random_forest",
+    "prediction_enabled": true,
+    "promotion_gate": "passed: lower 95% bound of R\u00b2 is above 0.2",
+    "uncertainty_method": "split-conformal 90% interval from out-of-fold log residuals",
+    "notes": [
+      "Added after model_spec.json as a separate exploratory model; same features and leakage rules.",
+      "Burn time ends at either extinction or completion, so it is not a pure burning-rate measure."
+    ]
+  }
+}

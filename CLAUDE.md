@@ -4,7 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-NASA Space Apps 2026 (team AstraBuilders). Curated NASA PSI (Physical Sciences Informatics) microgravity combustion data that later feeds a material advisor, a research-assistant agent, a data explorer and model development. Right now the repo holds a verified data package and its reproducible build pipeline. No trained model, predictions or safety rankings exist yet. `agent_querying/` (`build_database.py`, `query_functions.py`) holds empty placeholders for the upcoming agent work.
+NASA Space Apps 2026 (team AstraBuilders). Curated NASA PSI (Physical Sciences Informatics) microgravity combustion data that later feeds a material advisor, a research-assistant agent, a data explorer and model development. The repo holds a verified data package and its build pipeline (`data/`), two trained FLEX droplet models (`model/`) and a FastAPI backend with a Claude chat agent (`api/`). See `docs/API.md`. There are no safety rankings: the advisor ranks evidence.
+
+## Backend and models
+
+- `model/train_flex.py` trains the extinction classifier and burn-time regressor with grouped CV and writes `model/artifacts/` (joblib files with sklearn built-ins only, `metrics.json`, `oof_predictions.json`). Each model has a promotion gate; a failed gate disables that prediction in the API. The extinction model is unweighted on purpose so its probabilities stay calibrated (balanced weights gave a Brier score worse than the base rate). `model/evaluate_models.py` runs the stress tests into `evaluation.json`; rerun it after retraining.
+- `api/core.py` holds every function (options, explorer, similarity, advisor, predictions, what-if, search). Numbers go through `val()` with a trust label. `api/main.py` exposes them over HTTP; `api/agent.py` gives the same functions to a language model as tools: DeepSeek (`deepseek-flash`, OpenAI-compatible SDK, `DEEPSEEK_API_KEY`) by default, or Claude (`ANTHROPIC_API_KEY`); both loops share `TOOLS`, `run_tool` and the system prompt.
+- Run: `.venv/Scripts/python -m uvicorn api.main:app --reload --port 8000`. Test: `.venv/Scripts/python -m pytest api/tests -q`.
 
 `data/DATA_HANDOFF.md` is the authoritative description of the data: what was corrected, what each teammate should use, and what must not be claimed. Read it before you change data semantics.
 
@@ -21,6 +27,7 @@ python3 -m venv .venv
 .venv/bin/python -m unittest data.tests.test_data.DataTests.test_units_and_zero   # single test
 ```
 
+- `python data/scripts/build_sqlite.py` builds `data/flame.sqlite` from `data/clean/` (one table per CSV, `src_*` for NASA source tables, `_tables`/`_columns` catalogue). Rerun it after `build_data.py` or `label_data.py`; `data/tests/test_sqlite.py` checks every cell.
 - `data/clean/cleaning_pipeline.py` is a legacy shim that forwards to `build_data.py`.
 - The tests import `build_data`, so they need the venv dependencies. They do not need `data/raw/`. The raw-vs-clean comparisons are skipped when the cache is missing.
 - To read the committed `data/clean/` files you need only the standard library (`data/access.py`).
@@ -45,10 +52,9 @@ The pipeline runs in one direction: **fetch → build → clean package → read
 - BASS oxygen in the workbook is a fraction (0.221 means 22.1%). BASS-II oxygen is already a percent. Pressure is converted from atm at 101.325 kPa/atm. Don't invent a default pressure for BASS-II.
 - Thickness, width and diameter are separate fields. A rod diameter is never thickness.
 - Labels come from `data/scripts/label_data.py` plus the AI-reviewed annotations in `data/annotations/*.jsonl` (no human sign-off). In `solid_combustion_model.csv`, `burned_binary` means "any flame observed" (226 yes / 6 no / 18 blank) and `training_eligible` is false for every test, so it is not a training target. The solid training set is `solid_stage_training.csv` (47 stages, `sustained_flame_binary`, grouped by `validation_group`); the FLEX one is `flex_training.csv`. Extinction after a burn, hardware failure and fuel exhaustion are not "did not burn".
-- `burn_model.joblib` is a scikit-learn logistic-regression pipeline. Its training code isn't in the repo, and loading it needs a function named `airflow_ushape` defined in `__main__`.
 - Uniqueness: BASS needs date + as-run number + test number + sample number. FLEX's experiment key includes the test number, because `193F001` repeats. Use `split_group` to keep repeat burns of one sample together in validation.
 - Evidence chunks of kind `experiment_plan_text` describe proposed tests and must not be cited as observed outcomes. Ground thresholds are Earth-gravity, external to PSI, and are not training outcomes.
-- Don't present safety rankings, model probabilities or extrapolations in the app or agent until model evidence exists.
+- Don't present safety rankings or extrapolations in the app or agent. Model numbers appear only when the model passed its gate and the input is inside the tested range; the FLEX models describe droplets, never solid materials.
 
 ## Git
 

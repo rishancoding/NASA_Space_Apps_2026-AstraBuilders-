@@ -23,6 +23,13 @@ As of Steps 1–2, no predictive model has been trained, no generated imagery or
 audio has been included in the project, and no chatbot API has been implemented.
 The repository records the sources and open-source processing dependencies.
 
+After Steps 1–2, Anthropic's Claude (via Claude Code) assisted with writing the
+model training script (`model/train_flex.py`), the backend API (`api/`), its tests
+and the API documentation. The research-assistant chat calls a language model at run
+time (DeepSeek-V4.1-Flash by default, or Claude): the model chooses which backend
+function to call and writes the explanation, while all numbers come from NASA
+data or the trained models.
+
 Before submission, the team must accurately describe its own concept-development
 contribution, follow the official restrictions on AI-originated ideas and NASA
 branding, and disclose any later model, chatbot, writing, image or video assistance.
