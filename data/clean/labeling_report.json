@@ -44,12 +44,17 @@
     "no_usable_observation_note": 6,
     "igniter_position_changed": 1
   },
-  "flex_training_candidates": 207,
+  "flex_training_candidates": 202,
   "flex_candidate_class_counts": {
-    "1": 180,
-    "0": 27
+    "1": 176,
+    "0": 26
   },
   "flex_disruptions_excluded": 61,
+  "flex_initial_quality_exclusions": {
+    "missing_initial_feature:droplet_diameter_mm": 12,
+    "initial_gas_fractions_do_not_sum_to_one": 6,
+    "nonpositive_initial_feature:pressure_kpa": 1
+  },
   "training_status": "Exploratory labeled candidates; no model fit or validated predictions. Labels retain source-specific observation horizons and AI review provenance.",
   "required_solid_features": [
     "material",
@@ -65,6 +70,14 @@
     "width_mm"
   ],
   "flex_features": [
+    "fuel",
+    "pressure_kpa",
+    "oxygen_pct",
+    "co2_fraction",
+    "helium_fraction",
+    "droplet_diameter_mm"
+  ],
+  "flex_validation_fields": [
     "fuel",
     "pressure_kpa",
     "oxygen_pct",

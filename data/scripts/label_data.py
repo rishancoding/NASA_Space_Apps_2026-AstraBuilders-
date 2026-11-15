@@ -10,6 +10,7 @@ import csv
 from collections import Counter
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 
@@ -20,6 +21,36 @@ EVIDENCE_FIELDS = ["experiment_id", "notes", "airflow_raw", "fan_display_raw", "
 REVIEW_COLUMNS = ["experiment_id", "test_id", "source_record", "source_url", "source_locator", "notes",
                   "target_name", "target_value", "condition_airflow_cm_s", "condition_oxygen_pct",
                   "condition_pressure_kpa", "evidence_note", "reviewer", "review_status"]
+FLEX_INITIAL_FIELDS = ["fuel", "pressure_kpa", "oxygen_pct", "nitrogen_fraction", "co2_fraction", "helium_fraction", "droplet_diameter_mm"]
+# Conservative screening rule, not a statement about instrument accuracy.
+FLEX_COMPOSITION_TOLERANCE = .01
+
+
+def flex_initial_problems(row):
+    problems, values = [], {}
+    for field in FLEX_INITIAL_FIELDS:
+        if row.get(field, "") == "":
+            problems.append("missing_initial_feature:" + field)
+        elif field != "fuel":
+            value = number(row[field])
+            if value is None or not math.isfinite(value):
+                problems.append("invalid_initial_number:" + field)
+            else:
+                values[field] = value
+    for field in ["pressure_kpa", "droplet_diameter_mm"]:
+        if field in values and values[field] <= 0:
+            problems.append("nonpositive_initial_feature:" + field)
+    if "oxygen_pct" in values and not 0 < values["oxygen_pct"] <= 100:
+        problems.append("invalid_initial_oxygen")
+    for field in ["nitrogen_fraction", "co2_fraction", "helium_fraction"]:
+        if field in values and not 0 <= values[field] <= 1:
+            problems.append("invalid_initial_fraction:" + field)
+    components = ["oxygen_pct", "nitrogen_fraction", "co2_fraction", "helium_fraction"]
+    if all(k in values for k in components):
+        total = values["oxygen_pct"] / 100 + sum(values[k] for k in components[1:])
+        if abs(total - 1) > FLEX_COMPOSITION_TOLERANCE + 1e-9:
+            problems.append("initial_gas_fractions_do_not_sum_to_one")
+    return problems
 
 
 def read_csv(path):
@@ -180,14 +211,13 @@ def build_labels():
 
     flex = read_csv(CLEAN / "flex_backup.csv")
     flex_labels = []
-    features = ["fuel", "pressure_kpa", "oxygen_pct", "nitrogen_fraction", "co2_fraction", "helium_fraction", "droplet_diameter_mm"]
+    features = FLEX_INITIAL_FIELDS
     for row in flex:
         end = row["test_end_raw"]
         if end not in {"Extinction", "Completion", "Disruption"}:
             raise ValueError(f"Unrecognized FLEX end result {end}")
         label = 1 if end == "Extinction" else 0 if end == "Completion" else ""
-        missing = [field for field in features if row[field] == ""]
-        reasons = (["disruption_censored_not_extinction_or_completion"] if end == "Disruption" else []) + missing
+        reasons = (["disruption_censored_not_extinction_or_completion"] if end == "Disruption" else []) + flex_initial_problems(row)
         flex_labels.append({**row, "target_name": "terminal_extinction_vs_completion", "extinction_binary": label,
                             "training_eligible": "false" if reasons else "true", "exclusion_reasons": "|".join(reasons)})
     write_csv(CLEAN / "flex_labeled.csv", flex_labels)
@@ -203,10 +233,12 @@ def build_labels():
         "stage_exclusions": dict(Counter(reason for s in stages for reason in s["exclusion_reasons"].split("|") if reason)),
         "flex_training_candidates": len(flex_candidates), "flex_candidate_class_counts": dict(Counter(str(r["extinction_binary"]) for r in flex_candidates)),
         "flex_disruptions_excluded": sum(r["test_end_raw"] == "Disruption" for r in flex_labels),
+        "flex_initial_quality_exclusions": dict(Counter(reason for r in flex_labels for reason in r["exclusion_reasons"].split("|") if reason and not reason.startswith("disruption_"))),
         "training_status": "Exploratory labeled candidates; no model fit or validated predictions. Labels retain source-specific observation horizons and AI review provenance.",
         "required_solid_features": ["material", "oxygen_initial_pct", "airflow_cm_s", "protocol"],
         "optional_solid_features": ["sample_geometry", "flow_direction", "thickness_mm", "diameter_mm", "width_mm"],
-        "flex_features": features,
+        "flex_features": [f for f in features if f != "nitrogen_fraction"],
+        "flex_validation_fields": features,
         "forbidden_features": ["outcome", "burned_binary", "notes", "evidence_quote", "event_state", "event_cause", "review_status", "exclusion_reasons", "oxygen_final_pct", "co2_final_pct", "burn_time_s", "extinction_diameter_mm", "burning_rate_raw", "test_end_raw"],
     }
     (CLEAN / "labeling_report.json").write_text(json.dumps(report, indent=2) + "\n")
@@ -228,7 +260,7 @@ def build_labels():
             "oxygen_caveat": "oxygen_initial_pct is not actual stage oxygen; oxygen_at_stage_pct remains unknown",
             "protocol": "ignition_trial versus ongoing_burn_trial; both categories contain both labels"},
         "flex_training.csv": {"target": "extinction_binary", "positive": "Extinction", "negative": "Completion",
-            "censored": "Disruption", "group": "split_group", "features": features},
+            "censored": "Disruption", "group": "split_group", "features": report["flex_features"]},
     }
     contract["dataset_roles"].update({"solid_combustion_model.csv": "Reviewed whole-test observations; not independent condition labels",
         "solid_stage_observations.csv": "Evidence-linked events; includes unknown conditions and excluded endpoints",

@@ -21,7 +21,7 @@ field. These are the editable source inputs. Do not edit generated clean files.
 | `solid_stage_observations.csv` | Evidence-linked events, terminal outcomes, unknown flows and exclusion reasons. Burnout and deliberate suppression are retained as observed events. |
 | `solid_stage_training.csv` | Conservative candidates for a source-reported sustained-flame stage classifier, screened for measured flow, material identity, sensor changes and confounding. |
 | `flex_labeled.csv` | All 274 droplet tests; disruptions are censored with blank classification target. |
-| `flex_training.csv` | 207 complete-feature droplet candidates: 180 extinction and 27 completion. The other 61 disruptions and 6 incomplete-feature extinction cases are excluded. |
+| `flex_training.csv` | 202 screened droplet candidates: 176 extinction and 26 completion. Disruptions, missing features, nonpositive pressure and inconsistent gas totals are excluded. |
 | `labeling_report.json` | Counts, class balance, exclusions and feature whitelists. |
 
 The current solid subset has 47 stages (31 sustained, 16 not sustained), grouped
@@ -57,9 +57,11 @@ it does not establish that the proposed advisor model is feasible or accurate.
 
 ## Model lead
 
-Use `solid_stage_training.csv` **or** `flex_training.csv` for the one selected
-model. Never pool droplets with solids. Use the exact feature whitelist in
-`labeling_report.json`; the CSVs also carry outcome-related evidence columns for
+Step 2 selected `flex_training.csv` for the one exploratory model; see
+[MODEL_SCOPE.md](../../docs/MODEL_SCOPE.md) and `model/model_spec.json`.
+Solid stage candidates remain available for research and future label review.
+Never pool droplets with solids. Use the selected model specification's feature
+whitelist; the CSVs also carry outcome-related evidence columns for
 audit, and those columns must not be used as features. Final gas composition,
 burn time, extinction diameter, source notes, labels and event descriptions can
 leak the answer. Keep whole-test summaries out of a condition-specific model.
@@ -72,12 +74,13 @@ identifier. Check groups and class support in each fold; stage count is not the
 independent-sample count. Missing dimensions/pressure remain missing. A nominal
 diameter need not describe the actual remaining size of a repeatedly burned rod.
 
-The FLEX target is `extinction_binary`: terminal extinction (1) versus completion
+The FLEX target is `extinction_binary`: recorded Extinction (1) versus Completion
 (0), conditional on those two observable endings. It is not an ignition or
 suppression-success label, and disruption exclusion creates a selection limit.
 
 Run `python3 data/scripts/label_data.py` to apply the reviews without downloading
-anything or reading the PDFs. The full `build_data.py` also applies them after
-rebuilding observations. Both are deterministic. Review the evidence spans and
+anything or reading the PDFs. Then rerun `audit_model_readiness.py` to refresh the
+selected model specification. The full `build_data.py` runs both after rebuilding
+observations. These builds are deterministic. Review the evidence spans and
 any pilot model errors before making engineering claims. No model was trained
 by this labeling step.

@@ -10,8 +10,9 @@ These are real NASA records, rebuilt from selected tables and documents. See
 | `solid_stage_observations.csv` | Condition-linked events and explicit exclusions | Model preparation and agent |
 | `solid_stage_training.csv` | 47 conservative labeled stage candidates | Exploratory solid-fuel model |
 | `airflow_readings.csv` | Ordered display readings; no assumed outcome alignment | Evidence review |
-| `flex_labeled.csv` / `flex_training.csv` | All FLEX labels / 207 complete-feature extinction-versus-completion candidates | Separate fallback model |
+| `flex_labeled.csv` / `flex_training.csv` | All FLEX labels / 202 physically screened extinction-versus-completion candidates | Selected exploratory model |
 | `labeling_report.json` | Review coverage, class balance, exclusions and feature whitelists | Model lead |
+| `model_readiness.json` | Step 2 coverage audit, exclusions and model selection rationale | Model lead |
 | `investigation_catalog.csv` | All 19 requested PSI investigations plus the external NTRS report | Explorer and research assistant |
 | `source_tables/` | All 21 selected NASA experimental CSV tables, plus BASS science rows, BASS-II report observations and calibration cells | Evidence, comparisons, numerical lookups |
 | `table_index.json` | Table locations, original headers, encodings, row counts and versions | Shared ingestion code |

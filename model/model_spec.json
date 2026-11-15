@@ -1,0 +1,178 @@
+{
+  "spec_version": "1.0.0",
+  "status": "scope_finalized; model_not_trained",
+  "number_of_final_models": 1,
+  "provenance": "AI-assisted review and code by OpenAI Codex; descriptive counts computed in Python; no human scientific sign-off",
+  "dataset": "data/clean/flex_training.csv",
+  "dataset_sha256": "51aabd13e37ed104128d6127f248e57a01d804bc6c82befa60263f0f8796c79b",
+  "source_record": "PSI-69",
+  "source_url": "https://psi.nasa.gov/physci/repo/data/investigations/PSI-69",
+  "task": "binary_classification",
+  "target": "extinction_binary",
+  "target_meaning": "Recorded Test end category Extinction versus Completion among non-disrupted, valid-feature FLEX observations",
+  "classes": {
+    "0": "Completion",
+    "1": "Extinction"
+  },
+  "training_rows": 202,
+  "class_counts": {
+    "1": 176,
+    "0": 26
+  },
+  "group_column": "split_group",
+  "features": [
+    "fuel",
+    "pressure_kpa",
+    "oxygen_pct",
+    "co2_fraction",
+    "helium_fraction",
+    "droplet_diameter_mm"
+  ],
+  "fuel_categories": [
+    "Heptane",
+    "Methanol"
+  ],
+  "units": {
+    "pressure_kpa": "kPa",
+    "oxygen_pct": "oxygen mole percent",
+    "co2_fraction": "mole fraction",
+    "helium_fraction": "mole fraction",
+    "droplet_diameter_mm": "mm"
+  },
+  "nitrogen_handling": "Use reported nitrogen for source-composition validation; omit it as a redundant model feature. For a user scenario it is the remaining fraction.",
+  "domains_by_fuel": {
+    "Heptane": {
+      "rows": 74,
+      "classes": {
+        "1": 56,
+        "0": 18
+      },
+      "groups": 73,
+      "fields": {
+        "pressure_kpa": {
+          "missing": 0,
+          "min": 70.39421053,
+          "max": 207.15629605
+        },
+        "oxygen_pct": {
+          "missing": 0,
+          "min": 14.000000000000002,
+          "max": 30.0
+        },
+        "co2_fraction": {
+          "missing": 0,
+          "min": 0.0,
+          "max": 0.7
+        },
+        "helium_fraction": {
+          "missing": 0,
+          "min": 0.0,
+          "max": 0.45
+        },
+        "droplet_diameter_mm": {
+          "missing": 0,
+          "min": 1.13,
+          "max": 4.67
+        }
+      }
+    },
+    "Methanol": {
+      "rows": 128,
+      "classes": {
+        "1": 120,
+        "0": 8
+      },
+      "groups": 128,
+      "fields": {
+        "pressure_kpa": {
+          "missing": 0,
+          "min": 70.1675625,
+          "max": 309.26789803
+        },
+        "oxygen_pct": {
+          "missing": 0,
+          "min": 12.0,
+          "max": 34.0
+        },
+        "co2_fraction": {
+          "missing": 0,
+          "min": 0.0,
+          "max": 0.7
+        },
+        "helium_fraction": {
+          "missing": 0,
+          "min": 0.0,
+          "max": 0.45
+        },
+        "droplet_diameter_mm": {
+          "missing": 0,
+          "min": 1.61,
+          "max": 4.53
+        }
+      }
+    }
+  },
+  "domain_policy": "Observed per-fuel bounds are preliminary exclusion limits, not proof of joint support. Step 4 must also return comparable real tests and reject unsupported combinations.",
+  "validation_rules": [
+    "positive finite pressure and initial diameter",
+    "finite oxygen in (0,100]",
+    "gas fractions in [0,1]",
+    "source gas-fraction sum within 0.01 of one (screening heuristic, not instrument accuracy)",
+    "no Disruption labels",
+    "no missing initial features",
+    "do not repair, renormalize or default invalid source values"
+  ],
+  "validation_plan": {
+    "outer_folds": 5,
+    "stratify_by": "extinction_binary",
+    "group_by": "split_group",
+    "seed": 42,
+    "no_group_overlap": true,
+    "require_both_classes_in_each_fold": true,
+    "preprocessing": "fit categorical encoding and numeric transforms within training folds only",
+    "tuning_and_calibration": "training folds only with inner grouped splits; no use of outer validation labels for model fitting",
+    "primary_metric": "balanced_accuracy",
+    "secondary_metrics": [
+      "macro_f1",
+      "per_class_precision_recall_f1",
+      "confusion_matrix",
+      "brier_score",
+      "log_loss"
+    ],
+    "baselines": [
+      "majority-class classifier",
+      "simple logistic regression"
+    ],
+    "models_to_compare": [
+      "logistic regression",
+      "small random forest"
+    ],
+    "promotion_gate": "Compare against baseline using out-of-fold results, report uncertainty and calibration; do not enable numerical predictions if evidence is inadequate"
+  },
+  "output_scope": "Experimental FLEX terminal-category estimate, conditional on comparable tests with either of the two selected endings",
+  "unsupported_claims": [
+    "solid-material burn probability or safety ranking",
+    "ignition resistance",
+    "causal suppressant effectiveness",
+    "fire-extinguisher success",
+    "flame spread rate",
+    "Moon/Mars or partial-gravity prediction",
+    "spacecraft certification"
+  ],
+  "excluded_predictor_columns": [
+    "test_id",
+    "experiment_id",
+    "split_group",
+    "test_date",
+    "test_end_raw",
+    "burn_time_s",
+    "extinction_diameter_mm",
+    "burning_rate_raw",
+    "extinction_binary",
+    "training_eligible",
+    "exclusion_reasons"
+  ],
+  "solid_prediction_enabled": false,
+  "pressure_prediction_scope": "FLEX droplet experiments only; no inferred pressure effect for BASS/BASS-II",
+  "no_training_in_step_2": true
+}

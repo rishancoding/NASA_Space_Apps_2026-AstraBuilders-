@@ -487,6 +487,8 @@ def build() -> None:
     })
     from label_data import build_labels
     build_labels()
+    from audit_model_readiness import build_readiness
+    build_readiness()
 
 
 if __name__ == "__main__":
