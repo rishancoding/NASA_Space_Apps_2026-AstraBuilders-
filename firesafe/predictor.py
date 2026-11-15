@@ -26,7 +26,7 @@ from sklearn.metrics import (accuracy_score, balanced_accuracy_score, brier_scor
                              log_loss, precision_recall_fscore_support, roc_auc_score)
 from sklearn.model_selection import GroupKFold, LeaveOneGroupOut, cross_val_predict
 from sklearn.pipeline import Pipeline, make_pipeline
-from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
+from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, PolynomialFeatures, StandardScaler
 
 from . import MODEL_DIR
 from .data import flex_training, solid_training
@@ -77,12 +77,20 @@ def _flex_X(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _flex_pipeline(kind: str, with_conditions: bool = True) -> Pipeline:
-    parts = [("fuel", OneHotEncoder(handle_unknown="ignore"), ["fuel"])]
+    """kind: "lr", "rf" or "lr_int" (logistic regression on squares and pairwise interactions, so each fuel can
+    respond differently to oxygen, CO2 and droplet size; C=0.3 chosen by nested grouped CV)."""
+    parts = [("fuel", OneHotEncoder(handle_unknown="ignore", sparse_output=False), ["fuel"])]
     if with_conditions:
         parts.append(("num", make_pipeline(SimpleImputer(strategy="median"), StandardScaler()), FLEX_NUM))
-    est = (LogisticRegression(max_iter=5000) if kind == "lr"
-           else RandomForestClassifier(n_estimators=400, min_samples_leaf=3, random_state=0))
-    return Pipeline([("prep", ColumnTransformer(parts)), ("model", est)])
+    steps = [("prep", ColumnTransformer(parts))]
+    if kind == "lr_int":
+        steps += [("poly", PolynomialFeatures(2, include_bias=False)), ("scale", StandardScaler()),
+                  ("model", LogisticRegression(C=0.3, max_iter=5000))]
+    elif kind == "lr":
+        steps.append(("model", LogisticRegression(max_iter=5000)))
+    else:
+        steps.append(("model", RandomForestClassifier(n_estimators=400, min_samples_leaf=3, random_state=0)))
+    return Pipeline(steps)
 
 
 def _scores(y, p) -> dict:
@@ -171,6 +179,7 @@ def train_all() -> dict:
         "Fuel only (logistic)": lambda: _flex_pipeline("lr", with_conditions=False),
         "Fuel + conditions (logistic)": lambda: _flex_pipeline("lr"),
         "Fuel + conditions (random forest)": lambda: _flex_pipeline("rf"),
+        "Fuel + conditions with interactions (logistic)": lambda: _flex_pipeline("lr_int"),
     }
     fcomp, fprobs = [], {}
     for name, fn in fcands.items():
@@ -178,12 +187,13 @@ def train_all() -> dict:
         fcomp.append({"model": name, **_scores(fy, p)})
         fprobs[name] = p
     # Pre-declared rule: deploy whichever condition-aware model has the lower grouped-CV log loss.
-    best = min(["Fuel + conditions (logistic)", "Fuel + conditions (random forest)"],
-               key=lambda n: next(c["log_loss"] for c in fcomp if c["model"] == n))
+    kinds = {"Fuel + conditions (logistic)": "lr", "Fuel + conditions (random forest)": "rf",
+             "Fuel + conditions with interactions (logistic)": "lr_int"}
+    best = min(kinds, key=lambda n: next(c["log_loss"] for c in fcomp if c["model"] == n))
     for c in fcomp:
         if c["model"] == best:
             c["model"] += " [deployed]"
-    joblib.dump(_flex_pipeline("rf" if "forest" in best else "lr").fit(FX, fy), FLEX_PATH)
+    joblib.dump(_flex_pipeline(kinds[best]).fit(FX, fy), FLEX_PATH)
     valid_p = f[f["pressure_kpa"] > 0]
     metrics["flex"] = {
         "target": "extinction_binary: 1 = flame extinguished before the droplet was consumed, 0 = burned to completion",

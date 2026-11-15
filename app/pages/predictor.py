@@ -13,28 +13,67 @@ ui.init_page("Combustion Predictor",
              "never tested are flagged, not guessed.", eyebrow="Machine-learning estimate")
 
 m = predictor.metrics()
+EXPERIMENT = {"PSI-25": "BASS-II", "PSI-26": "BASS", "PSI-69": "FLEX"}
+
+
+def _diff(mine: float, theirs: float, unit: str) -> str:
+    gap = theirs - mine
+    return "the same" if abs(gap) < 0.05 else f"{abs(gap):.1f} {unit} {'higher' if gap > 0 else 'lower'}"
+
+
+def solid_run(n: dict, est: dict) -> None:
+    """One nearby NASA solid run as a dropdown: what happened, how close it is, whether it agrees."""
+    went = "kept burning" if n["sustained_flame"] else "went out"
+    exp = EXPERIMENT.get(n["source_record"], n["source_record"])
+    with st.expander(f"{exp} test {n['test_id']}: {went}"):
+        same = n["scenario"] == est["scenario"]
+        agrees = (est["probability"] >= 0.5) == bool(n["sustained_flame"])
+        st.markdown(
+            f"NASA burned {' '.join(n['material_raw'].split())} at {n['oxygen_pct']:.1f}% oxygen and "
+            f"{n['airflow_cm_s']:g} cm/s, and the flame {went}. Crew note: \"{n['evidence_quote']}\"")
+        ui.note(f"Oxygen {_diff(est['oxygen_pct'], n['oxygen_pct'], 'points')}, airflow "
+                f"{_diff(est['airflow_cm_s'], n['airflow_cm_s'], 'cm/s')}, "
+                f"{'same' if same else 'different'} scenario. "
+                f"{'Agrees with' if agrees else 'Differs from'} the estimate. <a href='{n['source_url']}' target='_blank'>NASA record</a>")
+
+
+def droplet_run(n: dict, est: dict) -> None:
+    went = "went out early" if n["extinguished"] else "burned to the end"
+    with st.expander(f"FLEX test {n['test_id']}: {went}"):
+        extra = [f"{n[k] * 100:.0f}% {g}" for k, g in (("co2_fraction", "CO₂"), ("helium_fraction", "helium"))
+                 if n[k] and n[k] > 0]
+        st.markdown(f"A {n['droplet_diameter_mm']:.1f} mm {n['fuel'].lower()} drop at {n['oxygen_pct']:.0f}% oxygen"
+                    f"{' with ' + ' and '.join(extra) if extra else ''}, {n['pressure_kpa']:.0f} kPa: it {went}.")
+        agrees = (est["probability"] >= 0.5) == bool(n["extinguished"])
+        ui.note(f"Oxygen {_diff(est['oxygen_pct'], n['oxygen_pct'], 'points')}, droplet "
+                f"{_diff(est['droplet_diameter_mm'], n['droplet_diameter_mm'], 'mm')}. "
+                f"{'Agrees with' if agrees else 'Differs from'} the estimate. <a href='{n['source_url']}' target='_blank'>NASA record</a>")
+
+
 solid_tab, flex_tab = st.tabs(["Solid materials", "Fuel droplets"])
 
 with solid_tab:
     sm = m["solid"]
     dep = next(c for c in sm["comparison"] if "[deployed]" in c["model"])
-    st.caption(f"Trained on {sm['n_observations']} carefully measured NASA runs. Rough guide only: the material "
-               "matters far more to this model than oxygen or airflow.")
+    st.caption(f"Rough guide from {sm['n_observations']} NASA runs.")
     a, b = st.columns([1, 2], gap="large")
     with a:
         mat = st.selectbox("Material", predictor.solid_materials(), index=predictor.solid_materials().index("PMMA"))
+        ui.note("The biggest factor.")
         tested = sm["protocols_by_material"][mat]
         proto = st.radio("Scenario", list(predictor.PROTOCOLS), format_func=predictor.PROTOCOLS.get,
                          index=list(predictor.PROTOCOLS).index(tested[0]))
-        rng = sm["ranges"][mat]
-        oxy = st.slider("Oxygen (%)", 10.0, 30.0, float(np.clip(21.0, 10, 30)), 0.1)
-        air = st.slider("Airflow (cm/s)", 0.5, 40.0, 10.0, 0.5)
-        pres = st.slider("Pressure (kPa)", 30.0, 110.0, 101.3, 0.1,
-                         help="Not a model input: shown so the out-of-range check can flag it.")
+        ui.note("New spark, or a fire already going? Existing fires are harder to stop.")
         mission = st.selectbox("Mission", list(MISSIONS))
-        st.caption(f"NASA tested {mat} {rng['n']} times at {rng['oxygen_pct'][0]:.0f}-{rng['oxygen_pct'][1]:.0f}% "
-                   f"oxygen and {rng['airflow_cm_s'][0]:g}-{rng['airflow_cm_s'][1]:g} cm/s airflow.")
-    r = predictor.predict_solid(mat, oxy, air, proto, pres, MISSIONS[mission])
+        ui.note("Only orbit was tested; Moon or Mars adds a warning.")
+        rng = sm["ranges"][mat]
+        with st.expander("Less important factors"):
+            oxy = st.slider("Oxygen (%)", 10.0, 30.0, 21.0, 0.1)
+            ui.note(f"Earth air is 21%. Small effect. Tested: {rng['oxygen_pct'][0]:.0f}-{rng['oxygen_pct'][1]:.0f}%.")
+            air = st.slider("Airflow (cm/s)", 0.5, 40.0, 10.0, 0.5)
+            ui.note(f"Ventilation speed. Almost no effect. Tested: {rng['airflow_cm_s'][0]:g}-"
+                    f"{rng['airflow_cm_s'][1]:g} cm/s.")
+    r = predictor.predict_solid(mat, oxy, air, proto, gravity=MISSIONS[mission])
     with b:
         c1, c2 = st.columns(2)
         c1.metric("Chance it keeps burning", f"{r['probability']:.0%}")
@@ -71,31 +110,36 @@ with solid_tab:
         fig.add_vline(x=now, line_dash="dot", line_color=ui.MUTED)
         ui.layout(fig, height=400, xaxis_title=xt, yaxis=dict(tickformat=".0%", range=[0, 1], title=None))
         st.plotly_chart(fig, width="stretch")
-        ui.note(f"The line is the model's estimate as {axis.lower()} changes; the dotted line is your setting. "
-                "Dots are real NASA runs (top: kept burning, bottom: went out).")
+        ui.note("Line: estimate. Dotted line: your setting. Dots: real NASA runs.")
         ui.label("Closest real NASA runs")
-        st.dataframe(pd.DataFrame(r["nearest"]).drop(columns=["stage_id"]), hide_index=True,
-                     width="stretch")
+        for n in r["nearest"][:3]:
+            solid_run(n, r)
 
 with flex_tab:
     fm = m["flex"]
     fdep = next(c for c in fm["comparison"] if "[deployed]" in c["model"])
-    st.caption(f"Trained on {fm['n_observations']} NASA FLEX droplet tests. Here oxygen, pressure and the "
-               "added gases clearly change the result.")
+    st.caption(f"Based on {fm['n_observations']} NASA droplet tests.")
     a, b = st.columns([1, 2], gap="large")
     with a:
         fuel = st.selectbox("Fuel", sorted(fm["ranges"]))
+        ui.note("Methanol nearly always went out early.")
         fr = fm["ranges"][fuel]
-        fp = st.slider("Pressure (kPa)", 10.0, 320.0, 101.3, 0.5)
         fo = st.slider("Oxygen (%)", 10.0, 40.0, 21.0, 0.5)
-        fc = st.slider("CO₂ mole fraction", 0.0, 0.7, 0.0, 0.01)
-        fh = st.slider("Helium mole fraction", 0.0, 0.5, 0.0, 0.01)
-        fd = st.slider("Initial droplet diameter (mm)", 1.0, 5.0, 3.0, 0.05)
+        ui.note("More oxygen, less likely to go out early.")
+        fd = st.slider("Droplet size (mm)", 1.0, 5.0, 3.0, 0.05)
+        ui.note("Bigger drops go out early more often.")
+        with st.expander("Less important factors"):
+            fc = st.slider("CO₂ in the air (%)", 0.0, 70.0, 0.0, 1.0) / 100
+            ui.note("Suppression gas. More makes going out likelier.")
+            fh = st.slider("Helium in the air (%)", 0.0, 50.0, 0.0, 1.0) / 100
+            ui.note("Cools the flame a little.")
+            fp = st.slider("Pressure (kPa)", 10.0, 320.0, 101.3, 0.5)
+            ui.note("Sea level is ~101 kPa. Small effect.")
     fres = predictor.predict_flex(fuel, fp, fo, fc, fh, fd)
     with b:
         st.metric("Chance the flame goes out before the fuel runs out", f"{fres['probability']:.0%}")
         for w in fres["warnings"]:
             st.warning(w, icon=":material/warning:")
-        st.dataframe(pd.DataFrame(fr).drop(columns=["n"], errors="ignore").T.rename(columns={0: "min", 1: "max"}),
-                     width="content")
-        ui.note(f"Range NASA tested for {fuel} ({fr['n']} tests). Settings outside it are flagged above.")
+        ui.label("Closest real NASA tests")
+        for n in fres["nearest"][:3]:
+            droplet_run(n, fres)

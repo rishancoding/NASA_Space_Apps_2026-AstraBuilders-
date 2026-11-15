@@ -692,26 +692,26 @@
  },
  "flex": {
   "target": "extinction_binary: 1 = flame extinguished before the droplet was consumed, 0 = burned to completion",
-  "model_type": "Fuel + conditions (random forest)",
-  "n_observations": 207,
+  "model_type": "Fuel + conditions with interactions (logistic)",
+  "n_observations": 202,
   "class_counts": {
-   "0": 27,
-   "1": 180
+   "0": 26,
+   "1": 176
   },
-  "n_groups": 206,
+  "n_groups": 201,
   "validation": "5-fold GroupKFold on split_group (FLEX source identifier)",
   "training_testing": "5 folds: each trains on ~80% of the tests and scores the held-out ~20%",
   "comparison": [
    {
     "model": "Constant baseline",
-    "log_loss": 0.387,
-    "brier": 0.113,
+    "log_loss": 0.384,
+    "brier": 0.112,
     "roc_auc": 0.5,
-    "accuracy": 0.87,
+    "accuracy": 0.871,
     "balanced_accuracy": 0.5,
     "precision": [
      0.0,
-     0.87
+     0.871
     ],
     "recall": [
      0.0,
@@ -719,33 +719,33 @@
     ],
     "f1": [
      0.0,
-     0.93
+     0.931
     ],
     "support": [
-     27,
-     180
+     26,
+     176
     ],
     "confusion_matrix": [
      [
       0,
-      27
+      26
      ],
      [
       0,
-      180
+      176
      ]
     ]
    },
    {
     "model": "Fuel only (logistic)",
-    "log_loss": 0.366,
+    "log_loss": 0.363,
     "brier": 0.109,
-    "roc_auc": 0.613,
-    "accuracy": 0.87,
+    "roc_auc": 0.628,
+    "accuracy": 0.871,
     "balanced_accuracy": 0.5,
     "precision": [
      0.0,
-     0.87
+     0.871
     ],
     "recall": [
      0.0,
@@ -753,93 +753,127 @@
     ],
     "f1": [
      0.0,
-     0.93
+     0.931
     ],
     "support": [
-     27,
-     180
+     26,
+     176
     ],
     "confusion_matrix": [
      [
       0,
-      27
+      26
      ],
      [
       0,
-      180
+      176
      ]
     ]
    },
    {
     "model": "Fuel + conditions (logistic)",
-    "log_loss": 0.305,
-    "brier": 0.085,
-    "roc_auc": 0.812,
-    "accuracy": 0.899,
-    "balanced_accuracy": 0.643,
+    "log_loss": 0.303,
+    "brier": 0.084,
+    "roc_auc": 0.814,
+    "accuracy": 0.891,
+    "balanced_accuracy": 0.593,
     "precision": [
-     0.8,
-     0.904
+     0.833,
+     0.893
     ],
     "recall": [
-     0.296,
-     0.989
-    ],
-    "f1": [
-     0.432,
-     0.944
-    ],
-    "support": [
-     27,
-     180
-    ],
-    "confusion_matrix": [
-     [
-      8,
-      19
-     ],
-     [
-      2,
-      178
-     ]
-    ]
-   },
-   {
-    "model": "Fuel + conditions (random forest) [deployed]",
-    "log_loss": 0.292,
-    "brier": 0.088,
-    "roc_auc": 0.838,
-    "accuracy": 0.894,
-    "balanced_accuracy": 0.608,
-    "precision": [
-     0.857,
-     0.895
-    ],
-    "recall": [
-     0.222,
+     0.192,
      0.994
     ],
     "f1": [
-     0.353,
-     0.942
+     0.312,
+     0.941
     ],
     "support": [
-     27,
-     180
+     26,
+     176
     ],
     "confusion_matrix": [
      [
-      6,
+      5,
       21
      ],
      [
       1,
-      179
+      175
+     ]
+    ]
+   },
+   {
+    "model": "Fuel + conditions (random forest)",
+    "log_loss": 0.299,
+    "brier": 0.091,
+    "roc_auc": 0.827,
+    "accuracy": 0.876,
+    "balanced_accuracy": 0.568,
+    "precision": [
+     0.571,
+     0.887
+    ],
+    "recall": [
+     0.154,
+     0.983
+    ],
+    "f1": [
+     0.242,
+     0.933
+    ],
+    "support": [
+     26,
+     176
+    ],
+    "confusion_matrix": [
+     [
+      4,
+      22
+     ],
+     [
+      3,
+      173
+     ]
+    ]
+   },
+   {
+    "model": "Fuel + conditions with interactions (logistic) [deployed]",
+    "log_loss": 0.249,
+    "brier": 0.077,
+    "roc_auc": 0.896,
+    "accuracy": 0.896,
+    "balanced_accuracy": 0.678,
+    "precision": [
+     0.667,
+     0.914
+    ],
+    "recall": [
+     0.385,
+     0.972
+    ],
+    "f1": [
+     0.488,
+     0.942
+    ],
+    "support": [
+     26,
+     176
+    ],
+    "confusion_matrix": [
+     [
+      10,
+      16
+     ],
+     [
+      5,
+      171
      ]
     ]
    }
   ],
-  "deployed": "Fuel + conditions (random forest) [deployed]",
+  "deployed": "Fuel + conditions with interactions (logistic) [deployed]",
   "oof": [
    {
     "experiment_id": "PSI-69:2:20CAL10",
@@ -851,925 +885,895 @@
     "experiment_id": "PSI-69:3:20CAL12",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.771
+    "predicted": 0.944
    },
    {
     "experiment_id": "PSI-69:4:30CAL02",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.964
+    "predicted": 0.973
    },
    {
     "experiment_id": "PSI-69:5:30CAL03",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.942
+    "predicted": 0.937
    },
    {
     "experiment_id": "PSI-69:6:40CAL01",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.97
+    "predicted": 0.969
    },
    {
     "experiment_id": "PSI-69:10:256F002",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.871
+    "predicted": 0.998
    },
    {
     "experiment_id": "PSI-69:11:256R001",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.966
+    "predicted": 0.999
    },
    {
     "experiment_id": "PSI-69:13:256R002",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.944
+    "predicted": 0.999
    },
    {
     "experiment_id": "PSI-69:14:256F007",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.948
+    "predicted": 0.994
    },
    {
     "experiment_id": "PSI-69:15:256F008",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.906
+    "predicted": 0.995
    },
    {
     "experiment_id": "PSI-69:16:256F009",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.795
+    "predicted": 1.0
    },
    {
     "experiment_id": "PSI-69:18:248F001",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.662
+    "predicted": 0.999
    },
    {
     "experiment_id": "PSI-69:20:192F001",
     "fuel": "Methanol",
     "actual": 0,
-    "predicted": 0.743
+    "predicted": 0.066
    },
    {
     "experiment_id": "PSI-69:25:191R001",
     "fuel": "Methanol",
     "actual": 0,
-    "predicted": 0.699
+    "predicted": 0.59
    },
    {
     "experiment_id": "PSI-69:29:178R001",
     "fuel": "Methanol",
     "actual": 0,
-    "predicted": 0.697
+    "predicted": 0.867
    },
    {
     "experiment_id": "PSI-69:30:178F001",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.561
+    "predicted": 0.515
    },
    {
     "experiment_id": "PSI-69:32:182F002",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.517
+    "predicted": 0.007
    },
    {
     "experiment_id": "PSI-69:33:177R002",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.938
+    "predicted": 0.96
    },
    {
     "experiment_id": "PSI-69:34:177F001",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.898
+    "predicted": 0.965
    },
    {
     "experiment_id": "PSI-69:35:181F001",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.655
+    "predicted": 0.876
    },
    {
     "experiment_id": "PSI-69:36:190R002",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.88
+    "predicted": 0.956
    },
    {
     "experiment_id": "PSI-69:45:206R001",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.697
+    "predicted": 0.306
    },
    {
     "experiment_id": "PSI-69:47:209F001",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.816
+    "predicted": 0.789
    },
    {
     "experiment_id": "PSI-69:49:209F003",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.708
+    "predicted": 0.776
    },
    {
     "experiment_id": "PSI-69:50:209F004",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.647
+    "predicted": 0.762
    },
    {
     "experiment_id": "PSI-69:51:209F005",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.497
+    "predicted": 0.284
    },
    {
     "experiment_id": "PSI-69:54:190F003",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.866
+    "predicted": 0.944
    },
    {
     "experiment_id": "PSI-69:56:194F001",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.945
+    "predicted": 0.934
    },
    {
     "experiment_id": "PSI-69:57:303F001",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.747
+    "predicted": 0.661
    },
    {
     "experiment_id": "PSI-69:58:176F001",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.972
+    "predicted": 0.963
    },
    {
     "experiment_id": "PSI-69:59:176R001",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.987
+    "predicted": 0.983
    },
    {
     "experiment_id": "PSI-69:60:204F001",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.966
+    "predicted": 0.973
    },
    {
     "experiment_id": "PSI-69:61:204R001",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.977
+    "predicted": 0.963
    },
    {
     "experiment_id": "PSI-69:62:301F001",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.929
+    "predicted": 0.936
    },
    {
     "experiment_id": "PSI-69:63:301F002",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.604
+    "predicted": 0.448
    },
    {
     "experiment_id": "PSI-69:64:302F001",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.635
+    "predicted": 0.711
    },
    {
     "experiment_id": "PSI-69:65:189R001",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.985
+    "predicted": 0.979
    },
    {
     "experiment_id": "PSI-69:66:189F001",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.973
+    "predicted": 0.993
    },
    {
     "experiment_id": "PSI-69:67:189F002",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.907
+    "predicted": 0.974
    },
    {
     "experiment_id": "PSI-69:68:189R003",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.969
-   },
-   {
-    "experiment_id": "PSI-69:69:193R002",
-    "fuel": "Heptane",
-    "actual": 0,
-    "predicted": 0.28
+    "predicted": 0.995
    },
    {
     "experiment_id": "PSI-69:70:193F001",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.894
+    "predicted": 0.998
    },
    {
     "experiment_id": "PSI-69:71:189R002",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.924
+    "predicted": 0.994
    },
    {
     "experiment_id": "PSI-69:72:193R001",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.457
+    "predicted": 0.196
    },
    {
     "experiment_id": "PSI-69:73:193F001",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.894
+    "predicted": 0.998
    },
    {
     "experiment_id": "PSI-69:74:221F001",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.256
-   },
-   {
-    "experiment_id": "PSI-69:75:203R002",
-    "fuel": "Methanol",
-    "actual": 1,
-    "predicted": 0.965
-   },
-   {
-    "experiment_id": "PSI-69:76:203F001",
-    "fuel": "Methanol",
-    "actual": 1,
-    "predicted": 0.998
+    "predicted": 0.267
    },
    {
     "experiment_id": "PSI-69:77:175R001",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.993
+    "predicted": 0.986
    },
    {
     "experiment_id": "PSI-69:78:175F001",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.971
-   },
-   {
-    "experiment_id": "PSI-69:79:179F001",
-    "fuel": "Heptane",
-    "actual": 1,
-    "predicted": 0.734
+    "predicted": 0.994
    },
    {
     "experiment_id": "PSI-69:82:304F001",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.993
+    "predicted": 0.988
    },
    {
     "experiment_id": "PSI-69:84:304R001",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.961
+    "predicted": 0.997
    },
    {
     "experiment_id": "PSI-69:85:304R002",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.97
+    "predicted": 0.998
    },
    {
     "experiment_id": "PSI-69:86:305F002",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.991
+    "predicted": 0.993
    },
    {
     "experiment_id": "PSI-69:87:305F003",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.981
+    "predicted": 0.994
    },
    {
     "experiment_id": "PSI-69:94:C08H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.777
+    "predicted": 0.676
    },
    {
     "experiment_id": "PSI-69:95:C08H201",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.831
+    "predicted": 0.891
    },
    {
     "experiment_id": "PSI-69:97:C08M101",
     "fuel": "Methanol",
     "actual": 0,
-    "predicted": 0.86
+    "predicted": 0.759
    },
    {
     "experiment_id": "PSI-69:98:C09M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.868
+    "predicted": 0.849
    },
    {
     "experiment_id": "PSI-69:99:C09M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.651
+    "predicted": 0.475
    },
    {
     "experiment_id": "PSI-69:100:C09H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.941
+    "predicted": 0.983
    },
    {
     "experiment_id": "PSI-69:101:C09H201",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.837
+    "predicted": 0.947
    },
    {
     "experiment_id": "PSI-69:102:C10H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.943
+    "predicted": 0.986
    },
    {
     "experiment_id": "PSI-69:103:C10H201",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.873
+    "predicted": 0.992
    },
    {
     "experiment_id": "PSI-69:104:C08M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.762
+    "predicted": 0.804
    },
    {
     "experiment_id": "PSI-69:108:C09M301",
     "fuel": "Methanol",
     "actual": 0,
-    "predicted": 0.923
+    "predicted": 0.894
    },
    {
     "experiment_id": "PSI-69:109:C10M102",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.778
+    "predicted": 0.875
    },
    {
     "experiment_id": "PSI-69:110:C10M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.815
+    "predicted": 0.939
    },
    {
     "experiment_id": "PSI-69:111:C10M303",
     "fuel": "Methanol",
     "actual": 0,
-    "predicted": 0.955
+    "predicted": 0.934
    },
    {
     "experiment_id": "PSI-69:112:C10M401",
     "fuel": "Methanol",
     "actual": 0,
-    "predicted": 0.858
+    "predicted": 0.908
    },
    {
     "experiment_id": "PSI-69:113:C11M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.895
-   },
-   {
-    "experiment_id": "PSI-69:114:C11M201",
-    "fuel": "Methanol",
-    "actual": 1,
-    "predicted": 0.935
+    "predicted": 0.651
    },
    {
     "experiment_id": "PSI-69:115:C11M301",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.935
+    "predicted": 0.89
    },
    {
     "experiment_id": "PSI-69:116:C11M401",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.985
+    "predicted": 0.968
    },
    {
     "experiment_id": "PSI-69:117:C11H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.949
+    "predicted": 0.996
    },
    {
     "experiment_id": "PSI-69:118:C11H201",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.951
+    "predicted": 0.974
    },
    {
     "experiment_id": "PSI-69:119:C12H103",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.953
+    "predicted": 0.994
    },
    {
     "experiment_id": "PSI-69:120:C12H201",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.949
+    "predicted": 0.985
    },
    {
     "experiment_id": "PSI-69:121:C12M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.852
+    "predicted": 0.695
    },
    {
     "experiment_id": "PSI-69:122:C12M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.962
+    "predicted": 0.97
    },
    {
     "experiment_id": "PSI-69:123:C12M301",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.925
+    "predicted": 0.922
    },
    {
     "experiment_id": "PSI-69:124:C12M401",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.981
+    "predicted": 0.978
    },
    {
     "experiment_id": "PSI-69:125:C13M103",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.938
+    "predicted": 0.97
    },
    {
     "experiment_id": "PSI-69:126:C13M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.987
+    "predicted": 0.985
    },
    {
     "experiment_id": "PSI-69:127:C13M301",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.975
+    "predicted": 0.973
    },
    {
     "experiment_id": "PSI-69:128:C13M401",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.986
+    "predicted": 0.988
    },
    {
     "experiment_id": "PSI-69:129:C13H102",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.991
+    "predicted": 0.999
    },
    {
     "experiment_id": "PSI-69:130:C13H201",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.972
+    "predicted": 0.998
    },
    {
     "experiment_id": "PSI-69:134:C21H401",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.658
+    "predicted": 0.809
    },
    {
     "experiment_id": "PSI-69:135:C21H501",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.631
+    "predicted": 0.562
    },
    {
     "experiment_id": "PSI-69:136:C21H302",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.709
+    "predicted": 0.6
    },
    {
     "experiment_id": "PSI-69:140:C14M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.943
+    "predicted": 0.958
    },
    {
     "experiment_id": "PSI-69:141:C14M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.999
+    "predicted": 0.993
    },
    {
     "experiment_id": "PSI-69:142:C14M301",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.975
+    "predicted": 0.998
    },
    {
     "experiment_id": "PSI-69:143:C14M302",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.976
+    "predicted": 0.995
    },
    {
     "experiment_id": "PSI-69:144:C01M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.976
+    "predicted": 0.949
    },
    {
     "experiment_id": "PSI-69:145:C01M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.998
+    "predicted": 0.976
    },
    {
     "experiment_id": "PSI-69:146:C01M301",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.876
+    "predicted": 0.896
    },
    {
     "experiment_id": "PSI-69:147:C13M102",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.998
+    "predicted": 0.99
    },
    {
     "experiment_id": "PSI-69:150:C01H302",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.662
+    "predicted": 0.798
    },
    {
     "experiment_id": "PSI-69:151:C03M101",
     "fuel": "Methanol",
     "actual": 0,
-    "predicted": 0.971
+    "predicted": 0.972
    },
    {
     "experiment_id": "PSI-69:152:C03M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.948
+    "predicted": 0.972
    },
    {
     "experiment_id": "PSI-69:153:C03M301",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.975
+    "predicted": 0.981
    },
    {
     "experiment_id": "PSI-69:154:C03H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.938
+    "predicted": 0.981
    },
    {
     "experiment_id": "PSI-69:155:C03H201",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.861
+    "predicted": 0.927
    },
    {
     "experiment_id": "PSI-69:156:C03H401",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.495
+    "predicted": 0.302
    },
    {
     "experiment_id": "PSI-69:157:C05M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.91
+    "predicted": 0.952
    },
    {
     "experiment_id": "PSI-69:158:C05M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.973
+    "predicted": 0.963
    },
    {
     "experiment_id": "PSI-69:159:C05M301",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.978
+    "predicted": 0.989
    },
    {
     "experiment_id": "PSI-69:160:C05M401",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.977
+    "predicted": 0.984
    },
    {
     "experiment_id": "PSI-69:161:C06M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.948
+    "predicted": 0.961
    },
    {
     "experiment_id": "PSI-69:162:C06M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.998
+    "predicted": 0.994
    },
    {
     "experiment_id": "PSI-69:163:C06M301",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.978
+    "predicted": 0.993
    },
    {
     "experiment_id": "PSI-69:164:C06M401",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.981
+    "predicted": 0.993
    },
    {
     "experiment_id": "PSI-69:165:C03H302",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.513
+    "predicted": 0.51
    },
    {
     "experiment_id": "PSI-69:166:C07M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.994
+    "predicted": 0.985
    },
    {
     "experiment_id": "PSI-69:167:C07M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.977
+    "predicted": 0.997
    },
    {
     "experiment_id": "PSI-69:169:C15M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.982
+    "predicted": 0.951
    },
    {
     "experiment_id": "PSI-69:170:C15M301",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.919
+    "predicted": 0.964
    },
    {
     "experiment_id": "PSI-69:171:C03H501",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.948
+    "predicted": 0.985
    },
    {
     "experiment_id": "PSI-69:172:C03H601",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.784
+    "predicted": 0.866
    },
    {
     "experiment_id": "PSI-69:176:C08M501",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.579
+    "predicted": 0.313
    },
    {
     "experiment_id": "PSI-69:177:C08M601",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.807
+    "predicted": 0.85
    },
    {
     "experiment_id": "PSI-69:178:C09H501",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.861
+    "predicted": 0.838
    },
    {
     "experiment_id": "PSI-69:180:C02H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.977
+    "predicted": 0.955
    },
    {
     "experiment_id": "PSI-69:181:C02H201",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.928
+    "predicted": 0.63
    },
    {
     "experiment_id": "PSI-69:183:C09M501",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.869
+    "predicted": 0.818
    },
    {
     "experiment_id": "PSI-69:184:C09M502",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.818
+    "predicted": 0.823
    },
    {
     "experiment_id": "PSI-69:185:C09M601",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.866
+    "predicted": 0.867
    },
    {
     "experiment_id": "PSI-69:186:C09M701",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.897
+    "predicted": 0.91
    },
    {
     "experiment_id": "PSI-69:187:C02M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.963
+    "predicted": 0.964
    },
    {
     "experiment_id": "PSI-69:188:C02M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.993
+    "predicted": 0.978
    },
    {
     "experiment_id": "PSI-69:189:C03M501",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.863
+    "predicted": 0.951
    },
    {
     "experiment_id": "PSI-69:190:C03M601",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.975
+    "predicted": 0.983
    },
    {
     "experiment_id": "PSI-69:191:C03M701",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.959
+    "predicted": 0.99
    },
    {
     "experiment_id": "PSI-69:192:C04M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.963
+    "predicted": 0.967
    },
    {
     "experiment_id": "PSI-69:193:C04M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.982
+    "predicted": 0.988
    },
    {
     "experiment_id": "PSI-69:194:C04H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.967
+    "predicted": 0.99
    },
    {
     "experiment_id": "PSI-69:195:C04H201",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.949
+    "predicted": 0.979
    },
    {
     "experiment_id": "PSI-69:196:C01H501",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.913
+    "predicted": 0.726
    },
    {
     "experiment_id": "PSI-69:197:C01H601",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.906
+    "predicted": 0.786
    },
    {
     "experiment_id": "PSI-69:199:C01M501",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.933
+    "predicted": 0.957
    },
    {
     "experiment_id": "PSI-69:200:C01M602",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.966
+    "predicted": 0.973
    },
    {
     "experiment_id": "PSI-69:201:C01M603",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.968
+    "predicted": 0.969
    },
    {
     "experiment_id": "PSI-69:202:N01M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.949
+    "predicted": 0.95
    },
    {
     "experiment_id": "PSI-69:203:N01M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.955
+    "predicted": 0.968
    },
    {
     "experiment_id": "PSI-69:207:N01H202",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.684
+    "predicted": 0.453
    },
    {
     "experiment_id": "PSI-69:208:N01H301",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.763
+    "predicted": 0.57
    },
    {
     "experiment_id": "PSI-69:209:N02H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.962
+    "predicted": 0.968
    },
    {
     "experiment_id": "PSI-69:211:N02H203",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.868
+    "predicted": 0.881
    },
    {
     "experiment_id": "PSI-69:212:N03H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.765
+    "predicted": 0.896
    },
    {
     "experiment_id": "PSI-69:213:N04H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.889
+    "predicted": 0.997
    },
    {
     "experiment_id": "PSI-69:214:N04H201",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.664
+    "predicted": 0.573
    },
    {
     "experiment_id": "PSI-69:215:N04M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.997
+    "predicted": 0.984
    },
    {
     "experiment_id": "PSI-69:216:N04M201",
@@ -1781,13 +1785,13 @@
     "experiment_id": "PSI-69:217:N05M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.981
+    "predicted": 0.987
    },
    {
     "experiment_id": "PSI-69:218:N05M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.998
+    "predicted": 0.988
    },
    {
     "experiment_id": "PSI-69:219:N06M101",
@@ -1799,289 +1803,289 @@
     "experiment_id": "PSI-69:220:N06M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.983
+    "predicted": 0.998
    },
    {
     "experiment_id": "PSI-69:221:N06M202",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.958
+    "predicted": 0.998
    },
    {
     "experiment_id": "PSI-69:222:H01M102",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.99
+    "predicted": 0.982
    },
    {
     "experiment_id": "PSI-69:224:H01H102",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.834
+    "predicted": 0.318
    },
    {
     "experiment_id": "PSI-69:225:H02M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.95
+    "predicted": 0.984
    },
    {
     "experiment_id": "PSI-69:226:H03M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.989
+    "predicted": 0.991
    },
    {
     "experiment_id": "PSI-69:227:H03M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.978
+    "predicted": 0.988
    },
    {
     "experiment_id": "PSI-69:228:N01H401",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.574
+    "predicted": 0.772
    },
    {
     "experiment_id": "PSI-69:230:N01H601",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.662
+    "predicted": 0.839
    },
    {
     "experiment_id": "PSI-69:232:H03H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.795
+    "predicted": 0.96
    },
    {
     "experiment_id": "PSI-69:233:H03H201",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.477
+    "predicted": 0.648
    },
    {
     "experiment_id": "PSI-69:234:H03H202",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.574
+    "predicted": 0.713
    },
    {
     "experiment_id": "PSI-69:235:H04H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.788
+    "predicted": 0.874
    },
    {
     "experiment_id": "PSI-69:236:H04H201",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.666
+    "predicted": 0.7
    },
    {
     "experiment_id": "PSI-69:238:H04H303",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.649
+    "predicted": 0.384
    },
    {
     "experiment_id": "PSI-69:239:H04M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.992
+    "predicted": 0.994
    },
    {
     "experiment_id": "PSI-69:240:H04M202",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.994
+    "predicted": 0.991
    },
    {
     "experiment_id": "PSI-69:241:H05M102",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.986
+    "predicted": 0.992
    },
    {
     "experiment_id": "PSI-69:243:H05H103",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.403
+    "predicted": 0.146
    },
    {
     "experiment_id": "PSI-69:244:H06M102",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.997
+    "predicted": 0.993
    },
    {
     "experiment_id": "PSI-69:245:H06M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.989
+    "predicted": 0.996
    },
    {
     "experiment_id": "PSI-69:246:H07M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.996
+    "predicted": 0.994
    },
    {
     "experiment_id": "PSI-69:247:H07M202",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.969
+    "predicted": 0.988
    },
    {
     "experiment_id": "PSI-69:248:H08M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.978
+    "predicted": 0.998
    },
    {
     "experiment_id": "PSI-69:249:H10H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.74
+    "predicted": 0.778
    },
    {
     "experiment_id": "PSI-69:250:H11H101",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.908
+    "predicted": 0.762
    },
    {
     "experiment_id": "PSI-69:251:H10M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.84
+    "predicted": 0.951
    },
    {
     "experiment_id": "PSI-69:253:H11M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.859
+    "predicted": 0.977
    },
    {
     "experiment_id": "PSI-69:255:H12M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.967
+    "predicted": 0.99
    },
    {
     "experiment_id": "PSI-69:256:H12M102",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.96
+    "predicted": 0.991
    },
    {
     "experiment_id": "PSI-69:257:H12M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.948
+    "predicted": 0.991
    },
    {
     "experiment_id": "PSI-69:258:H12H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.847
+    "predicted": 0.931
    },
    {
     "experiment_id": "PSI-69:259:H12H201",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.786
+    "predicted": 0.804
    },
    {
     "experiment_id": "PSI-69:260:H13H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.931
+    "predicted": 0.988
    },
    {
     "experiment_id": "PSI-69:261:H13H201",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.843
+    "predicted": 0.93
    },
    {
     "experiment_id": "PSI-69:262:H13M102",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.919
+    "predicted": 0.993
    },
    {
     "experiment_id": "PSI-69:263:H13M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.964
+    "predicted": 0.994
    },
    {
     "experiment_id": "PSI-69:264:H14M101",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.976
+    "predicted": 0.992
    },
    {
     "experiment_id": "PSI-69:265:H14M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.977
+    "predicted": 0.996
    },
    {
     "experiment_id": "PSI-69:266:H14M202",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.965
+    "predicted": 0.993
    },
    {
     "experiment_id": "PSI-69:267:H14H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.634
+    "predicted": 0.8
    },
    {
     "experiment_id": "PSI-69:268:H14H201",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.752
+    "predicted": 0.875
    },
    {
     "experiment_id": "PSI-69:269:H15H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.629
+    "predicted": 0.86
    },
    {
     "experiment_id": "PSI-69:270:H15H201",
     "fuel": "Heptane",
     "actual": 0,
-    "predicted": 0.669
+    "predicted": 0.912
    },
    {
     "experiment_id": "PSI-69:271:H15M102",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.935
+    "predicted": 0.997
    },
    {
     "experiment_id": "PSI-69:272:H15M201",
     "fuel": "Methanol",
     "actual": 1,
-    "predicted": 0.977
+    "predicted": 0.998
    },
    {
     "experiment_id": "PSI-69:273:H19H101",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.761
+    "predicted": 0.934
    },
    {
     "experiment_id": "PSI-69:274:H19H201",
     "fuel": "Heptane",
     "actual": 1,
-    "predicted": 0.518
+    "predicted": 0.456
    }
   ],
   "ranges": {
@@ -2091,7 +2095,7 @@
      207.15629605
     ],
     "oxygen_pct": [
-     13.0,
+     14.000000000000002,
      30.0
     ],
     "co2_fraction": [
@@ -2103,10 +2107,10 @@
      0.45
     ],
     "droplet_diameter_mm": [
-     1.1,
+     1.13,
      4.67
     ],
-    "n": 76
+    "n": 74
    },
    "Methanol": {
     "pressure_kpa": [
@@ -2129,9 +2133,9 @@
      1.61,
      4.53
     ],
-    "n": 130
+    "n": 128
    }
   },
-  "note": "1 test(s) list 0 kPa ambient pressure in the NASA table; they are kept for training but excluded from the supported-range check."
+  "note": "0 test(s) list 0 kPa ambient pressure in the NASA table; they are kept for training but excluded from the supported-range check."
  }
 }

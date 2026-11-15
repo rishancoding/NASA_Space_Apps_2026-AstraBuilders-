@@ -1,8 +1,8 @@
 {
   "extinction_stability_20_shuffles": {
-    "balanced_accuracy_mean": 0.769515,
-    "min": 0.730988,
-    "max": 0.810752,
+    "balanced_accuracy_mean": 0.763472,
+    "min": 0.735358,
+    "max": 0.787369,
     "roc_auc_mean": 0.813549,
     "roc_auc_min": 0.788243
   },
@@ -13,7 +13,7 @@
     "p_value": 0.004975
   },
   "extinction_vs_fuel_only": {
-    "full_model_bacc": 0.782998,
+    "full_model_bacc": 0.763112,
     "full_model_auc": 0.807474,
     "fuel_only_bacc": 0.687063,
     "fuel_only_auc": 0.634725
@@ -22,13 +22,13 @@
     "Methanol": {
       "rows": 128,
       "completions": 8,
-      "bacc": 0.6625,
+      "bacc": 0.65,
       "auc": 0.6
     },
     "Heptane": {
       "rows": 74,
       "completions": 18,
-      "bacc": 0.739087,
+      "bacc": 0.703373,
       "auc": 0.848214
     }
   },
@@ -167,22 +167,22 @@
     "all_co2_tests": {
       "held_out_rows": 95,
       "completions": 8,
-      "bacc": 0.578305,
+      "bacc": 0.572557,
       "auc": 0.590517,
-      "accuracy": 0.747368
+      "accuracy": 0.736842
     },
     "all_helium_tests": {
       "held_out_rows": 44,
       "completions": 6,
-      "bacc": 0.815789,
+      "bacc": 0.789474,
       "auc": 0.850877,
-      "accuracy": 0.681818
+      "accuracy": 0.636364
     }
   },
   "extinction_with_screened_rows": {
     "added_rows": 4,
     "rows": 206,
-    "bacc": 0.746741,
+    "bacc": 0.750259,
     "auc": 0.818953
   },
   "extinction_directions": {
@@ -248,39 +248,39 @@
     }
   },
   "burn_time_stability_20_shuffles": {
-    "r2_mean": 0.748326,
-    "r2_min": 0.70291,
-    "r2_max": 0.780223,
-    "mae_mean_s": 2.710012
+    "r2_mean": 0.748327,
+    "r2_min": 0.702719,
+    "r2_max": 0.780197,
+    "mae_mean_s": 2.709944
   },
   "burn_time_vs_d2_law": {
-    "rf_r2": 0.734694,
-    "rf_mae_s": 2.757929,
+    "rf_r2": 0.73458,
+    "rf_mae_s": 2.758835,
     "d2_law_r2": 0.312924,
     "d2_law_mae_s": 4.689378
   },
   "burn_time_per_fuel": {
     "Methanol": {
       "rows": 127,
-      "r2": 0.674477,
-      "mae_s": 3.297554
+      "r2": 0.674315,
+      "mae_s": 3.29883
     },
     "Heptane": {
       "rows": 73,
-      "r2": 0.637477,
-      "mae_s": 1.819129
+      "r2": 0.637467,
+      "mae_s": 1.819393
     }
   },
   "burn_time_new_atmosphere": {
     "all_co2_tests": {
       "held_out_rows": 94,
-      "r2": 0.403812,
-      "mae_s": 4.697333
+      "r2": 0.40384,
+      "mae_s": 4.697115
     },
     "all_helium_tests": {
       "held_out_rows": 43,
-      "r2": -0.147008,
-      "mae_s": 3.131569
+      "r2": -0.146733,
+      "mae_s": 3.129744
     }
   }
 }

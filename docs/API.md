@@ -109,7 +109,7 @@ Retrain with `.venv/Scripts/python model/train_flex.py`. It rewrites `model/arti
 
 | Model | Data | Validation | Status |
 | --- | --- | --- | --- |
-| Extinction vs completion: unweighted logistic regression (chosen over balanced-weight LR and a small random forest by Brier score) | 202 FLEX tests (176 extinction / 26 completion) | Balanced accuracy 0.80 (95% CI 0.71–0.89) vs 0.50 for always guessing; ROC AUC 0.81; Brier 0.083 vs 0.112 for quoting the base rate. Probabilities are calibrated: tests given about 62% ended in extinction 61% of the time | Enabled |
+| Extinction vs completion: logistic regression on squares and pairwise interactions (C=0.3; chosen over plain LR, balanced-weight LR and a small random forest by Brier score) | 202 FLEX tests (176 extinction / 26 completion) | Balanced accuracy 0.80 (95% CI 0.72–0.88) vs 0.50 for always guessing; ROC AUC 0.88 (plain LR 0.81); Brier 0.076 vs 0.112 for quoting the base rate. Probabilities are calibrated: tests given about 56% ended in extinction 54% of the time | Enabled |
 | Burn time: random forest on log(seconds), selected within fitting rows | 119 fit / 41 calibration / 40 independent audit rows | Audit R² 0.612 (group-bootstrap CI 0.36–0.81), MAE 2.90 s; nominal 90% interval covered 36/40 audit groups | Enabled where coverage permits |
 | Similarity | 250 solid tests; 202 screened FLEX rows of matching fuel/gas family | Distance in typical-difference units, with coverage levels `close`, `partial`, `none` | n/a |
 | Evidence search | 757 NASA text passages | TF-IDF keywords + latent semantic analysis, built in memory at startup | n/a |

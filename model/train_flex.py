@@ -29,6 +29,7 @@ from sklearn.metrics import (balanced_accuracy_score, brier_score_loss, confusio
                              log_loss, mean_absolute_error, precision_recall_fscore_support, r2_score,
                              roc_auc_score)
 from sklearn.model_selection import GroupKFold, GroupShuffleSplit, StratifiedGroupKFold
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 from sklearn.pipeline import Pipeline
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
@@ -50,6 +51,11 @@ def classifier_candidates():
             class_weight="balanced", max_iter=2000, C=1.0))]),
         "random_forest": Pipeline([("prep", preprocessor()), ("model", RandomForestClassifier(
             n_estimators=300, max_depth=4, min_samples_leaf=3, random_state=SEED))]),
+        # Squares and pairwise interactions let each fuel respond differently to oxygen, CO2 and droplet size.
+        # C=0.3 was chosen by nested grouped CV (21 of 25 inner searches) before this candidate was added here.
+        "logistic_regression_interactions": Pipeline([
+            ("prep", preprocessor()), ("poly", PolynomialFeatures(2, include_bias=False)), ("scale", StandardScaler()),
+            ("model", LogisticRegression(C=0.3, max_iter=5000))]),
     }
 
 

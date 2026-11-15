@@ -1,7 +1,7 @@
 {
   "trained_with": {
     "scikit_learn": "1.9.1",
-    "python": "3.12.10"
+    "python": "3.11.15"
   },
   "dataset": "data/clean/flex_training.csv",
   "source_record": "PSI-69",
@@ -365,32 +365,32 @@
         ],
         "calibration": [
           {
-            "predicted_mean": 0.671825,
+            "predicted_mean": 0.671875,
             "observed_rate": 0.634146,
             "n": 41
           },
           {
-            "predicted_mean": 0.852041,
+            "predicted_mean": 0.852537,
             "observed_rate": 0.825,
             "n": 40
           },
           {
-            "predicted_mean": 0.921039,
+            "predicted_mean": 0.921034,
             "observed_rate": 0.95,
             "n": 40
           },
           {
-            "predicted_mean": 0.959502,
+            "predicted_mean": 0.959473,
             "observed_rate": 0.95,
             "n": 40
           },
           {
-            "predicted_mean": 0.979322,
+            "predicted_mean": 0.979234,
             "observed_rate": 1.0,
             "n": 41
           }
         ],
-        "mean_predicted_probability": 0.876239,
+        "mean_predicted_probability": 0.876323,
         "balanced_accuracy": 0.692745,
         "balanced_accuracy_95ci": [
           0.598056,
@@ -428,14 +428,91 @@
             ]
           ]
         },
-        "roc_auc": 0.824738,
-        "brier_score": 0.092526,
-        "log_loss": 0.30423
+        "roc_auc": 0.824301,
+        "brier_score": 0.092566,
+        "log_loss": 0.304409
+      },
+      "logistic_regression_interactions": {
+        "decision_thresholds_per_fold": [
+          0.92,
+          0.9,
+          0.87,
+          0.88,
+          0.95
+        ],
+        "calibration": [
+          {
+            "predicted_mean": 0.555343,
+            "observed_rate": 0.536585,
+            "n": 41
+          },
+          {
+            "predicted_mean": 0.873517,
+            "observed_rate": 0.925,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.962211,
+            "observed_rate": 0.9,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.985913,
+            "observed_rate": 1.0,
+            "n": 40
+          },
+          {
+            "predicted_mean": 0.996326,
+            "observed_rate": 1.0,
+            "n": 41
+          }
+        ],
+        "mean_predicted_probability": 0.873684,
+        "balanced_accuracy": 0.803759,
+        "balanced_accuracy_95ci": [
+          0.716116,
+          0.876322
+        ],
+        "macro_f1": 0.671196,
+        "raw_accuracy": 0.772277,
+        "per_class": {
+          "Completion": {
+            "precision": 0.34375,
+            "recall": 0.846154,
+            "f1": 0.488889,
+            "support": 26
+          },
+          "Extinction": {
+            "precision": 0.971014,
+            "recall": 0.761364,
+            "f1": 0.853503,
+            "support": 176
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "Completion",
+            "Extinction"
+          ],
+          "rows_actual_cols_predicted": [
+            [
+              22,
+              4
+            ],
+            [
+              42,
+              134
+            ]
+          ]
+        },
+        "roc_auc": 0.884397,
+        "brier_score": 0.075939,
+        "log_loss": 0.254339
       }
     },
-    "selected_model": "logistic_regression",
+    "selected_model": "logistic_regression_interactions",
     "selection_rule": "lowest Brier score among models whose balanced-accuracy 95% CI is above 0.5",
-    "decision_threshold": 0.79,
+    "decision_threshold": 0.83,
     "base_rate_extinction": 0.871287,
     "prediction_enabled": true,
     "promotion_gate": "passed: balanced accuracy (95% CI above 0.5, at least 0.10 above guessing) and Brier score better than the base rate",
@@ -450,6 +527,10 @@
     "task": "regression",
     "target": "burn_time_s",
     "target_meaning": "Recorded FLEX burn time among screened Extinction/Completion rows; no inferred physical definition of Completion",
+    "trained_with": {
+      "scikit_learn": "1.9.1",
+      "python": "3.11.15"
+    },
     "rows": 200,
     "groups": 199,
     "partitions": {
@@ -919,10 +1000,6 @@
       "Audit was held out from fitting, candidate choice and interval calibration.",
       "Nominal coverage assumes exchangeable sample groups. It is marginal, not guaranteed at each condition or under distribution shift.",
       "Historical stress tests describe full-data CV candidates, not this frozen deployed pipeline."
-    ],
-    "trained_with": {
-      "scikit_learn": "1.9.1",
-      "python": "3.14.2"
-    }
+    ]
   }
 }

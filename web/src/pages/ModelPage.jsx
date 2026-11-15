@@ -4,7 +4,7 @@ import { Card, ErrorBox, Spinner, fmt, useAsync } from "../components/ui.jsx";
 
 const NAMES = {
   majority_baseline: "Always guess “extinction”", logistic_regression: "Logistic regression",
-  logistic_regression_balanced: "Logistic regression (balanced weights)", random_forest: "Random forest",
+  logistic_regression_balanced: "Logistic regression (balanced weights)", random_forest: "Random forest", logistic_regression_interactions: "Logistic regression with interactions",
   mean_baseline: "Always guess the average", ridge: "Ridge regression",
 };
 const axis = { tick: { fill: "#6b7280", fontSize: 11 } };

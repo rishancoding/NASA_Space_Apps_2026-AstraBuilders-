@@ -40,6 +40,7 @@ h2, h3, h4 {{ letter-spacing: -0.02em; }}
 .fs-label {{ font-family: 'Geist Mono', monospace; font-size: 0.68rem; letter-spacing: 0.12em;
   text-transform: uppercase; color: {MUTED}; margin: 0.2rem 0 0.35rem 0; }}
 .fs-note {{ color: {MUTED}; font-size: 0.86rem; line-height: 1.5; margin-top: -0.3rem; }}
+.fs-note a {{ color: {INK}; text-decoration: underline; text-decoration-color: {LINE}; }}
 [data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"]) {{ background: {CARD}; }}
 [data-testid="stMetricLabel"] p {{ font-family: 'Geist Mono', monospace; font-size: 0.7rem !important;
   letter-spacing: 0.1em; text-transform: uppercase; color: {MUTED}; }}
