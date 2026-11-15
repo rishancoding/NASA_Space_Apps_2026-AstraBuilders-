@@ -231,7 +231,6 @@ def burn_time_model():
 @lru_cache(maxsize=1)
 def search_index():
     """TF-IDF + latent semantic analysis over the evidence chunks, built in memory (~1 s)."""
-    from sklearn.decomposition import TruncatedSVD
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.preprocessing import normalize
 
@@ -239,9 +238,16 @@ def search_index():
     texts = [f"{c['source_record']} {catalog().get(c['source_record'], {}).get('investigation_name', '')} {c['locator']} {c['text']}" for c in chunks]
     vec = TfidfVectorizer(stop_words="english", sublinear_tf=True, ngram_range=(1, 2), max_df=0.6)
     tfidf = vec.fit_transform(texts)
-    svd = TruncatedSVD(n_components=150, random_state=42)
-    lsa = normalize(svd.fit_transform(tfidf))
-    return vec, svd, tfidf, lsa
+    # Truncated SVD via the small document Gram matrix (757 x 757): same result as sklearn's
+    # TruncatedSVD but ~100x faster here, because documents are far fewer than terms.
+    gram = (tfidf @ tfidf.T).toarray()
+    w, u = np.linalg.eigh(gram)
+    top = np.argsort(w)[::-1][:150]
+    s = np.sqrt(np.clip(w[top], 1e-12, None))
+    u = u[:, top]
+    components = np.asarray(tfidf.T @ u) / s  # term -> concept projection (terms x 150)
+    lsa = normalize(u * s)
+    return vec, components, tfidf, lsa
 
 
 # --------------------------------------------------------------------------- options
@@ -919,10 +925,10 @@ def search_evidence(q, source_record=None, k=5, include_plans=True):
     if not q or not q.strip():
         raise InputError({"field": "q", "message": "Enter a search query"})
     k = max(1, min(25, int(k)))
-    vec, svd, tfidf, lsa = search_index()
+    vec, components, tfidf, lsa = search_index()
     qv = vec.transform([q])
     lexical = (tfidf @ qv.T).toarray().ravel()
-    qn = qv @ svd.components_.T
+    qn = np.asarray(qv @ components)
     norm = np.linalg.norm(qn)
     semantic = (lsa @ (qn / norm).ravel()) if norm > 0 else np.zeros(len(lexical))
     score = 0.6 * lexical + 0.4 * np.clip(semantic, 0, None)

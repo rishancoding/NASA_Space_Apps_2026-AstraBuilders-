@@ -12,6 +12,8 @@ Conventions the UI can rely on:
 from __future__ import annotations
 
 import os
+import threading
+from contextlib import asynccontextmanager
 from typing import Literal, Optional
 
 from fastapi import FastAPI, Query, Request
@@ -23,7 +25,23 @@ from pydantic import BaseModel, Field
 from . import core
 from .agent import ChatUnavailable, chat, model_name, provider
 
+def _warm_up():
+    """Load data, models and the search index in the background so the first user request is fast."""
+    for fn in (core.solids, core.flex_all, core.extinction_model, core.burn_time_model, core.search_index):
+        try:
+            fn()
+        except Exception as e:  # never block startup; the request path will report real errors
+            print(f"warm-up skipped {fn.__name__}: {e}")
+
+
+@asynccontextmanager
+async def lifespan(_app):
+    threading.Thread(target=_warm_up, daemon=True).start()
+    yield
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="AstraBuilders Flame API",
     version="1.0.0",
 )
